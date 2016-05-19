@@ -15,16 +15,13 @@ configure_file(kdeplatformtheme_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/kdeplatf
 
 remove_definitions(-DQT_NO_CAST_FROM_ASCII)
 
-macro(FRAMEWORKINTEGRATION_TESTS _testname)
+macro(OSXINTEGRATION_TESTS _testname)
     add_executable(${_testname} ${_testname}.cpp ${ARGN})
     set_target_properties(${_testname} PROPERTIES COMPILE_FLAGS "-DUNIT_TEST")
-    add_test(frameworkintegration-${_testname} ${_testname})
+    add_test(osxintegration-${_testname} ${_testname})
     ecm_mark_as_test(${_testname})
     ecm_mark_nongui_executable(${_testname})
     target_link_libraries(${_testname} Qt5::Test KF5::ConfigWidgets KF5::ConfigCore KF5::IconThemes KF5::Style KF5::Notifications)
 endmacro()
 
-frameworkintegration_tests(
-  kstyle_unittest
-)
 
