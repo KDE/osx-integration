@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8.12)
 project(OSXIntegration)
 
 include(FeatureSummary)
-find_package(ECM 5.22.0  NO_MODULE)
+find_package(ECM 5.20.0  NO_MODULE)
 set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://projects.kde.org/projects/kdesupport/extra-cmake-modules")
 feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKAGES)
 
@@ -23,7 +23,7 @@ include(KDECMakeSettings)
 set(REQUIRED_QT_VERSION 5.5.0)
 find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets)
 
-set(KF5_VERSION "5.22.0") # handled by release scripts
+set(KF5_VERSION "5.20.0") # handled by release scripts
 set(KF5_DEP_VERSION "5.20.0") # handled by release scripts
 
 ecm_setup_version(${KF5_VERSION} VARIABLE_PREFIX OSXINTEGRATION
@@ -36,14 +36,12 @@ find_package(KF5ConfigWidgets ${KF5_DEP_VERSION} REQUIRED)
 find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
 find_package(KF5Notifications ${KF5_DEP_VERSION} REQUIRED)
 find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
-if(APPLE)
-    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus)
-    find_package(KF518n ${KF5_DEP_VERSION} REQUIRED)
-    find_package(KF5IO ${KF5_DEP_VERSION} REQUIRED)
-    add_definitions(-DTRANSLATION_DOMAIN=\"osxintegration5\")
-    if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/po")
-        ki18n_install(po)
-    endif()
+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus)
+find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
+find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
+add_definitions(-DTRANSLATION_DOMAIN=\"osxintegration5\")
+if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/po")
+    ki18n_install(po)
 endif()
 
 add_subdirectory(src)
@@ -62,8 +60,6 @@ install(FILES  "${CMAKE_CURRENT_BINARY_DIR}/KF5OSXIntegrationConfig.cmake"
                "${CMAKE_CURRENT_BINARY_DIR}/KF5OSXIntegrationConfigVersion.cmake"
         DESTINATION "${CMAKECONFIG_INSTALL_DIR}"
         COMPONENT Devel )
-
-install(EXPORT KF5OSXTargets DESTINATION "${CMAKECONFIG_INSTALL_DIR}" FILE KF5OSXTargets.cmake NAMESPACE KF5:: )
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/osxintegration_version.h
         DESTINATION ${KDE_INSTALL_INCLUDEDIR_KF5} COMPONENT Devel )
