@@ -126,9 +126,9 @@ QStringList KHintsSettingsMac::xdgIconThemePaths() const
 
     QStringList xdgDirs = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation);
     if (xdgDirs.isEmpty()) {
-        xdgDirs << "/opt/local/share"
-            << "/usr/local/share"
-            << "/usr/share";
+        xdgDirs << QStringLiteral("/opt/local/share")
+            << QStringLiteral("/usr/local/share")
+            << QStringLiteral("/usr/share");
     }
     foreach (const QString &xdgDir, xdgDirs) {
         const QFileInfo xdgIconsDir(xdgDir + QStringLiteral("/icons"));

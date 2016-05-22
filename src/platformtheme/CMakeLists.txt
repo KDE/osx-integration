@@ -18,9 +18,10 @@ set(platformtheme_SRCS
 include_directories(
     ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
 )
-# remove?
-# remove_definitions(-DQT_NO_CAST_FROM_ASCII)
 
+# Use the same name for the platform theme module. This makes it impossible
+# to install both the plasma and the OS X integration modules, but that's
+# intentional.
 add_library(KDEPlatformTheme MODULE ${platformtheme_SRCS})
 
 # add KF5:WindowSystem?
