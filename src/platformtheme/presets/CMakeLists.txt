@@ -1,0 +1,3 @@
+
+INSTALL(FILES MacOSX-Graphite.qtcurve DESTINATION ${DATA_INSTALL_DIR}/QtCurve/)
+INSTALL(FILES MacOSX-Graphite.colors DESTINATION ${DATA_INSTALL_DIR}/color-schemes/)
