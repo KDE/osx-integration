@@ -221,6 +221,13 @@ void KHintsSettingsMac::loadPalettes()
     KSharedConfigPtr mKdeGlobals = kdeGlobals();
     if (mKdeGlobals->hasGroup("Colors:View")) {
         palettes()[QPlatformTheme::SystemPalette] = new QPalette(KColorScheme::createApplicationPalette(mKdeGlobals));
+    } else {
+        const QString scheme = readConfigValue(QStringLiteral("General"), QStringLiteral("ColorScheme"), QStringLiteral("Mac OSX Graphite")).toString();
+        const QString path = QStandardPaths::locate(QStandardPaths::GenericDataLocation, QStringLiteral("color-schemes/") + scheme + QStringLiteral(".colors"));
+
+        if (!path.isEmpty()) {
+            palettes()[QPlatformTheme::SystemPalette] = new QPalette(KColorScheme::createApplicationPalette(KSharedConfig::openConfig(path)));
+        }
     }
 }
 
