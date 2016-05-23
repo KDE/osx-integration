@@ -42,50 +42,14 @@ static const char GeneralId[] =      "General";
 static const char DefaultFont[] =    "Lucida Grande";
 static char *LocalDefaultFont = NULL;
 
-/* Default fonts on OS X <= 10.9 :
-    System: Lucida Grande 13pt
-    System headlines: <System>,Bold
-    Application: Helvetica 12pt
-    Fixed width: Monaco 10pt
-    Messages: <system>
-    Labels: <system>,11pt
-    Help tags: <system>,11pt
-    Window title bars: <system>
-    Utility window title bars: <system>,11pt
-    --- Dumped from the native QPlatformTheme::themeFont() function:
-    (themeFont QPlatformTheme::Font : CoreText font role)
-    themeFont 0 : 2 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,13,-1,5,50,0,0,0,0,0"
-    themeFont 1 : 12 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,14,-1,5,50,0,0,0,0,0"
-    themeFont 2 : 12 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,14,-1,5,50,0,0,0,0,0"
-    themeFont 3 : 12 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,14,-1,5,50,0,0,0,0,0"
-    themeFont 4 : 3 = ".Lucida Grande UI" style "Bold" NSFont weight@12pt= 9 QFont= ".Lucida Grande UI,13,-1,5,75,0,0,0,0,0"
-    themeFont 5 : 2 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,13,-1,5,50,0,0,0,0,0"
-    themeFont 6 : 25 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,11,-1,5,50,0,0,0,0,0"
-    themeFont 7 : 2 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,13,-1,5,50,0,0,0,0,0"
-    themeFont 8 : 15 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,13,-1,5,50,0,0,0,0,0"
-    themeFont 9 : 2 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,13,-1,5,50,0,0,0,0,0"
-    themeFont 10 : 2 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,13,-1,5,50,0,0,0,0,0"
-    themeFont 11 : 16 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,13,-1,5,50,0,0,0,0,0"
-    themeFont 12 : 2 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,13,-1,5,50,0,0,0,0,0"
-    themeFont 13 : 2 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,13,-1,5,50,0,0,0,0,0"
-    themeFont 14 : 22 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,10,-1,5,50,0,0,0,0,0"
-    themeFont 15 : 2 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,13,-1,5,50,0,0,0,0,0"
-    themeFont 16 : 8 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,12,-1,5,50,0,0,0,0,0"
-    themeFont 17 : 4 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,11,-1,5,50,0,0,0,0,0"
-    themeFont 18 : 8 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,12,-1,5,50,0,0,0,0,0"
-    themeFont 19 : 2 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,13,-1,5,50,0,0,0,0,0"
-    themeFont 20 : 8 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,12,-1,5,50,0,0,0,0,0"
-    themeFont 21 : 4 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,11,-1,5,50,0,0,0,0,0"
-    themeFont 22 : 6 = ".Lucida Grande UI" style "Regular" NSFont weight@12pt= 5 QFont= ".Lucida Grande UI,9,-1,5,50,0,0,0,0,0"
-    themeFont 23 : 1 = "Monaco" style "Regular" NSFont weight@12pt= 5 QFont= "Monaco,10,-1,5,50,0,0,0,0,0"
- */
+// See README.fonts.txt for information and thoughts about native/default fonts
 
 static KFontData DefaultFontData[KFontSettingsDataMac::FontTypesCount] = {
-    // Note: we use 
     { GeneralId, "font",                 DefaultFont,  12, -1, QFont::SansSerif },
     { GeneralId, "fixed",                "Monaco",     10, -1, QFont::Monospace },
-    { GeneralId, "toolBarFont",          DefaultFont,  11, -1, QFont::SansSerif },
+    { GeneralId, "toolBarFont",          DefaultFont,  10, -1, QFont::SansSerif },
     { GeneralId, "menuFont",             DefaultFont,  14, -1, QFont::SansSerif },
+    // applications don't control the window titlebar fonts
     { "WM",      "activeFont",           DefaultFont,  13, -1, QFont::SansSerif },
     { GeneralId, "taskbarFont",          DefaultFont,   9, -1, QFont::SansSerif },
     { GeneralId, "smallestReadableFont", DefaultFont,   9, -1, QFont::SansSerif },
