@@ -20,6 +20,10 @@
  */
 
 #include <qpa/qplatformthemeplugin.h>
+#include <QChildEvent>
+#include <QWidget>
+#include <QApplication>
+#include <QDebug>
 
 #include "kdemactheme.h"
 
@@ -31,13 +35,32 @@ class KdePlatformThemePlugin : public QPlatformThemePlugin
     Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QPA.QPlatformThemeFactoryInterface.5.1" FILE "kdeplatformtheme.json")
 public:
     KdePlatformThemePlugin(QObject *parent = Q_NULLPTR)
-        : QPlatformThemePlugin(parent) {}
+        : QPlatformThemePlugin(parent)
+    {
+        if (qEnvironmentVariableIsSet("KDE_LAYOUT_USES_WIDGET_RECT")) {
+            qApp->installEventFilter(this);
+        }
+    }
 
     QPlatformTheme *create(const QString &key, const QStringList &paramList) Q_DECL_OVERRIDE
     {
         Q_UNUSED(key)
         Q_UNUSED(paramList)
         return new KdeMacTheme;
+    }
+protected:
+    bool eventFilter(QObject *object, QEvent *event)
+    {
+        switch (event->type()) {
+            case QEvent::ChildAdded: {
+                QChildEvent *childEvent = static_cast<QChildEvent*>(event);
+                if (childEvent->child()->isWidgetType()) {
+                    QWidget* theChildWidget = qobject_cast<QWidget*>(childEvent->child());
+                    theChildWidget->setAttribute(Qt::WA_LayoutUsesWidgetRect, true);
+                }
+            }
+        }
+        return qApp->eventFilter(object, event);
     }
 };
 
