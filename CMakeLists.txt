@@ -29,7 +29,7 @@ execute_process(COMMAND git describe
 )
 message(STATUS "KF5_VERSION=${KF5_VERSION}")
 # is there a more streamlined way to include sub-patch level versioning info into KF5_VERSION?
-set(KF5_VERSION "5.22.0-12")
+set(KF5_VERSION "5.22.0-13")
 set(KF5_DEP_VERSION "5.20.0") # handled by release scripts
 
 ecm_setup_version(${KF5_VERSION} VARIABLE_PREFIX OSXINTEGRATION
@@ -70,5 +70,6 @@ install(FILES  "${CMAKE_CURRENT_BINARY_DIR}/KF5OSXIntegrationConfig.cmake"
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/osxintegration_version.h
         DESTINATION ${KDE_INSTALL_INCLUDEDIR_KF5} COMPONENT Devel )
 
+install(FILES macosx_workspace.notifyrc DESTINATION ${KDE_INSTALL_KNOTIFY5RCDIR})
 
 feature_summary(WHAT ALL   FATAL_ON_MISSING_REQUIRED_PACKAGES)
