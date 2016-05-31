@@ -27,6 +27,8 @@
 class KConfigGroup;
 
 class QPalette;
+class KdeProxyStyle;
+
 class KHintsSettingsMac : public KHintsSettings
 {
     Q_OBJECT
@@ -45,6 +47,9 @@ protected:
     void iconChanged(int group);
     Qt::ToolButtonStyle toolButtonStyle(const KConfigGroup &cg) const;
     void updateCursorTheme();
+    void checkNativeTheme(const QString &theme);
+private:
+    KdeProxyStyle *styleProxy;
 };
 
 #endif //KHINTS_SETTINGS_MAC_H

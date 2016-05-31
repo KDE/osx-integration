@@ -35,6 +35,7 @@
 #include <QGuiApplication>
 #include <QDialogButtonBox>
 #include <QScreen>
+#include <QProxyStyle>
 
 #include <QDBusConnection>
 #include <QDBusInterface>
@@ -46,7 +47,29 @@
 
 #include <config-platformtheme.h>
 
+class KdeProxyStyle : public QProxyStyle
+{
+public:
+    KdeProxyStyle(const QString &styleName)
+        : QProxyStyle(styleName)
+    {
+        ;
+    }
+
+    int layoutSpacing(QSizePolicy::ControlType control1, QSizePolicy::ControlType control2,
+                        Qt::Orientation orientation, const QStyleOption *option = 0, const QWidget *widget = 0) const
+    {
+        int spacing = QProxyStyle::layoutSpacing(control1, control2, orientation, option, widget);
+        qWarning() << "layoutSpacing=" << spacing;
+        if (spacing > 2) {
+            spacing /= 2;
+        }
+        return spacing;
+    }
+};
+
 KHintsSettingsMac::KHintsSettingsMac()
+    : styleProxy(0)
 {
     KSharedConfigPtr mKdeGlobals = kdeGlobals();
 
@@ -82,6 +105,7 @@ KHintsSettingsMac::KHintsSettingsMac()
         styleNames.prepend(lnfStyle);
     }
     hints()[QPlatformTheme::StyleNames] = styleNames;
+    checkNativeTheme(configuredStyle);
 
     hints()[QPlatformTheme::DialogButtonBoxLayout] = QDialogButtonBox::MacLayout;
     hints()[QPlatformTheme::DialogButtonBoxButtonsHaveIcons] = cg.readEntry("ShowIconsOnPushButtons", false);
@@ -151,6 +175,23 @@ void KHintsSettingsMac::delayedDBusConnects()
                                           QStringLiteral("notifyChange"), this, SLOT(slotNotifyChange(int,int)));
 }
 
+void KHintsSettingsMac::checkNativeTheme(const QString &theme)
+{
+#if 0
+    // using a QStyleProxy messes up the colour palette for some reason, so this feature is deactivated for now
+    if (theme.isEmpty() || theme.compare(QStringLiteral("macintosh"), Qt::CaseInsensitive) == 0) {
+        if (qApp) {
+            if (!styleProxy) {
+                styleProxy = new KdeProxyStyle(QStringLiteral("macintosh"));
+            }
+            // styleProxy will be owned by QApplication after this, so no point deleting it
+            qApp->setStyle(styleProxy);
+            loadPalettes();
+        }
+    }
+#endif
+}
+
 void KHintsSettingsMac::slotNotifyChange(int type, int arg)
 {
     KHintsSettings::slotNotifyChange(type,arg);
@@ -173,6 +214,8 @@ void KHintsSettingsMac::slotNotifyChange(int type, int arg)
         }
 
         const QString theme = cg.readEntry("widgetStyle", QString());
+        checkNativeTheme(theme);
+
         if (theme.isEmpty()) {
             return;
         }
@@ -187,6 +230,7 @@ void KHintsSettingsMac::slotNotifyChange(int type, int arg)
             styleNames.prepend(lnfStyle);
         }
         hints()[QPlatformTheme::StyleNames] = styleNames;
+
         break;
     }
     }
