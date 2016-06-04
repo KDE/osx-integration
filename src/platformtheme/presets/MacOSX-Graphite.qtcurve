@@ -171,3 +171,4 @@ windowBorder=32
 windowDrag=3
 xCheck=false
 xbar=false
+onlyTicksInMenu=true
