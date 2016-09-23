@@ -29,7 +29,7 @@ execute_process(COMMAND git describe
 )
 message(STATUS "KF5_VERSION=${KF5_VERSION}")
 # is there a more streamlined way to include sub-patch level versioning info into KF5_VERSION?
-set(KF5_VERSION "5.22.0-24")
+set(KF5_VERSION "5.22.0-25")
 set(KF5_DEP_VERSION "5.20.0") # handled by release scripts
 
 ecm_setup_version(${KF5_VERSION} VARIABLE_PREFIX OSXINTEGRATION

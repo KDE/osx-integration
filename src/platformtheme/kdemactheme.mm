@@ -36,7 +36,7 @@
 #include <QVariant>
 #include <QDebug>
 
-// instantiating the natice platform theme requires the use of private APIs
+// instantiating the native platform theme requires the use of private APIs
 #include <QtGui/private/qguiapplication_p.h>
 #include <QtGui/qpa/qplatformintegration.h>
 
@@ -64,6 +64,11 @@ KdeMacTheme::KdeMacTheme()
     if (strcasecmp(QT_VERSION_STR, qVersion())) {
         NSLog(@"Warning: the KDE Platform Plugin for Mac was built against Qt %s but is running with Qt %s!",
             QT_VERSION_STR, qVersion());
+    }
+    // first things first: instruct Qt not to use the Mac-style toplevel menubar
+    // if we are not using the Cocoa QPA plugin (but the XCB QPA instead).
+    if (!QGuiApplication::platformName().contains(QLatin1String("cocoa"))) {
+        QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuBar);
     }
     QPlatformIntegration *pi = QGuiApplicationPrivate::platformIntegration();
     if (pi) {
