@@ -40,62 +40,87 @@ static const char GeneralId[] =      "General";
 // NOTE: the default system font changed with OS X 10.11, from Lucida Grande to
 // San Francisco. With luck this will be caught by QFontDatabase::GeneralFont
 static const char DefaultFont[] =    "Lucida Grande";
-static char *LocalDefaultFont = NULL;
+static const char DefaultFixedFont[] = "Monaco";
+static const char *LocalDefaultFont = NULL;
 
 // See README.fonts.txt for information and thoughts about native/default fonts
 
 static KFontData DefaultFontData[KFontSettingsDataMac::FontTypesCount] = {
-    { GeneralId, "font",                 DefaultFont,  12, -1, QFont::SansSerif },
-    { GeneralId, "fixed",                "Monaco",     10, -1, QFont::Monospace },
-    { GeneralId, "toolBarFont",          DefaultFont,  10, -1, QFont::SansSerif },
-    { GeneralId, "menuFont",             DefaultFont,  14, -1, QFont::SansSerif },
+    { GeneralId, "font",                 DefaultFont,       12, -1, QFont::SansSerif },
+    { GeneralId, "fixed",                DefaultFixedFont,  10, -1, QFont::Monospace },
+    { GeneralId, "toolBarFont",          DefaultFont,       10, -1, QFont::SansSerif },
+    { GeneralId, "menuFont",             DefaultFont,       14, -1, QFont::SansSerif },
     // applications don't control the window titlebar fonts
-    { "WM",      "activeFont",           DefaultFont,  13, -1, QFont::SansSerif },
-    { GeneralId, "taskbarFont",          DefaultFont,   9, -1, QFont::SansSerif },
-    { GeneralId, "smallestReadableFont", DefaultFont,   9, -1, QFont::SansSerif },
+    { "WM",      "activeFont",           DefaultFont,       13, -1, QFont::SansSerif },
+    { GeneralId, "taskbarFont",          DefaultFont,        9, -1, QFont::SansSerif },
+    { GeneralId, "smallestReadableFont", DefaultFont,        9, -1, QFont::SansSerif },
     // this one is to accomodate for the MessageBoxFont which should be bold on OS X
     // when using the native theme fonts.
-    { GeneralId, "messageBoxFont",       DefaultFont,  13, QFont::Bold, QFont::SansSerif }
+    { GeneralId, "messageBoxFont",       DefaultFont,       13, QFont::Bold, QFont::SansSerif }
 };
 
 static const char *fontNameFor(QFontDatabase::SystemFont role)
 {
     QFont qf = QFontDatabase::systemFont(role);
     const char *fn = qf.defaultFamily().toLocal8Bit().constData();
-    if (role == QFontDatabase::FixedFont && !qf.fixedPitch()) {
-        fn = "Monaco";
-    }
-    if (strcmp(fn, ".Lucida Grande UI") == 0) {
-        return "Lucida Grande";
+    if (fn && *fn) {
+        if (role == QFontDatabase::FixedFont && !qf.fixedPitch()) {
+            fn = "Monaco";
+        } else if (strcmp(fn, ".Lucida Grande UI") == 0) {
+            fn = "Lucida Grande";
+        }
+        return strdup(fn);
     } else {
-        return fn;
+        return NULL;
     }
 }
 
-KFontSettingsDataMac::KFontSettingsDataMac()
+void initDefaultFonts()
 {
-    QMetaObject::invokeMethod(this, "delayedDBusConnects", Qt::QueuedConnection);
+    const char *fn;
+    static bool active = false;
+
+    // we must protect ourselves from being called recursively
+    if (active) {
+        return;
+    }
+    active = true;
+
     if (!LocalDefaultFont) {
-        LocalDefaultFont = strdup(fontNameFor(QFontDatabase::GeneralFont));
+        fn = fontNameFor(QFontDatabase::GeneralFont);
+        if (fn) {
+            LocalDefaultFont = fn;
+        }
     }
     for (int i = 0 ; i < KFontSettingsDataMac::FontTypesCount ; ++i) {
-        const char *fn;
         switch(i) {
-            case FixedFont:
-                fn = strdup(fontNameFor(QFontDatabase::FixedFont));
+            case KFontSettingsDataMac::FixedFont:
+                fn = fontNameFor(QFontDatabase::FixedFont);
                 break;
-            case WindowTitleFont:
-                fn = strdup(fontNameFor(QFontDatabase::TitleFont));
+            case KFontSettingsDataMac::WindowTitleFont:
+                fn = fontNameFor(QFontDatabase::TitleFont);
                 break;
-            case SmallestReadableFont:
-                fn = strdup(fontNameFor(QFontDatabase::SmallestReadableFont));
+            case KFontSettingsDataMac::SmallestReadableFont:
+                fn = fontNameFor(QFontDatabase::SmallestReadableFont);
                 break;
             default:
                 fn = LocalDefaultFont;
                 break;
         }
-        DefaultFontData[i].FontName = fn;
+        if (fn) {
+            if (DefaultFontData[i].FontName != DefaultFont && DefaultFontData[i].FontName != DefaultFixedFont) {
+                free((void*)DefaultFontData[i].FontName);
+            }
+            DefaultFontData[i].FontName = fn;
+        }
     }
+
+    active = false;
+}
+
+KFontSettingsDataMac::KFontSettingsDataMac()
+{
+    QMetaObject::invokeMethod(this, "delayedDBusConnects", Qt::QueuedConnection);
     for (int i = 0; i < FontTypesCount; ++i) {
         // remove any information that already have been cached by our parent
         // IFF we don't have our own mFonts copy
@@ -108,13 +133,17 @@ KFontSettingsDataMac::~KFontSettingsDataMac()
 {
     for (int i = 0 ; i < KFontSettingsDataMac::FontTypesCount ; ++i) {
         if (DefaultFontData[i].FontName != DefaultFont) {
-            if (DefaultFontData[i].FontName != LocalDefaultFont) {
-                delete DefaultFontData[i].FontName;
+            if (DefaultFontData[i].FontName
+                    && DefaultFontData[i].FontName != LocalDefaultFont
+                    && DefaultFontData[i].FontName != DefaultFixedFont) {
+                free((void*)(DefaultFontData[i].FontName));
             }
-            DefaultFontData[i].FontName = DefaultFont;
+            DefaultFontData[i].FontName = (i == FixedFont)? DefaultFixedFont : DefaultFont;
         }
     }
-    delete LocalDefaultFont;
+    if (LocalDefaultFont) {
+        free((void*)(LocalDefaultFont));
+    }
     LocalDefaultFont = NULL;
 }
 
@@ -123,6 +152,27 @@ QFont *KFontSettingsDataMac::font(FontTypes fontType)
     QFont *cachedFont = mFonts[fontType];
 
     if (!cachedFont) {
+        // check if we have already initialised our local database mapping font types to fonts
+        // if not, we do it here, at the latest possible moment. Doing it in the KFontSettingsDataMac
+        // ctor is bound for failure as our instance is likely to be created before Qt's own
+        // font database has been populated. That's expectable: the font database also represents
+        // platform (theme) specific fonts for various roles, and our ctor is called as part of the
+        // platform theme creation procedure.
+        if (!LocalDefaultFont) {
+            static bool active = false;
+            // NB: initDefaultFonts() queries Qt's font database which in turn can call us
+            // again. Protection against this is built into initDefaultFonts(), but in practice
+            // we prefer to return NULL if called through recursively.
+            if (!active) {
+                active = true;
+                initDefaultFonts();
+                active = false;
+            } else {
+                // our caller must handle NULL, preferably by relaying the font request
+                // to the native platform theme (see KdeMacTheme::font()).
+                return NULL;
+            }
+        }
         const KConfigGroup configGroup(kdeGlobals(), DefaultFontData[fontType].ConfigGroupKey);
         QString fontInfo;
         bool forceBold = false;
@@ -145,16 +195,18 @@ QFont *KFontSettingsDataMac::font(FontTypes fontType)
 
         cachedFont = new QFont(QLatin1String(fontData.FontName), fontData.Size, forceBold? QFont::Bold : fontData.Weight);
         cachedFont->setStyleHint(fontData.StyleHint);
+//         qWarning() << "Requested font type" << fontType << "name=" << fontData.FontName << "forceBold=" << forceBold << "styleHint=" << fontData.StyleHint;
+//         qWarning() << "\t->" << *cachedFont;
 
         fontInfo = configGroup.readEntry(fontData.ConfigKey, QString());
 
         if (!fontInfo.isEmpty()) {
             cachedFont->fromString(fontInfo);
+//             qWarning() << "\tfontInfo=" << fontInfo << "->" << *cachedFont;
         }
 
         mFonts[fontType] = cachedFont;
     }
-
     return cachedFont;
 }
 

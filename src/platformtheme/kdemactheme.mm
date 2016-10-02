@@ -165,13 +165,24 @@ const QFont *KdeMacTheme::font(Font type) const
 {
     // when using the platform-default fonts, try returning a bold version of the 
     // standard system font; it's the only one where Qt/OS X really deviates.
-    return m_fontsData->font(fontType(type));
+    const QFont *qf = m_fontsData->font(fontType(type));
+    if (!qf && nativeTheme) {
+        qf = nativeTheme->font(type);
+//         if (qf) {
+//             qWarning() << "native font for type" << type << "=role" << fontType(type) << ":" << *qf;
+//         } else {
+//             qWarning() << "native font for type" << type << "=role" << fontType(type) << ": NULL";
+//         }
+    }
+    return qf;
 }
 
 void KdeMacTheme::loadSettings()
 {
     if (!m_fontsData) {
         m_fontsData = new KFontSettingsDataMac;
+    }
+    if (!m_hints) {
         m_hints = new KHintsSettingsMac;
     }
 }
@@ -201,53 +212,53 @@ QString KdeMacTheme::standardButtonText(int button) const
     // It's impossible to use the parent's method since we use
     // the nativeTheme in the default case
     switch (static_cast<QPlatformDialogHelper::StandardButton>(button)) {
-    case QPlatformDialogHelper::NoButton:
-        qWarning() << Q_FUNC_INFO << "Unsupported standard button:" << button;
-        return QString();
-    case QPlatformDialogHelper::Ok:
-        return KStandardGuiItem::ok().text();
-    case QPlatformDialogHelper::Save:
-        return KStandardGuiItem::save().text();
-    case QPlatformDialogHelper::SaveAll:
-        return i18nc("@action:button", "Save All");
-    case QPlatformDialogHelper::Open:
-        return KStandardGuiItem::open().text();
-    case QPlatformDialogHelper::Yes:
-        return KStandardGuiItem::yes().text();
-    case QPlatformDialogHelper::YesToAll:
-        return i18nc("@action:button", "Yes to All");
-    case QPlatformDialogHelper::No:
-        return KStandardGuiItem::no().text();
-    case QPlatformDialogHelper::NoToAll:
-        return i18nc("@action:button", "No to All");
-    case QPlatformDialogHelper::Abort:
-        // FIXME KStandardGuiItem::stop() doesn't seem right here
-        return i18nc("@action:button", "Abort");
-    case QPlatformDialogHelper::Retry:
-        return i18nc("@action:button", "Retry");
-    case QPlatformDialogHelper::Ignore:
-        return i18nc("@action:button", "Ignore");
-    case QPlatformDialogHelper::Close:
-        return KStandardGuiItem::close().text();
-    case QPlatformDialogHelper::Cancel:
-        return KStandardGuiItem::cancel().text();
-    case QPlatformDialogHelper::Discard:
-        return KStandardGuiItem::discard().text();
-    case QPlatformDialogHelper::Help:
-        return KStandardGuiItem::help().text();
-    case QPlatformDialogHelper::Apply:
-        return KStandardGuiItem::apply().text();
-    case QPlatformDialogHelper::Reset:
-        return KStandardGuiItem::reset().text();
-    case QPlatformDialogHelper::RestoreDefaults:
-        return KStandardGuiItem::defaults().text();
-    default:
-        if (nativeTheme) {
-            // something not foreseen by Qt/KDE: now see if OS X
-            // has an opinion about the text.
-            return nativeTheme->standardButtonText(button);
-        }
-        return QPlatformTheme::defaultStandardButtonText(button);
+        case QPlatformDialogHelper::NoButton:
+            qWarning() << Q_FUNC_INFO << "Unsupported standard button:" << button;
+            return QString();
+        case QPlatformDialogHelper::Ok:
+            return KStandardGuiItem::ok().text();
+        case QPlatformDialogHelper::Save:
+            return KStandardGuiItem::save().text();
+        case QPlatformDialogHelper::SaveAll:
+            return i18nc("@action:button", "Save All");
+        case QPlatformDialogHelper::Open:
+            return KStandardGuiItem::open().text();
+        case QPlatformDialogHelper::Yes:
+            return KStandardGuiItem::yes().text();
+        case QPlatformDialogHelper::YesToAll:
+            return i18nc("@action:button", "Yes to All");
+        case QPlatformDialogHelper::No:
+            return KStandardGuiItem::no().text();
+        case QPlatformDialogHelper::NoToAll:
+            return i18nc("@action:button", "No to All");
+        case QPlatformDialogHelper::Abort:
+            // FIXME KStandardGuiItem::stop() doesn't seem right here
+            return i18nc("@action:button", "Abort");
+        case QPlatformDialogHelper::Retry:
+            return i18nc("@action:button", "Retry");
+        case QPlatformDialogHelper::Ignore:
+            return i18nc("@action:button", "Ignore");
+        case QPlatformDialogHelper::Close:
+            return KStandardGuiItem::close().text();
+        case QPlatformDialogHelper::Cancel:
+            return KStandardGuiItem::cancel().text();
+        case QPlatformDialogHelper::Discard:
+            return KStandardGuiItem::discard().text();
+        case QPlatformDialogHelper::Help:
+            return KStandardGuiItem::help().text();
+        case QPlatformDialogHelper::Apply:
+            return KStandardGuiItem::apply().text();
+        case QPlatformDialogHelper::Reset:
+            return KStandardGuiItem::reset().text();
+        case QPlatformDialogHelper::RestoreDefaults:
+            return KStandardGuiItem::defaults().text();
+        default:
+            if (nativeTheme) {
+                // something not foreseen by Qt/KDE: now see if OS X
+                // has an opinion about the text.
+                return nativeTheme->standardButtonText(button);
+            }
+            return QPlatformTheme::defaultStandardButtonText(button);
     }
 }
 
