@@ -1,0 +1,194 @@
+We were forked off frameworkintegration around the time that plasma-integration was also
+split off that framework.
+This file lists potentially relevant changes from plasma-integration's creation (c0ffbc2d87f7711b660d80a70b2c422a9152392e)
+until 3258d996565bec01c3a2e7d1ab4362bdb747483c (sept. 15)
+
+### Done:
+
+diff --git a/src/platformtheme/kdeplatformfiledialoghelper.cpp b/src/platformtheme/kdeplatformfiledialoghelper.cpp
+index 139c35d..15b5e90 100644
+--- a/src/platformtheme/kdeplatformfiledialoghelper.cpp
++++ b/src/platformtheme/kdeplatformfiledialoghelper.cpp
+@@ -288,6 +288,8 @@ void KDEPlatformFileDialogHelper::initializeDialog()
+         // overwrite option
+         if (options()->testOption(QFileDialogOptions::FileDialogOption::DontConfirmOverwrite)) {
+             dialog->m_fileWidget->setConfirmOverwrite(false);
++         } else if (options()->acceptMode() == QFileDialogOptions::AcceptSave) {
++             dialog->m_fileWidget->setConfirmOverwrite(true);
+         }
+     }
+ }
+@@ -328,11 +330,11 @@ void KDEPlatformFileDialogHelper::restoreSize()
+ 
+ bool KDEPlatformFileDialogHelper::show(Qt::WindowFlags windowFlags, Qt::WindowModality windowModality, QWindow *parent)
+ {
+-    Q_UNUSED(parent)
+     initializeDialog();
+     m_dialog->setWindowFlags(windowFlags);
+     m_dialog->setWindowModality(windowModality);
+     restoreSize();
++    m_dialog->windowHandle()->setTransientParent(parent);
+     // Use a delayed show here to delay show() after the internal Qt invisible QDialog.
+     // The delayed call shouldn't matter, because for other "real" native QPlatformDialog
+     // implementation like Mac and Windows, the native dialog is not necessarily
+
+diff --git a/src/platformtheme/khintssettings.cpp b/src/platformtheme/khintssettings.cpp
+index edbed5f..7768a1c 100644
+--- a/src/platformtheme/khintssettings.cpp
++++ b/src/platformtheme/khintssettings.cpp
+@@ -375,12 +375,6 @@ void KHintsSettings::loadPalettes()
+             return;
+         }
+ 
+-        path = QStandardPaths::locate(QStandardPaths::GenericDataLocation, QStringLiteral("plasma/look-and-feel/org.kde.loonandfeel/contents/colors"));
+-        if (!path.isEmpty()) {
+-            m_palettes[QPlatformTheme::SystemPalette] = new QPalette(KColorScheme::createApplicationPalette(KSharedConfig::openConfig(path)));
+-            return;
+-        }
+-
+         const QString scheme = readConfigValue(QStringLiteral("General"), QStringLiteral("ColorScheme"), QStringLiteral("Breeze")).toString();
+         path = QStandardPaths::locate(QStandardPaths::GenericDataLocation, QStringLiteral("color-schemes/") + scheme + QStringLiteral(".colors"));
+ 
+diff --git not done
+###
+### not done:
+There is little point changing the default fixed font in kfontsettingsdata.cpp (from Oxygen Mono to Hack); it's
+overridden in kfontsettingsdatamac.m (Monaco is close enough to Hack but still more elegant; has true Italic
+instead of an improved slanted (Oblique) mode.
+
+diff --git a/autotests/kfiledialog_unittest.cpp b/autotests/kfiledialog_unittest.cpp
+index 59915da..b32cd8e 100644
+--- a/autotests/kfiledialog_unittest.cpp
++++ b/autotests/kfiledialog_unittest.cpp
+@@ -19,6 +19,9 @@
+  */
+ 
+ #include <QTest>
++#include <QTimer>
++#include <QDir>
++#include <QTemporaryFile>
+ #include <QFileDialog>
+ #include <KFileWidget>
+ #include <KDirOperator>
+@@ -200,7 +203,61 @@ private Q_SLOTS:
+ 
+         QCOMPARE(dialog.fileMode(), qtFileMode);
+     }
++
++    void testSaveOverwrite_data()
++    {
++        QTest::addColumn<bool>("qtOverwriteOption");
++        QTest::addColumn<bool>("messageBoxExpected");
++        QTest::newRow("checkoverwrite") << false << true;
++        QTest::newRow("allowoverwrite") << true << false;
++    }
++
++    void testSaveOverwrite()
++    {
++        QFETCH(bool, qtOverwriteOption);
++        QFETCH(bool, messageBoxExpected);
++
++        QTemporaryFile tempFile(QDir::tempPath()+"/kfiledialogtest_XXXXXX");
++        tempFile.setAutoRemove(true);
++        tempFile.open();
++        QString tempName = tempFile.fileName();
++        tempFile.close();
++        int idx = tempName.lastIndexOf('/');
++
++        QFileDialog dialog;
++        dialog.setAcceptMode(QFileDialog::AcceptSave);
++        if (qtOverwriteOption) dialog.setOption(QFileDialog::DontConfirmOverwrite);
++        dialog.setDirectory(tempName.left(idx+1));
++        dialog.selectFile(tempName.mid(idx+1));
++        dialog.open();
++
++        KFileWidget *fw = findFileWidget();
++        QVERIFY(fw);
++        QTest::qWaitForWindowExposed(fw->window());
++        QCOMPARE(fw->isVisible(), true);
++
++        messageBoxSeen = false;
++        QTimer::singleShot(500, this, SLOT(checkMessageBox()));
++        fw->slotOk();
++
++        fw->slotCancel();
++        QVERIFY(messageBoxSeen == messageBoxExpected);
++    }
++
++protected Q_SLOTS:
++    void checkMessageBox()
++    {
++        QDialog *msgbox = findMessageBox();
++        if (!msgbox) return;
++        QTest::qWaitForWindowExposed(msgbox);
++        QCOMPARE(msgbox->isVisible(), true);
++        messageBoxSeen = true;
++        msgbox->close();
++    }
++
+ private:
++    bool messageBoxSeen;
++
+     static QString fileViewToString(KFile::FileView fv)
+     {
+         switch (fv) {
+@@ -230,6 +287,18 @@ private:
+         Q_ASSERT(widgets.count() == 1);
+         return (widgets.count() == 1) ? widgets.first() : Q_NULLPTR;
+     }
++
++    static QDialog *findMessageBox()
++    {
++        QList<QDialog *> widgets;
++        foreach (QWidget *widget, QApplication::topLevelWidgets()) {
++            QDialog *dlg = widget->findChild<QDialog *>();
++            if (dlg) {
++                widgets.append(dlg);
++            }
++        }
++        return (widgets.count() == 1) ? widgets.first() : Q_NULLPTR;
++    }
+ };
+ 
+ QTEST_MAIN(KFileDialog_UnitTest)
+diff --git a/src/platformtheme/kfontsettingsdata.cpp b/src/platformtheme/kfontsettingsdata.cpp
+index a43e8be..d3f8fe3 100644
+--- a/src/platformtheme/kfontsettingsdata.cpp
++++ b/src/platformtheme/kfontsettingsdata.cpp
+@@ -54,7 +54,7 @@ static const char DefaultFont[] =    "Noto Sans";
+ 
+ static const KFontData DefaultFontData[KFontSettingsData::FontTypesCount] = {
+     { GeneralId, "font",                 DefaultFont,  10, -1, QFont::SansSerif },
+-    { GeneralId, "fixed",                "Oxygen Mono",  9, -1, QFont::Monospace },
++    { GeneralId, "fixed",                "Hack",  9, -1, QFont::Monospace },
+     { GeneralId, "toolBarFont",          DefaultFont,  9, -1, QFont::SansSerif },
+     { GeneralId, "menuFont",             DefaultFont,  10, -1, QFont::SansSerif },
+     { "WM",      "activeFont",           DefaultFont,  10, -1, QFont::SansSerif },
+diff --git a/tests/qfiledialogtest.cpp b/tests/qfiledialogtest.cpp
+index 1d69ea1..329eabf 100644
+--- a/tests/qfiledialogtest.cpp
++++ b/tests/qfiledialogtest.cpp
+@@ -31,6 +31,8 @@ int main(int argc, char **argv)
+     parser.addHelpOption();
+     parser.addOption(QCommandLineOption(QStringList(QStringLiteral("staticFunction")), QStringLiteral("Test one of the static convenience function: 'getOpenFileUrl', 'getExistingDirectory'"), QStringLiteral("function name")));
+     parser.addOption(QCommandLineOption(QStringList(QStringLiteral("acceptMode")), QStringLiteral("File dialog acceptMode: 'open' or 'save'"), QStringLiteral("type"), QStringLiteral("open")));
++    parser.addOption(QCommandLineOption(QStringList(QStringLiteral("confirmOverwrite")), QStringLiteral("Test overwrite option: 'on' or 'off'"), QStringLiteral("option"), QStringLiteral("on")));
++    parser.addOption(QCommandLineOption(QStringList(QStringLiteral("nativeDialog")), QStringLiteral("Use the platform native dialog: 'on' or 'off'"), QStringLiteral("option"), QStringLiteral("on")));
+     parser.addOption(QCommandLineOption(QStringList(QStringLiteral("fileMode")), QStringLiteral("File dialog fileMode: 'AnyFile' or 'ExistingFile' or 'Directory' or 'ExistingFiles'"), QStringLiteral("type")));
+     parser.addOption(QCommandLineOption(QStringList(QStringLiteral("nameFilter")), QStringLiteral("Dialog nameFilter, e. g. 'cppfiles (*.cpp *.h *.hpp)', can be specified multiple times"), QStringLiteral("nameFilter"), QStringLiteral("Everything (*)")));
+     // add option mimeTypeFilter later
+@@ -83,6 +85,14 @@ int main(int argc, char **argv)
+         dialog.selectNameFilter(selectNameFilter);
+     }
+ 
++    if (parser.value(QStringLiteral("confirmOverwrite")) == QStringLiteral("off")) {
++        dialog.setOption(QFileDialog::DontConfirmOverwrite, true);
++    }
++
++    if (parser.value(QStringLiteral("nativeDialog")) == QStringLiteral("off")) {
++        dialog.setOption(QFileDialog::DontUseNativeDialog, true);
++    }
++
+     dialog.setDirectory(parser.value(QStringLiteral("selectDirectory")));
+     dialog.selectFile(parser.value(QStringLiteral("selectFile")));
+ 

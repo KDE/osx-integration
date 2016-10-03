@@ -288,6 +288,8 @@ void KDEPlatformFileDialogHelper::initializeDialog()
         // overwrite option
         if (options()->testOption(QFileDialogOptions::FileDialogOption::DontConfirmOverwrite)) {
             dialog->m_fileWidget->setConfirmOverwrite(false);
+         } else if (options()->acceptMode() == QFileDialogOptions::AcceptSave) {
+             dialog->m_fileWidget->setConfirmOverwrite(true);
         }
     }
 }
@@ -328,11 +330,11 @@ void KDEPlatformFileDialogHelper::restoreSize()
 
 bool KDEPlatformFileDialogHelper::show(Qt::WindowFlags windowFlags, Qt::WindowModality windowModality, QWindow *parent)
 {
-    Q_UNUSED(parent)
     initializeDialog();
     m_dialog->setWindowFlags(windowFlags);
     m_dialog->setWindowModality(windowModality);
     restoreSize();
+    m_dialog->windowHandle()->setTransientParent(parent);
     // Use a delayed show here to delay show() after the internal Qt invisible QDialog.
     // The delayed call shouldn't matter, because for other "real" native QPlatformDialog
     // implementation like Mac and Windows, the native dialog is not necessarily

@@ -28,6 +28,7 @@
 #include "kdeplatformsystemtrayicon.h"
 
 #include <QCoreApplication>
+#include <QGuiApplication>
 #include <QMessageBox>
 #include <QFont>
 #include <QPalette>
@@ -49,14 +50,16 @@
 
 #include <AppKit/AppKit.h>
 
+static QString platformName = QStringLiteral("<unset>");
+
 static void warnNoNativeTheme()
 {
-    const char *msg = "The KdePlatformThemePlugin is being used and the native Cocoa theme failed to load.\n"
-                    "Applications will function but lack functionality available only through the native theme,\n"
-                    "including the menu bar at the top of the screen(s).";
     // Make sure the warning appears somewhere. qWarning() isn't guaranteed to be of use when we're
-    // not called from a terminal session.
-    NSLog(@"%s", msg);
+    // not called from a terminal session and it's probably too early to try an alert dialog.
+    // NSLog() will log to system.log, but also to the terminal.
+    NSLog(@"The KdePlatformThemePlugin is being used and the native theme for %@ failed to load.\n"
+                    "Applications will function but lack functionality available only through the native theme,\n"
+                    "including the menu bar at the top of the screen(s).", platformName.toNSString());
 }
 
 KdeMacTheme::KdeMacTheme()
@@ -67,7 +70,8 @@ KdeMacTheme::KdeMacTheme()
     }
     // first things first: instruct Qt not to use the Mac-style toplevel menubar
     // if we are not using the Cocoa QPA plugin (but the XCB QPA instead).
-    if (!QGuiApplication::platformName().contains(QLatin1String("cocoa"))) {
+    platformName = QGuiApplication::platformName().contains(QLatin1String("cocoa"));
+    if (!platformName.contains(QLatin1String("cocoa"))) {
         QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuBar);
     }
     QPlatformIntegration *pi = QGuiApplicationPrivate::platformIntegration();

@@ -29,6 +29,10 @@
 
 #include <config-platformtheme.h>
 
+// We use a different class name for the Mac KDE platform theme plugin, but it will still
+// identify itself as "KDE" to Qt. This ensures that it will also be picked up when using
+// the XCB platform plugin (without patching it).
+
 class KdePlatformThemePlugin : public QPlatformThemePlugin
 {
     Q_OBJECT
