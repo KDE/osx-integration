@@ -239,7 +239,6 @@ KDEPlatformFileDialogHelper::~KDEPlatformFileDialogHelper()
     delete m_dialog;
 }
 
-#include <QDebug>
 void KDEPlatformFileDialogHelper::initializeDialog()
 {
     if (options()->testOption(QFileDialogOptions::ShowDirsOnly)) {
