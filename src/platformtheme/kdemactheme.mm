@@ -57,9 +57,15 @@ static void warnNoNativeTheme()
     // Make sure the warning appears somewhere. qWarning() isn't guaranteed to be of use when we're
     // not called from a terminal session and it's probably too early to try an alert dialog.
     // NSLog() will log to system.log, but also to the terminal.
-    NSLog(@"The KdePlatformThemePlugin is being used and the native theme for %@ failed to load.\n"
-                    "Applications will function but lack functionality available only through the native theme,\n"
-                    "including the menu bar at the top of the screen(s).", platformName.toNSString());
+    if (platformName.contains(QLatin1String("cocoa"))) {
+        NSLog(@"The KdePlatformThemePlugin is being used and the native theme for the %@ platform failed to load.\n"
+            "Applications will function but lack functionality available only through the native theme,\n"
+            "including the menu bar at the top of the screen(s).", platformName.toNSString());
+    } else {
+        NSLog(@"The KdePlatformThemePlugin is being used and the native theme for the %@ platform failed to load.\n"
+            "Applications will function but lack functionality available only through the native theme.",
+            platformName.toNSString());
+    }
 }
 
 KdeMacTheme::KdeMacTheme()
@@ -70,13 +76,13 @@ KdeMacTheme::KdeMacTheme()
     }
     // first things first: instruct Qt not to use the Mac-style toplevel menubar
     // if we are not using the Cocoa QPA plugin (but the XCB QPA instead).
-    platformName = QGuiApplication::platformName().contains(QLatin1String("cocoa"));
+    platformName = QGuiApplication::platformName();
     if (!platformName.contains(QLatin1String("cocoa"))) {
         QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuBar);
     }
     QPlatformIntegration *pi = QGuiApplicationPrivate::platformIntegration();
     if (pi) {
-        nativeTheme = pi->createPlatformTheme(QString::fromLatin1("cocoa"));
+        nativeTheme = pi->createPlatformTheme(platformName);
     } else {
         nativeTheme = Q_NULLPTR;
     }

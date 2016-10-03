@@ -239,6 +239,7 @@ KDEPlatformFileDialogHelper::~KDEPlatformFileDialogHelper()
     delete m_dialog;
 }
 
+#include <QDebug>
 void KDEPlatformFileDialogHelper::initializeDialog()
 {
     if (options()->testOption(QFileDialogOptions::ShowDirsOnly)) {
@@ -286,6 +287,7 @@ void KDEPlatformFileDialogHelper::initializeDialog()
         }
 
         // overwrite option
+        // TODO: figure out how to avoid a native "OK to overwrite" request followed by one from KDE (mod in KIO??)
         if (options()->testOption(QFileDialogOptions::FileDialogOption::DontConfirmOverwrite)) {
             dialog->m_fileWidget->setConfirmOverwrite(false);
          } else if (options()->acceptMode() == QFileDialogOptions::AcceptSave) {
