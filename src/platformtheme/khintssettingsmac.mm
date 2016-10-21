@@ -74,8 +74,10 @@ KHintsSettingsMac::KHintsSettingsMac()
     KSharedConfigPtr mKdeGlobals = kdeGlobals();
 
     KConfigGroup cg(mKdeGlobals, "KDE");
+
     // we're overriding whatever the parent class configured
     hints().clear();
+
     KConfigGroup cgToolbar(mKdeGlobals, "Toolbar style");
     hints()[QPlatformTheme::ToolButtonStyle] = toolButtonStyle(cgToolbar);
 
@@ -84,11 +86,12 @@ KHintsSettingsMac::KHintsSettingsMac()
 
     hints()[QPlatformTheme::ItemViewActivateItemOnSingleClick] = cg.readEntry("SingleClick", true);
 
+#ifdef KDEMACTHEME_ADD_ICONTHEMESETTINGS
     // The new default Breeze icon theme is svg based and looks more out of place than the older Oxygen theme
     // which is PNG-based, and thus easier to use with/in the Finder.
     hints()[QPlatformTheme::SystemIconThemeName] = readConfigValue(QStringLiteral("Icons"), QStringLiteral("Theme"), QStringLiteral("oxygen"));
-
     hints()[QPlatformTheme::IconThemeSearchPaths] = xdgIconThemePaths();
+#endif
 
     QStringList styleNames;
     styleNames << QStringLiteral("macintosh")

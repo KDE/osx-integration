@@ -1,3 +1,7 @@
+if(DEFINE_ICONTHEME_SETTINGS)
+    add_definitions(-DKDEMACTHEME_ADD_ICONTHEMESETTINGS)
+endif()
+
 add_subdirectory(presets)
 
 configure_file(config-platformtheme.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-platformtheme.h )
