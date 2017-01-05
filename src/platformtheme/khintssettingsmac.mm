@@ -36,6 +36,7 @@
 #include <QDialogButtonBox>
 #include <QScreen>
 #include <QProxyStyle>
+#include <QStyle>
 
 #include <QDBusConnection>
 #include <QDBusInterface>
@@ -193,6 +194,11 @@ void KHintsSettingsMac::checkNativeTheme(const QString &theme)
         }
     }
 #endif
+// do this only when certain that there's a QApplication instance:
+//         QApplication *app = qobject_cast<QApplication *>(QCoreApplication::instance());
+//         if (app) {
+//             qWarning() << Q_FUNC_INFO << "platform theme:" << app->style()->objectName();
+//         }
 }
 
 void KHintsSettingsMac::slotNotifyChange(int type, int arg)

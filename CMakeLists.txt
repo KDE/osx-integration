@@ -2,8 +2,14 @@ cmake_minimum_required(VERSION 3.0)
 
 project(OSXIntegration)
 
-option(DEFINE_ICONTHEME_SETTINGS,
+option(DEFINE_ICONTHEME_SETTINGS
        "Should the theme plugin define a standard theme and add the standard locations for icon themes to the search path?"
+       OFF)
+option(PREFER_NATIVE_DIALOGS
+       "Should native dialogs be preferred?"
+       ON)
+option(NEVER_NATIVE_DIALOGS
+       "Should native dialogs never be used (when not already preferred)?"
        OFF)
 
 include(FeatureSummary)
@@ -33,7 +39,7 @@ execute_process(COMMAND git describe
 )
 message(STATUS "KF5_VERSION=${KF5_VERSION}")
 # is there a more streamlined way to include sub-patch level versioning info into KF5_VERSION?
-set(KF5_VERSION "5.26.0.6")
+set(KF5_VERSION "5.26.0.7")
 set(KF5_DEP_VERSION "5.20.0") # handled by release scripts
 
 ecm_setup_version(${KF5_VERSION} VARIABLE_PREFIX OSXINTEGRATION

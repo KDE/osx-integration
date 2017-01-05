@@ -209,10 +209,16 @@ QList<QKeySequence> KdeMacTheme::keyBindings(QKeySequence::StandardKey key) cons
 
 bool KdeMacTheme::usePlatformNativeDialog(QPlatformTheme::DialogType type) const
 {
+#ifdef KDEMACTHEME_PREFER_NATIVE_DIALOGS
     if (nativeTheme) {
         return nativeTheme->usePlatformNativeDialog(type);
     }
+#endif
+#ifndef KDEMACTHEME_NEVER_NATIVE_DIALOGS
     return type == QPlatformTheme::FileDialog;
+#else
+    return false;
+#endif
 }
 
 QString KdeMacTheme::standardButtonText(int button) const
@@ -274,6 +280,7 @@ QString KdeMacTheme::standardButtonText(int button) const
 
 QPlatformDialogHelper *KdeMacTheme::createPlatformDialogHelper(QPlatformTheme::DialogType type) const
 {
+#ifdef KDEMACTHEME_PREFER_NATIVE_DIALOGS
     // always prefer native dialogs
     // NOTE: somehow, the "don't use native dialog" option that Qt's example "standarddialogs"
     // provides does not modify our usePlatformNativeDialog() return value, but *does* cause
@@ -281,6 +288,7 @@ QPlatformDialogHelper *KdeMacTheme::createPlatformDialogHelper(QPlatformTheme::D
     if (nativeTheme) {
         return nativeTheme->createPlatformDialogHelper(type);
     }
+#endif
     QPlatformDialogHelper *helper = KdePlatformTheme::createPlatformDialogHelper(type);
     if (helper) {
         return helper;
