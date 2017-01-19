@@ -42,7 +42,8 @@ execute_process(COMMAND git describe
 )
 message(STATUS "KF5_VERSION=${KF5_VERSION}")
 # is there a more streamlined way to include sub-patch level versioning info into KF5_VERSION?
-set(KF5_VERSION "5.26.0.11")
+# 20170119: v5.30.0 is synced with plasma-integration 5.8.95
+set(KF5_VERSION "5.30.0")
 set(KF5_DEP_VERSION "5.20.0") # handled by release scripts
 
 ecm_setup_version(${KF5_VERSION} VARIABLE_PREFIX OSXINTEGRATION
