@@ -73,6 +73,12 @@ KHintsSettingsMac::KHintsSettingsMac()
     : styleProxy(0)
 {
     KSharedConfigPtr mKdeGlobals = kdeGlobals();
+    if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
+        if (!mKdeGlobals->name().isEmpty()) {
+            qWarning() << Q_FUNC_INFO << "config file:" << mKdeGlobals->name()
+                << "(" << QStandardPaths::locate(mKdeGlobals->locationType(), mKdeGlobals->name()) << ")";
+        }
+    }
 
     KConfigGroup cg(mKdeGlobals, "KDE");
 
