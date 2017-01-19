@@ -3,7 +3,7 @@ split off that framework.
 This file lists potentially relevant changes from plasma-integration's creation (c0ffbc2d87f7711b660d80a70b2c422a9152392e)
 until 3258d996565bec01c3a2e7d1ab4362bdb747483c (sept. 15)
 
-20170119: added as potential updates
+20170119: synced, among others with the current version of these plasma-integration commits:
 8fefab22498c15643e87ae104ef1d5fbfef8f539 Mon Sep 17 00:00:00 2001
 7bbbd93cd3fc0abdffd3fa7f144cb50a33fafad9 Mon Sep 17 00:00:00 2001
 

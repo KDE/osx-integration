@@ -11,6 +11,9 @@ option(PREFER_NATIVE_DIALOGS
 option(NEVER_NATIVE_DIALOGS
        "Should native dialogs never be used (when not already preferred)?"
        OFF)
+option(OVERRIDE_NATIVE_THEME
+       "Should the platform theme plugin replace the native theme? If OFF it installs as the \"kde\" theme."
+       OFF)
 
 include(FeatureSummary)
 find_package(ECM 5.20.0  NO_MODULE)
@@ -39,7 +42,7 @@ execute_process(COMMAND git describe
 )
 message(STATUS "KF5_VERSION=${KF5_VERSION}")
 # is there a more streamlined way to include sub-patch level versioning info into KF5_VERSION?
-set(KF5_VERSION "5.26.0.7")
+set(KF5_VERSION "5.26.0.11")
 set(KF5_DEP_VERSION "5.20.0") # handled by release scripts
 
 ecm_setup_version(${KF5_VERSION} VARIABLE_PREFIX OSXINTEGRATION

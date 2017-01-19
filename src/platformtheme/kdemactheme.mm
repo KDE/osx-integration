@@ -21,6 +21,7 @@
  *  Boston, MA 02110-1301, USA.
  */
 
+#include "config-platformtheme.h"
 #include "kdemactheme.h"
 #include "kfontsettingsdatamac.h"
 #include "khintssettingsmac.h"
@@ -58,13 +59,13 @@ static void warnNoNativeTheme()
     // not called from a terminal session and it's probably too early to try an alert dialog.
     // NSLog() will log to system.log, but also to the terminal.
     if (platformName.contains(QLatin1String("cocoa"))) {
-        NSLog(@"The KdePlatformThemePlugin is being used and the native theme for the %@ platform failed to load.\n"
+        NSLog(@"The %s platform theme plugin is being used and the native theme for the %@ platform failed to load.\n"
             "Applications will function but lack functionality available only through the native theme,\n"
-            "including the menu bar at the top of the screen(s).", platformName.toNSString());
+            "including the menu bar at the top of the screen(s).", PLATFORM_PLUGIN_THEME_NAME, platformName.toNSString());
     } else {
-        NSLog(@"The KdePlatformThemePlugin is being used and the native theme for the %@ platform failed to load.\n"
+        NSLog(@"The %s platform theme plugin is being used and the native theme for the %@ platform failed to load.\n"
             "Applications will function but lack functionality available only through the native theme.",
-            platformName.toNSString());
+            PLATFORM_PLUGIN_THEME_NAME, platformName.toNSString());
     }
 }
 
@@ -73,7 +74,7 @@ How we get here:
 (lldb) bt
 * thread #1: tid = 0x2e3a6be, 0x000000010a481454 KDEPlatformTheme.so`KdeMacTheme::KdeMacTheme(this=0x0000000103a3d830) + 4 at kdemactheme.mm:72, queue = 'com.apple.main-thread', stop reason = breakpoint 1.2
   * frame #0: 0x000000010a481454 KDEPlatformTheme.so`KdeMacTheme::KdeMacTheme(this=0x0000000103a3d830) + 4 at kdemactheme.mm:72
-    frame #1: 0x000000010a48686b KDEPlatformTheme.so`KdePlatformThemePlugin::create(this=<unavailable>, key=<unavailable>, paramList=<unavailable>) + 27 at main_mac.cpp:53
+    frame #1: 0x000000010a48686b KDEPlatformTheme.so`CocoaPlatformThemePlugin::create(this=<unavailable>, key=<unavailable>, paramList=<unavailable>) + 27 at main_mac.cpp:53
     frame #2: 0x00000001008c85b8 QtGui`QPlatformThemeFactory::create(QString const&, QString const&) [inlined] QPlatformTheme* qLoadPlugin<QPlatformTheme, QPlatformThemePlugin, QStringList&>(loader=<unavailable>, key=0x0000000103a406b0, args=0x0000000103a3d710) + 60 at qfactoryloader_p.h:103
     frame #3: 0x00000001008c857c QtGui`QPlatformThemeFactory::create(key=<unavailable>, platformPluginPath=<unavailable>) + 396 at qplatformthemefactory.cpp:73
     frame #4: 0x00000001008d31bb QtGui`QGuiApplicationPrivate::createPlatformIntegration() [inlined] QLatin1String::QLatin1String(this=0x0000000103b17a00, pluginArgument=0x0000000103b17a00, this=0x0000000103b17a00, platformPluginPath=0x000000010134fa90, s=0x0000000103b19e50, platformThemeName=0x000000010134fa90, argc=<unavailable>, argv=<unavailable>) + 1357 at qguiapplication.cpp:1135
@@ -87,14 +88,14 @@ How we get here:
 KdeMacTheme::KdeMacTheme()
 {
     if (strcasecmp(QT_VERSION_STR, qVersion())) {
-        NSLog(@"Warning: the KDE Platform Plugin for Mac was built against Qt %s but is running with Qt %s!",
-            QT_VERSION_STR, qVersion());
+        NSLog(@"Warning: the %s platform theme plugin for Mac was built against Qt %s but is running with Qt %s!",
+            PLATFORM_PLUGIN_THEME_NAME, QT_VERSION_STR, qVersion());
     }
     // first things first: instruct Qt not to use the Mac-style toplevel menubar
     // if we are not using the Cocoa QPA plugin (but the XCB QPA instead).
     platformName = QGuiApplication::platformName();
     if (!platformName.contains(QLatin1String("cocoa"))) {
-        QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuBar);
+        QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuBar, true);
     }
     QPlatformIntegration *pi = QGuiApplicationPrivate::platformIntegration();
     if (pi) {
@@ -104,6 +105,9 @@ KdeMacTheme::KdeMacTheme()
     }
     if (!nativeTheme) {
         warnNoNativeTheme();
+    } else if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
+        qWarning() << Q_FUNC_INFO
+            << "loading platform theme plugin" << QLatin1String(PLATFORM_PLUGIN_THEME_NAME) << "for platform" << platformName;
     }
     m_fontsData = Q_NULLPTR;
     m_hints = Q_NULLPTR;

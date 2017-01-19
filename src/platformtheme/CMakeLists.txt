@@ -14,6 +14,13 @@ endif()
 
 add_subdirectory(presets)
 
+if(OVERRIDE_NATIVE_THEME)
+    set(PLATFORM_PLUGIN_THEME_NAME "cocoa")
+    set(PLUGIN_FILENAME "CocoaPlatformTheme")
+else()
+    set(PLATFORM_PLUGIN_THEME_NAME "kde")
+    set(PLUGIN_FILENAME "KDEPlatformTheme")
+endif()
 configure_file(config-platformtheme.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-platformtheme.h )
 
 set(platformtheme_SRCS
@@ -28,8 +35,12 @@ set(platformtheme_SRCS
     kdemactheme.mm
     kfontsettingsdatamac.mm
     khintssettingsmac.mm
-    main_mac.cpp
 )
+if(OVERRIDE_NATIVE_THEME)
+    set(platformtheme_SRCS ${platformtheme_SRCS} main_cocoa.cpp)
+else()
+    set(platformtheme_SRCS ${platformtheme_SRCS} main_kde.cpp)
+endif()
 
 include_directories(
     ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
@@ -38,10 +49,10 @@ include_directories(
 # Use the same name for the platform theme module. This makes it impossible
 # to install both the plasma and the OS X integration modules, but that's
 # intentional.
-add_library(KDEPlatformTheme MODULE ${platformtheme_SRCS})
+add_library(${PLUGIN_FILENAME} MODULE ${platformtheme_SRCS})
 
 # add KF5:WindowSystem?
-target_link_libraries(KDEPlatformTheme
+target_link_libraries(${PLUGIN_FILENAME}
     PRIVATE
         Qt5::DBus
         KF5::ConfigWidgets
@@ -54,6 +65,6 @@ target_link_libraries(KDEPlatformTheme
         KF5::Notifications
 )
 
-target_link_libraries(KDEPlatformTheme PRIVATE "-framework AppKit")
+target_link_libraries(${PLUGIN_FILENAME} PRIVATE "-framework AppKit")
 
-install(TARGETS KDEPlatformTheme DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/platformthemes)
+install(TARGETS ${PLUGIN_FILENAME} DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/platformthemes)

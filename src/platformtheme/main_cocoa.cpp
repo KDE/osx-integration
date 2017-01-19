@@ -29,16 +29,22 @@
 
 #include <config-platformtheme.h>
 
-// We use a different class name for the Mac KDE platform theme plugin, but it will still
-// identify itself as "KDE" to Qt. This ensures that it will also be picked up when using
-// the XCB platform plugin (without patching it).
+// We call ourselves the "cocoa" platform theme plugin. Doing that means we replace
+// the native platform theme. That is not a problem because the KdeMacTheme class proxies
+// the native theme. It just means that the native theme inherits a number of KDE
+// extensions, which are loaded automatically without user intervention like setting
+// an env. variable.
 
-class KdePlatformThemePlugin : public QPlatformThemePlugin
+// NB NB
+// This file should be kept in sync with main_kde.cpp !!
+// NB NB
+
+class CocoaPlatformThemePlugin : public QPlatformThemePlugin
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QPA.QPlatformThemeFactoryInterface.5.1" FILE "kdeplatformtheme.json")
+    Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QPA.QPlatformThemeFactoryInterface.5.1" FILE "cocoaplatformtheme.json")
 public:
-    KdePlatformThemePlugin(QObject *parent = Q_NULLPTR)
+    CocoaPlatformThemePlugin(QObject *parent = Q_NULLPTR)
         : QPlatformThemePlugin(parent)
     {
         if (qEnvironmentVariableIsSet("KDE_LAYOUT_USES_WIDGET_RECT")) {
@@ -68,4 +74,4 @@ protected:
     }
 };
 
-#include "main_mac.moc"
+#include "main_cocoa.moc"
