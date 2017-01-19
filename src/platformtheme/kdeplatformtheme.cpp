@@ -1,7 +1,7 @@
 /*  This file is part of the KDE libraries
  *  Copyright 2013 Kevin Ottens <ervin+bluesystems@kde.org>
  *  Copyright 2013 Aleix Pol Gonzalez <aleixpol@blue-systems.com>
- *  Copyright 2014 Luk�? Tinkl <ltinkl@redhat.com>
+ *  Copyright 2014 Lukáš Tinkl <ltinkl@redhat.com>
  *
  *  This library is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -20,13 +20,15 @@
  *  Boston, MA 02110-1301, USA.
  */
 
+#include <config-platformtheme.h>
+
 #include "kdeplatformtheme.h"
 #include "kfontsettingsdata.h"
 #include "khintssettings.h"
 #include "kdeplatformfiledialoghelper.h"
 #include "kdeplatformsystemtrayicon.h"
 
-#include <QCoreApplication>
+#include <QApplication>
 #include <QFont>
 #include <QPalette>
 #include <QString>
@@ -45,6 +47,8 @@ KdePlatformTheme::KdePlatformTheme()
     m_fontsData = Q_NULLPTR;
     m_hints = Q_NULLPTR;
     loadSettings();
+
+    QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuBar, false);
 }
 
 KdePlatformTheme::~KdePlatformTheme()

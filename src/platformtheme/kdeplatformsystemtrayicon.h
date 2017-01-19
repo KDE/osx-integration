@@ -1,5 +1,5 @@
 /*  This file is part of the KDE libraries
- *  Copyright 2014 Martin Gr‰ﬂlin <mgraesslin@kde.org>
+ *  Copyright 2014 Martin Gr√§√ülin <mgraesslin@kde.org>
  *
  *  This library is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by

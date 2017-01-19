@@ -3,6 +3,10 @@ split off that framework.
 This file lists potentially relevant changes from plasma-integration's creation (c0ffbc2d87f7711b660d80a70b2c422a9152392e)
 until 3258d996565bec01c3a2e7d1ab4362bdb747483c (sept. 15)
 
+20170119: added as potential updates
+8fefab22498c15643e87ae104ef1d5fbfef8f539 Mon Sep 17 00:00:00 2001
+7bbbd93cd3fc0abdffd3fa7f144cb50a33fafad9 Mon Sep 17 00:00:00 2001
+
 ### Done:
 
 diff --git a/src/platformtheme/kdeplatformfiledialoghelper.cpp b/src/platformtheme/kdeplatformfiledialoghelper.cpp
@@ -192,3 +196,119 @@ index 1d69ea1..329eabf 100644
      dialog.setDirectory(parser.value(QStringLiteral("selectDirectory")));
      dialog.selectFile(parser.value(QStringLiteral("selectFile")));
  
+From 8fefab22498c15643e87ae104ef1d5fbfef8f539 Mon Sep 17 00:00:00 2001
+From: David Faure <faure@kde.org>
+Date: Fri, 23 Dec 2016 15:46:41 +0100
+Subject: [PATCH] Fix compilation with Qt 5.8.
+
+---
+ src/platformtheme/kdeplatformfiledialoghelper.cpp | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/platformtheme/kdeplatformfiledialoghelper.cpp b/src/platformtheme/kdeplatformfiledialoghelper.cpp
+index 7e7e2e9..990b983 100644
+--- a/src/platformtheme/kdeplatformfiledialoghelper.cpp
++++ b/src/platformtheme/kdeplatformfiledialoghelper.cpp
+@@ -365,7 +365,13 @@ void KDEPlatformFileDialogHelper::selectFile(const QUrl &filename)
+     // Qt 5 at least <= 5.8.0 does not derive the directory from the passed url
+     // and set the initialDirectory option accordingly, also not for known schemes
+     // like file://, so we have to do it ourselves
++
++    // Syntax-wise we have to use a copy ctor until Qt 5.7.x and clone() since Qt 5.8.
++#if QT_VERSION < QT_VERSION_CHECK(5, 8, 0)
+     QSharedPointer<QFileDialogOptions> opt(new QFileDialogOptions(*options()));
++#else
++    auto opt = options()->clone();
++#endif
+     opt->setInitialDirectory(m_dialog->directory());
+     setOptions(opt);
+ }
+-- 
+2.11.0
+
+From 7bbbd93cd3fc0abdffd3fa7f144cb50a33fafad9 Mon Sep 17 00:00:00 2001
+From: "Friedrich W. H. Kossebau" <kossebau@kde.org>
+Date: Thu, 22 Dec 2016 19:51:32 +0100
+Subject: [PATCH] Fix Plasma-QPA filedialog to show wrong directory with
+ QFileDialog::selectUrl()
+
+Summary:
+QFileDialog does not set the initialDirectory option in codepaths from
+QFileDialog::selectUrl(...) or QFileDialog::selectFile(...) when passing
+the task on to the native widget. So KDEPlatformFileDialogHelper has to
+make sure itself that info is kept.
+Because KDEPlatformFileDialogHelper::initializeDialog() calls
+setDirectory(options()->initialDirectory()); as intended, usually during
+the show event. And by that it resets any otherwise wanted state of the
+filewidget it had from previous setup calls via QFileDialog, and instead
+to whatever value the initialDirectory option had before, usually the
+working directory as set during initialization.
+
+Test Plan:
+New unit test kfiledialog_unittest testSelectUrl no longer fails with added
+code, also behaves now as expected with code e.g. from KUrlRequester.
+
+Reviewers: #plasma, #frameworks, dfaure
+
+Reviewed By: #plasma, graesslin, dfaure
+
+Subscribers: plasma-devel
+
+Tags: #plasma
+
+Differential Revision: https://phabricator.kde.org/D3796
+---
+ autotests/kfiledialog_unittest.cpp                | 18 ++++++++++++++++++
+ src/platformtheme/kdeplatformfiledialoghelper.cpp |  7 +++++++
+ 2 files changed, 25 insertions(+)
+
+diff --git a/autotests/kfiledialog_unittest.cpp b/autotests/kfiledialog_unittest.cpp
+index b32cd8e..47a5543 100644
+--- a/autotests/kfiledialog_unittest.cpp
++++ b/autotests/kfiledialog_unittest.cpp
+@@ -77,6 +77,24 @@ private Q_SLOTS:
+         QCOMPARE(dialog.directory().absolutePath(), QDir::rootPath());
+     }
+ 
++    void testSelectUrl()
++    {
++        QTemporaryFile tempFile(QDir::tempPath()+"/kfiledialogtest_XXXXXX");
++        tempFile.setAutoRemove(true);
++        tempFile.open();
++        QString tempName = tempFile.fileName();
++        QUrl url = QUrl::fromLocalFile(tempName);
++        int idx = tempName.lastIndexOf('/');
++        QUrl directoryUrl = QUrl::fromLocalFile(tempName.left(idx+1));
++
++        QFileDialog dialog;
++        dialog.selectUrl(url);
++        dialog.show();
++
++        // check if dialog was set to base directory url of the passed file url
++        QCOMPARE(dialog.directoryUrl(), directoryUrl);
++    }
++
+     void testViewMode()
+     {
+         // Open a file dialog, and change view mode to tree
+diff --git a/src/platformtheme/kdeplatformfiledialoghelper.cpp b/src/platformtheme/kdeplatformfiledialoghelper.cpp
+index 15b5e90..7e7e2e9 100644
+--- a/src/platformtheme/kdeplatformfiledialoghelper.cpp
++++ b/src/platformtheme/kdeplatformfiledialoghelper.cpp
+@@ -361,6 +361,13 @@ QUrl KDEPlatformFileDialogHelper::directory() const
+ void KDEPlatformFileDialogHelper::selectFile(const QUrl &filename)
+ {
+     m_dialog->selectFile(filename);
++
++    // Qt 5 at least <= 5.8.0 does not derive the directory from the passed url
++    // and set the initialDirectory option accordingly, also not for known schemes
++    // like file://, so we have to do it ourselves
++    QSharedPointer<QFileDialogOptions> opt(new QFileDialogOptions(*options()));
++    opt->setInitialDirectory(m_dialog->directory());
++    setOptions(opt);
+ }
+ 
+ void KDEPlatformFileDialogHelper::setDirectory(const QUrl &directory)
+-- 
+2.11.0
+
