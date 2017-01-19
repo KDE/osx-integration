@@ -68,6 +68,22 @@ static void warnNoNativeTheme()
     }
 }
 
+/* ============
+How we get here:
+(lldb) bt
+* thread #1: tid = 0x2e3a6be, 0x000000010a481454 KDEPlatformTheme.so`KdeMacTheme::KdeMacTheme(this=0x0000000103a3d830) + 4 at kdemactheme.mm:72, queue = 'com.apple.main-thread', stop reason = breakpoint 1.2
+  * frame #0: 0x000000010a481454 KDEPlatformTheme.so`KdeMacTheme::KdeMacTheme(this=0x0000000103a3d830) + 4 at kdemactheme.mm:72
+    frame #1: 0x000000010a48686b KDEPlatformTheme.so`KdePlatformThemePlugin::create(this=<unavailable>, key=<unavailable>, paramList=<unavailable>) + 27 at main_mac.cpp:53
+    frame #2: 0x00000001008c85b8 QtGui`QPlatformThemeFactory::create(QString const&, QString const&) [inlined] QPlatformTheme* qLoadPlugin<QPlatformTheme, QPlatformThemePlugin, QStringList&>(loader=<unavailable>, key=0x0000000103a406b0, args=0x0000000103a3d710) + 60 at qfactoryloader_p.h:103
+    frame #3: 0x00000001008c857c QtGui`QPlatformThemeFactory::create(key=<unavailable>, platformPluginPath=<unavailable>) + 396 at qplatformthemefactory.cpp:73
+    frame #4: 0x00000001008d31bb QtGui`QGuiApplicationPrivate::createPlatformIntegration() [inlined] QLatin1String::QLatin1String(this=0x0000000103b17a00, pluginArgument=0x0000000103b17a00, this=0x0000000103b17a00, platformPluginPath=0x000000010134fa90, s=0x0000000103b19e50, platformThemeName=0x000000010134fa90, argc=<unavailable>, argv=<unavailable>) + 1357 at qguiapplication.cpp:1135
+    frame #5: 0x00000001008d2c6e QtGui`QGuiApplicationPrivate::createPlatformIntegration(this=0x0000000103c0a6a0) + 1950 at qguiapplication.cpp:1257
+    frame #6: 0x00000001008d3adb QtGui`QGuiApplicationPrivate::createEventDispatcher(this=<unavailable>) + 27 at qguiapplication.cpp:1274
+    frame #7: 0x00000001010e0098 QtCore`QCoreApplicationPrivate::init(this=0x0000000103c0a6a0) + 1832 at qcoreapplication.cpp:794
+    frame #8: 0x00000001008cfce1 QtGui`QGuiApplicationPrivate::init(this=0x0000000103c0a6a0) + 49 at qguiapplication.cpp:1297
+    frame #9: 0x000000010001e90e QtWidgets`QApplicationPrivate::init(this=0x0000000103c0a6a0) + 14 at qapplication.cpp:583
+============ */
+
 KdeMacTheme::KdeMacTheme()
 {
     if (strcasecmp(QT_VERSION_STR, qVersion())) {
