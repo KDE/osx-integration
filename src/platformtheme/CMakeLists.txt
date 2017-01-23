@@ -51,10 +51,15 @@ include_directories(
 # intentional.
 add_library(${PLUGIN_FILENAME} MODULE ${platformtheme_SRCS})
 
+if (NOT DISABLE_DBUS_SUPPORT)
+    target_link_libraries(${PLUGIN_FILENAME}
+        PRIVATE
+            Qt5::DBus
+    )
+endif()
 # add KF5:WindowSystem?
 target_link_libraries(${PLUGIN_FILENAME}
     PRIVATE
-        Qt5::DBus
         KF5::ConfigWidgets
         KF5::ConfigCore
         KF5::IconThemes

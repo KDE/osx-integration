@@ -35,8 +35,10 @@
 #include <QDialogButtonBox>
 #include <QScreen>
 
+#ifdef DBUS_SUPPORT_ENABLED
 #include <QDBusConnection>
 #include <QDBusInterface>
+#endif
 
 #include <kiconloader.h>
 #include <kconfiggroup.h>
@@ -126,7 +128,9 @@ KHintsSettings::KHintsSettings() : QObject(0)
     bool showIcons = cg.readEntry("ShowIconsInMenuItems", !QApplication::testAttribute(Qt::AA_DontShowIconsInMenus));
     QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus, !showIcons);
 
+#ifdef DBUS_SUPPORT_ENABLED
     QMetaObject::invokeMethod(this, "delayedDBusConnects", Qt::QueuedConnection);
+#endif
     QMetaObject::invokeMethod(this, "setupIconLoader", Qt::QueuedConnection);
 
     loadPalettes();
@@ -193,10 +197,12 @@ QStringList KHintsSettings::xdgIconThemePaths() const
 
 void KHintsSettings::delayedDBusConnects()
 {
+#ifdef DBUS_SUPPORT_ENABLED
     QDBusConnection::sessionBus().connect(QString(), QStringLiteral("/KToolBar"), QStringLiteral("org.kde.KToolBar"),
                                           QStringLiteral("styleChanged"), this, SLOT(toolbarStyleChanged()));
     QDBusConnection::sessionBus().connect(QString(), QStringLiteral("/KGlobalSettings"), QStringLiteral("org.kde.KGlobalSettings"),
                                           QStringLiteral("notifyChange"), this, SLOT(slotNotifyChange(int,int)));
+#endif
 }
 
 void KHintsSettings::setupIconLoader()

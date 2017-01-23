@@ -28,8 +28,10 @@
 #include <QString>
 #include <QVariant>
 #include <QApplication>
+#ifdef DBUS_SUPPORT_ENABLED
 #include <QDBusMessage>
 #include <QDBusConnection>
+#endif
 #include <qpa/qwindowsysteminterface.h>
 
 #include <ksharedconfig.h>
@@ -120,7 +122,9 @@ void initDefaultFonts()
 
 KFontSettingsDataMac::KFontSettingsDataMac()
 {
+#ifdef DBUS_SUPPORT_ENABLED
     QMetaObject::invokeMethod(this, "delayedDBusConnects", Qt::QueuedConnection);
+#endif
     for (int i = 0; i < FontTypesCount; ++i) {
         // remove any information that already have been cached by our parent
         // IFF we don't have our own mFonts copy
@@ -221,6 +225,8 @@ void KFontSettingsDataMac::dropFontSettingsCache()
 
 void KFontSettingsDataMac::delayedDBusConnects()
 {
+#ifdef DBUS_SUPPORT_ENABLED
     QDBusConnection::sessionBus().connect(QString(), QStringLiteral("/KDEPlatformTheme"), QStringLiteral("org.kde.KDEPlatformTheme"),
                                           QStringLiteral("refreshFonts"), this, SLOT(dropFontSettingsCache()));
+#endif
 }

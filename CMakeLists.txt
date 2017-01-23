@@ -14,6 +14,9 @@ option(NEVER_NATIVE_DIALOGS
 option(OVERRIDE_NATIVE_THEME
        "Should the platform theme plugin replace the native theme? If OFF it installs as the \"kde\" theme."
        OFF)
+option(DISABLE_DBUS_SUPPORT
+       "Don't build the D-Bus functionality. Experimental!"
+       OFF)
 
 include(FeatureSummary)
 find_package(ECM 5.20.0  NO_MODULE)
@@ -43,7 +46,7 @@ execute_process(COMMAND git describe
 message(STATUS "KF5_VERSION=${KF5_VERSION}")
 # is there a more streamlined way to include sub-patch level versioning info into KF5_VERSION?
 # 20170119: v5.30.0 is synced with plasma-integration 5.8.95
-set(KF5_VERSION "5.30.0.1")
+set(KF5_VERSION "5.30.0.2")
 set(KF5_DEP_VERSION "5.20.0") # handled by release scripts
 
 ecm_setup_version(${KF5_VERSION} VARIABLE_PREFIX OSXINTEGRATION
@@ -56,7 +59,10 @@ find_package(KF5ConfigWidgets ${KF5_DEP_VERSION} REQUIRED)
 find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
 find_package(KF5Notifications ${KF5_DEP_VERSION} REQUIRED)
 find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
-find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus)
+if (NOT DISABLE_DBUS_SUPPORT)
+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus)
+    add_definitions(-DDBUS_SUPPORT_ENABLED)
+endif()
 find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
 find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
 add_definitions(-DTRANSLATION_DOMAIN=\"osxintegration5\")

@@ -24,7 +24,9 @@
 #include <QMenu>
 #include <QRect>
 #include <QApplication>
+#ifdef DBUS_SUPPORT_ENABLED
 #include <QDBusInterface>
+#endif
 
 SystemTrayMenu::SystemTrayMenu()
     : QPlatformMenu()
@@ -341,10 +343,12 @@ void KDEPlatformSystemTrayIcon::showMessage(const QString &title, const QString 
 
 bool KDEPlatformSystemTrayIcon::isSystemTrayAvailable() const
 {
+#ifdef DBUS_SUPPORT_ENABLED
     QDBusInterface systrayHost(QStringLiteral("org.kde.StatusNotifierWatcher"), QStringLiteral("/StatusNotifierWatcher"), QStringLiteral("org.kde.StatusNotifierWatcher"));
     if (systrayHost.isValid()) {
         return systrayHost.property("IsStatusNotifierHostRegistered").toBool();
     }
+#endif
 
     return false;
 }

@@ -23,8 +23,10 @@
 #include <QString>
 #include <QVariant>
 #include <QApplication>
+#ifdef DBUS_SUPPORT_ENABLED
 #include <QDBusMessage>
 #include <QDBusConnection>
+#endif
 #include <qpa/qwindowsysteminterface.h>
 
 #include <ksharedconfig.h>
@@ -33,7 +35,9 @@
 KFontSettingsData::KFontSettingsData()
     : QObject(0)
 {
+#ifdef DBUS_SUPPORT_ENABLED
     QMetaObject::invokeMethod(this, "delayedDBusConnects", Qt::QueuedConnection);
+#endif
 
     for (int i = 0; i < FontTypesCount; ++i) {
         mFonts[i] = 0;
@@ -114,6 +118,8 @@ void KFontSettingsData::dropFontSettingsCache()
 
 void KFontSettingsData::delayedDBusConnects()
 {
+#ifdef DBUS_SUPPORT_ENABLED
     QDBusConnection::sessionBus().connect(QString(), QStringLiteral("/KDEPlatformTheme"), QStringLiteral("org.kde.KDEPlatformTheme"),
                                           QStringLiteral("refreshFonts"), this, SLOT(dropFontSettingsCache()));
+#endif
 }
