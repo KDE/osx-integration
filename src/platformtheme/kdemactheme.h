@@ -25,6 +25,10 @@
 #include "kdeplatformtheme.h"
 #include "kfontsettingsdatamac.h"
 
+#ifdef ADD_MENU_KEY
+#include <QAbstractNativeEventFilter>
+#endif
+
 class KHintsSettingsMac;
 class QIconEngine;
 
@@ -60,6 +64,10 @@ private:
     KFontSettingsDataMac *m_fontsData;
     // this will hold the instance of the native theme that will be used as a fallback
     QPlatformTheme *nativeTheme;
+
+#ifdef ADD_MENU_KEY
+    QAbstractNativeEventFilter *m_nativeEventFilter;
+#endif
 };
 
 #endif // KDEMACTHEME_H

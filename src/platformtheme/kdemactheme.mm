@@ -30,6 +30,7 @@
 
 #include <QCoreApplication>
 #include <QGuiApplication>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QFont>
 #include <QPalette>
@@ -51,7 +52,67 @@
 
 #include <AppKit/AppKit.h>
 
+// [NSEvent modifierFlags] keycodes:
+// LeftShift=131330
+// RightShift=131332
+// LeftAlt=524576
+// RightAlt=524608
+// LeftCommand=1048840
+// RightCommand=1048848
+
 static QString platformName = QStringLiteral("<unset>");
+
+#ifdef ADD_MENU_KEY
+class KdeMacThemeEventFilter : public QAbstractNativeEventFilter {
+public:
+    const static int keyboardMonitorMask = NSKeyDownMask | NSKeyUpMask | NSFlagsChangedMask;
+//     explicit KdeMacThemeEventFilter(QObject *parent = 0);
+//     ~KdeMacThemeEventFilter() override;
+
+    bool nativeEventFilter(const QByteArray &eventType, void *message, long *result) override;
+    NSEvent *nativeEventHandler(void *message);
+    id m_keyboardMonitor;
+};
+
+bool KdeMacThemeEventFilter::nativeEventFilter(const QByteArray &eventType, void *message, long *)
+{
+    NSEvent *event = static_cast<NSEvent *>(message);
+    qWarning() << Q_FUNC_INFO << "eventType=" << eventType;
+    NSLog( @"%s: event=%@", Q_FUNC_INFO, event );
+    // standard event processing
+    return false;
+}
+
+NSEvent *KdeMacThemeEventFilter::nativeEventHandler(void *message)
+{
+    NSEvent *event = static_cast<NSEvent *>(message);
+    switch ([event type]) {
+        case NSFlagsChanged:
+            if ([event modifierFlags] == 524608) {
+                qWarning() << Q_FUNC_INFO << "event=" << QString::fromNSString([event description])
+                    << "modifierFlags=" << [event modifierFlags] << "keyCode=" << [event keyCode];
+                const unichar menuKeyCode = static_cast<unichar>(NSMenuFunctionKey);
+                NSString *menuKeyString = [NSString stringWithCharacters:&menuKeyCode length:1];
+                NSEvent *menuKeyEvent = [NSEvent keyEventWithType:NSKeyDown
+                    location:[event locationInWindow] modifierFlags:([event modifierFlags] & ~NSAlternateKeyMask)
+                    timestamp:[event timestamp] windowNumber:[event windowNumber]
+                    context:nil characters:menuKeyString charactersIgnoringModifiers:menuKeyString
+                    isARepeat:NO keyCode:menuKeyCode];
+                qWarning() << "new event:" << QString::fromNSString([menuKeyEvent description]);
+                return menuKeyEvent;
+            }
+            break;
+//         case NSKeyDown:
+//             qWarning() << Q_FUNC_INFO << "event=" << QString::fromNSString([event description])
+//                 << "key=" << [event keyCode] 
+//                 << "modifierFlags=" << [event modifierFlags] << "chars=" << QString::fromNSString([event characters])
+//                 << "charsIgnMods=" << QString::fromNSString([event charactersIgnoringModifiers]);
+//             break;
+    }
+    // standard event processing
+    return event;
+}
+#endif //ADD_MENU_KEY
 
 static void warnNoNativeTheme()
 {
@@ -112,6 +173,24 @@ KdeMacTheme::KdeMacTheme()
     m_fontsData = Q_NULLPTR;
     m_hints = Q_NULLPTR;
     loadSettings();
+
+#ifdef ADD_MENU_KEY
+    KdeMacThemeEventFilter *cocoaEventFilter = new KdeMacThemeEventFilter;
+    m_nativeEventFilter = cocoaEventFilter;
+    cocoaEventFilter->m_keyboardMonitor = 0;
+    @autoreleasepool {
+        // set up a keyboard event monitor
+        cocoaEventFilter->m_keyboardMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:KdeMacThemeEventFilter::keyboardMonitorMask
+            handler:^(NSEvent* event) { return cocoaEventFilter->nativeEventHandler(event); }];
+    }
+    if (cocoaEventFilter->m_keyboardMonitor) {
+        qApp->installNativeEventFilter(m_nativeEventFilter);
+    } else {
+        qWarning() << Q_FUNC_INFO << "Could not create a global keyboard monitor";
+        delete cocoaEventFilter;
+        m_nativeEventFilter = 0;
+    }
+#endif
 }
 
 KdeMacTheme::~KdeMacTheme()
@@ -119,6 +198,19 @@ KdeMacTheme::~KdeMacTheme()
 //     delete m_fontsData;
 //     delete m_hints;
     delete nativeTheme;
+#ifdef ADD_MENU_KEY
+    if (m_nativeEventFilter) {
+        KdeMacThemeEventFilter *cocoaEventFilter = static_cast<KdeMacThemeEventFilter*>(m_nativeEventFilter);
+        qApp->removeNativeEventFilter(m_nativeEventFilter);
+        if (cocoaEventFilter->m_keyboardMonitor) {
+            @autoreleasepool {
+                 [NSEvent removeMonitor:cocoaEventFilter->m_keyboardMonitor];
+            }
+        }
+        delete cocoaEventFilter;
+        m_nativeEventFilter = 0;
+    }
+#endif
 }
 
 QPlatformMenuItem* KdeMacTheme::createPlatformMenuItem() const
