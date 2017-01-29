@@ -21,6 +21,8 @@
  *  Boston, MA 02110-1301, USA.
  */
 
+// #define ADD_MENU_KEY
+
 #include "config-platformtheme.h"
 #include "kdemactheme.h"
 #include "kfontsettingsdatamac.h"
@@ -59,6 +61,7 @@
 // RightAlt=524608
 // LeftCommand=1048840
 // RightCommand=1048848
+// RightCommand+RightAlt=1573200
 
 static QString platformName = QStringLiteral("<unset>");
 
@@ -72,6 +75,8 @@ public:
     bool nativeEventFilter(const QByteArray &eventType, void *message, long *result) override;
     NSEvent *nativeEventHandler(void *message);
     id m_keyboardMonitor;
+    bool enabled;
+    NSTimeInterval disableTime;
 };
 
 bool KdeMacThemeEventFilter::nativeEventFilter(const QByteArray &eventType, void *message, long *)
@@ -88,18 +93,36 @@ NSEvent *KdeMacThemeEventFilter::nativeEventHandler(void *message)
     NSEvent *event = static_cast<NSEvent *>(message);
     switch ([event type]) {
         case NSFlagsChanged:
-            if ([event modifierFlags] == 524608) {
-                qWarning() << Q_FUNC_INFO << "event=" << QString::fromNSString([event description])
-                    << "modifierFlags=" << [event modifierFlags] << "keyCode=" << [event keyCode];
-                const unichar menuKeyCode = static_cast<unichar>(NSMenuFunctionKey);
-                NSString *menuKeyString = [NSString stringWithCharacters:&menuKeyCode length:1];
-                NSEvent *menuKeyEvent = [NSEvent keyEventWithType:NSKeyDown
-                    location:[event locationInWindow] modifierFlags:([event modifierFlags] & ~NSAlternateKeyMask)
-                    timestamp:[event timestamp] windowNumber:[event windowNumber]
-                    context:nil characters:menuKeyString charactersIgnoringModifiers:menuKeyString
-                    isARepeat:NO keyCode:menuKeyCode];
-                qWarning() << "new event:" << QString::fromNSString([menuKeyEvent description]);
-                return menuKeyEvent;
+            switch ([event modifierFlags]) {
+                case 524608:
+                case 1048848:
+                    enabled = false;
+                    disableTime = [event timestamp];
+                    break;
+                case 1573200:
+                    // simultaneous press (i.e. within <= 0.1s) of just the right Command and Option keys:
+                    if (enabled || [event timestamp] - disableTime <= 0.1) {
+                        enabled = true;
+//                         qWarning() << Q_FUNC_INFO << "event=" << QString::fromNSString([event description])
+//                             << "modifierFlags=" << [event modifierFlags] << "keyCode=" << [event keyCode];
+                        const unichar menuKeyCode = static_cast<unichar>(NSMenuFunctionKey);
+                        NSString *menuKeyString = [NSString stringWithCharacters:&menuKeyCode length:1];
+                        NSEvent *menuKeyEvent = [NSEvent keyEventWithType:NSKeyDown
+                            location:[event locationInWindow]
+                            modifierFlags:([event modifierFlags] & ~(NSCommandKeyMask|NSAlternateKeyMask))
+                            timestamp:[event timestamp] windowNumber:[event windowNumber]
+                            context:nil characters:menuKeyString charactersIgnoringModifiers:menuKeyString isARepeat:NO
+                            // the keyCode must be an 8-bit value so not to be confounded with the Unicode value.
+                            // Judging from Carbon/Events.h 0x7f is unused.
+                            keyCode:0x7f];
+//                         qWarning() << "new event:" << QString::fromNSString([menuKeyEvent description]);
+                        return menuKeyEvent;
+                    }
+                    // fall through!
+                default:
+                    // any other flag change reenables the menukey emulation.
+                    enabled = true;
+                    break;
             }
             break;
 //         case NSKeyDown:
@@ -184,6 +207,7 @@ KdeMacTheme::KdeMacTheme()
             handler:^(NSEvent* event) { return cocoaEventFilter->nativeEventHandler(event); }];
     }
     if (cocoaEventFilter->m_keyboardMonitor) {
+        cocoaEventFilter->enabled = true;
         qApp->installNativeEventFilter(m_nativeEventFilter);
     } else {
         qWarning() << Q_FUNC_INFO << "Could not create a global keyboard monitor";

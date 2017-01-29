@@ -11,7 +11,9 @@ else()
         add_definitions(-DKDEMACTHEME_NEVER_NATIVE_DIALOGS)
     endif()
 endif()
-
+if(EMULATE_MENU_KEY)
+    add_definitions(-DADD_MENU_KEY)
+endif()
 add_subdirectory(presets)
 
 if(OVERRIDE_NATIVE_THEME)
