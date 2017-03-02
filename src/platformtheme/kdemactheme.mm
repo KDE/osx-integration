@@ -180,6 +180,7 @@ KdeMacTheme::KdeMacTheme()
     platformName = QGuiApplication::platformName();
     if (!platformName.contains(QLatin1String("cocoa"))) {
         QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuBar, true);
+        QCoreApplication::setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
     }
     QPlatformIntegration *pi = QGuiApplicationPrivate::platformIntegration();
     if (pi) {
