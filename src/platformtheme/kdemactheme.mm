@@ -30,6 +30,7 @@
 #include "kdeplatformfiledialoghelper.h"
 #include "kdeplatformsystemtrayicon.h"
 
+#include <QObject>
 #include <QCoreApplication>
 #include <QGuiApplication>
 #include <QKeyEvent>
@@ -40,6 +41,17 @@
 #include <QStringList>
 #include <QVariant>
 #include <QDebug>
+
+#include <QEvent>
+#ifndef QT_NO_GESTURES
+#include <QMouseEvent>
+#include <QGesture>
+#include <QTapAndHoldGesture>
+#include <QToolButton>
+#include <QPushButton>
+#include <QMenu>
+#include <QMenuBar>
+#endif
 
 // instantiating the native platform theme requires the use of private APIs
 #include <QtGui/private/qguiapplication_p.h>
@@ -65,20 +77,97 @@
 
 static QString platformName = QStringLiteral("<unset>");
 
+class KdeMacThemeEventFilter : public QObject
 #ifdef ADD_MENU_KEY
-class KdeMacThemeEventFilter : public QAbstractNativeEventFilter {
+                                , public QAbstractNativeEventFilter
+#endif
+{
+    Q_OBJECT
 public:
+    KdeMacThemeEventFilter(QObject *parent=nullptr)
+        : QObject(parent)
+#ifdef ADD_MENU_KEY
+        , QAbstractNativeEventFilter()
+#endif
+    {}
+
+#ifdef ADD_MENU_KEY
     const static int keyboardMonitorMask = NSKeyDownMask | NSKeyUpMask | NSFlagsChangedMask;
-//     explicit KdeMacThemeEventFilter(QObject *parent = 0);
-//     ~KdeMacThemeEventFilter() override;
 
     bool nativeEventFilter(const QByteArray &eventType, void *message, long *result) override;
     NSEvent *nativeEventHandler(void *message);
     id m_keyboardMonitor;
     bool enabled;
     NSTimeInterval disableTime;
+#endif
+
+    bool eventFilter(QObject *obj, QEvent *event)
+    {
+#ifndef QT_NO_GESTURES
+        switch (event->type()) {
+            case QEvent::MouseButtonPress: {
+                QMouseEvent *me = dynamic_cast<QMouseEvent*>(event);
+                if (me->button() == Qt::LeftButton && me->modifiers() == Qt::NoModifier) {
+                    QWidget *w = dynamic_cast<QWidget*>(obj);
+                    QPushButton *btn = dynamic_cast<QPushButton*>(obj);
+                    if (w
+                            && !dynamic_cast<QToolButton*>(obj)
+                            && !dynamic_cast<QMenu*>(obj)
+                            && !dynamic_cast<QMenuBar*>(obj)
+                            && (!btn || !btn->menu())) {
+                        // ideally we'd check first - if we could.
+                        // storing all grabbed QObjects is potentially dangerous since we won't
+                        // know when they go stale.
+                        w->grabGesture(Qt::TapAndHoldGesture);
+                        // accept this event but resend it so that the 1st mousepress
+                        // can also trigger a tap-and-hold!
+                        if (!m_grabbing.contains(obj)) {
+                            QMouseEvent relay(*me);
+                            me->accept();
+                            m_grabbing.insert(obj);
+                            int ret = QCoreApplication::sendEvent(obj, &relay);
+                            m_grabbing.remove(obj);
+                            return ret;
+                        }
+                    }
+                }
+                // NB: don't "eat" the event if no action was taken!
+                break;
+            }
+            case QEvent::Gesture: {
+                QGestureEvent *gEvent = static_cast<QGestureEvent*>(event);
+                if (QTapAndHoldGesture *heldTap = static_cast<QTapAndHoldGesture*>(gEvent->gesture(Qt::TapAndHoldGesture))) {
+                    if (heldTap->state() == Qt::GestureFinished) {
+                        QToolButton *tbtn = dynamic_cast<QToolButton*>(obj);
+                        QPushButton *btn = dynamic_cast<QPushButton*>(obj);
+                        if ((!tbtn || !tbtn->menu()) && (!btn || !btn->menu())) {
+                            // user clicked and held a button, send it a simulated ContextMenuEvent:
+                            QContextMenuEvent ce(QContextMenuEvent::Mouse, heldTap->position().toPoint(),
+                                heldTap->hotSpot().toPoint());
+                            qWarning() << "Sending" << &ce << "to" << obj << "because of" << gEvent;
+                            QCoreApplication::sendEvent(obj, &ce);
+                            gEvent->accept();
+                            if (btn) {
+                                btn->setDown(false);
+                            } else if (tbtn) {
+                                tbtn->setDown(false);
+                            }
+                            return true;
+                        }
+                    }
+                }
+                break;
+            }
+        }
+#endif
+        return false;
+    }
+#ifndef QT_NO_GESTURES
+    QSet<QObject*> m_grabbing;
+#endif
 };
 
+#ifdef ADD_MENU_KEY
 bool KdeMacThemeEventFilter::nativeEventFilter(const QByteArray &eventType, void *message, long *)
 {
     NSEvent *event = static_cast<NSEvent *>(message);
@@ -198,44 +287,41 @@ KdeMacTheme::KdeMacTheme()
     m_hints = Q_NULLPTR;
     loadSettings();
 
+    m_eventFilter = new KdeMacThemeEventFilter;
+#ifndef QT_NO_GESTURES
+    qApp->installEventFilter(m_eventFilter);
+#endif
 #ifdef ADD_MENU_KEY
-    KdeMacThemeEventFilter *cocoaEventFilter = new KdeMacThemeEventFilter;
-    m_nativeEventFilter = cocoaEventFilter;
-    cocoaEventFilter->m_keyboardMonitor = 0;
+    m_eventFilter->m_keyboardMonitor = 0;
     @autoreleasepool {
         // set up a keyboard event monitor
-        cocoaEventFilter->m_keyboardMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:KdeMacThemeEventFilter::keyboardMonitorMask
-            handler:^(NSEvent* event) { return cocoaEventFilter->nativeEventHandler(event); }];
+        m_eventFilter->m_keyboardMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:KdeMacThemeEventFilter::keyboardMonitorMask
+            handler:^(NSEvent* event) { return m_eventFilter->nativeEventHandler(event); }];
     }
-    if (cocoaEventFilter->m_keyboardMonitor) {
-        cocoaEventFilter->enabled = true;
-        qApp->installNativeEventFilter(m_nativeEventFilter);
+    if (m_eventFilter->m_keyboardMonitor) {
+        m_eventFilter->enabled = true;
+        qApp->installNativeEventFilter(m_eventFilter);
     } else {
         qWarning() << Q_FUNC_INFO << "Could not create a global keyboard monitor";
-        delete cocoaEventFilter;
-        m_nativeEventFilter = 0;
     }
 #endif
 }
 
 KdeMacTheme::~KdeMacTheme()
 {
-//     delete m_fontsData;
-//     delete m_hints;
     delete nativeTheme;
 #ifdef ADD_MENU_KEY
-    if (m_nativeEventFilter) {
-        KdeMacThemeEventFilter *cocoaEventFilter = static_cast<KdeMacThemeEventFilter*>(m_nativeEventFilter);
-        qApp->removeNativeEventFilter(m_nativeEventFilter);
-        if (cocoaEventFilter->m_keyboardMonitor) {
+    if (m_eventFilter && m_eventFilter->enabled) {
+        qApp->removeNativeEventFilter(m_eventFilter);
+        if (m_eventFilter->m_keyboardMonitor) {
             @autoreleasepool {
-                 [NSEvent removeMonitor:cocoaEventFilter->m_keyboardMonitor];
+                 [NSEvent removeMonitor:m_eventFilter->m_keyboardMonitor];
             }
         }
-        delete cocoaEventFilter;
-        m_nativeEventFilter = 0;
     }
 #endif
+    delete m_eventFilter;
+    m_eventFilter = 0;
 }
 
 QPlatformMenuItem* KdeMacTheme::createPlatformMenuItem() const
@@ -443,3 +529,5 @@ QPlatformSystemTrayIcon *KdeMacTheme::createPlatformSystemTrayIcon() const
     // nativeTheme->createPlatformSystemTrayIcon() or even NULL
     return KdePlatformTheme::createPlatformSystemTrayIcon();
 }
+
+#include "kdemactheme.moc"

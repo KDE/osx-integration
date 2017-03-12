@@ -31,6 +31,7 @@
 
 class KHintsSettingsMac;
 class QIconEngine;
+class KdeMacThemeEventFilter;
 
 class KdeMacTheme : public KdePlatformTheme
 {
@@ -65,9 +66,8 @@ private:
     // this will hold the instance of the native theme that will be used as a fallback
     QPlatformTheme *nativeTheme;
 
-#ifdef ADD_MENU_KEY
-    QAbstractNativeEventFilter *m_nativeEventFilter;
-#endif
+    // this will hold an instance of a class with Qt and/or native event filters:
+    KdeMacThemeEventFilter *m_eventFilter;
 };
 
 #endif // KDEMACTHEME_H
