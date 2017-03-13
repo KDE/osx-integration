@@ -51,6 +51,8 @@
 #include <QPushButton>
 #include <QMenu>
 #include <QMenuBar>
+#include <QTabBar>
+#include <QTabWidget>
 #endif
 
 // instantiating the native platform theme requires the use of private APIs
@@ -101,7 +103,20 @@ public:
     NSTimeInterval disableTime;
 #endif
 
-    bool eventFilter(QObject *obj, QEvent *event)
+#ifndef QT_NO_GESTURES
+    inline bool handleGestureForObject(const QObject *obj) const
+    {
+        const QPushButton *btn = dynamic_cast<const QPushButton*>(obj);
+        const QToolButton *tbtn = dynamic_cast<const QToolButton*>(obj);
+//         const QTabBar *qtb = dynamic_cast<const QTabBar*>(obj);
+//         const QTabWidget *qtw = dynamic_cast<const QTabWidget*>(obj);
+        return ((tbtn && !tbtn->menu())
+            || (btn && !btn->menu())
+            || obj->inherits("QTabBar") || obj->inherits("QTabWidget"));
+    }
+#endif
+
+    bool eventFilter(QObject *obj, QEvent *event) override
     {
 #ifndef QT_NO_GESTURES
         switch (event->type()) {
@@ -109,10 +124,7 @@ public:
                 QMouseEvent *me = dynamic_cast<QMouseEvent*>(event);
                 if (me->button() == Qt::LeftButton && me->modifiers() == Qt::NoModifier) {
                     QWidget *w = dynamic_cast<QWidget*>(obj);
-                    QPushButton *btn = dynamic_cast<QPushButton*>(obj);
-                    QToolButton *tbtn = dynamic_cast<QToolButton*>(obj);
-                    if (w && ((tbtn && !tbtn->menu())
-                            || (btn && !btn->menu()))) {
+                    if (w && handleGestureForObject(obj)) {
                         // ideally we'd check first - if we could.
                         // storing all grabbed QObjects is potentially dangerous since we won't
                         // know when they go stale.
@@ -136,19 +148,16 @@ public:
                 QGestureEvent *gEvent = static_cast<QGestureEvent*>(event);
                 if (QTapAndHoldGesture *heldTap = static_cast<QTapAndHoldGesture*>(gEvent->gesture(Qt::TapAndHoldGesture))) {
                     if (heldTap->state() == Qt::GestureFinished) {
-                        QToolButton *tbtn = dynamic_cast<QToolButton*>(obj);
-                        QPushButton *btn = dynamic_cast<QPushButton*>(obj);
-                        if ((tbtn && !tbtn->menu())
-                                || (btn && !btn->menu())) {
+                        if (handleGestureForObject(obj)) {
                             // user clicked and held a button, send it a simulated ContextMenuEvent:
                             QContextMenuEvent ce(QContextMenuEvent::Mouse, heldTap->position().toPoint(),
                                 heldTap->hotSpot().toPoint());
                             qWarning() << "Sending" << &ce << "to" << obj << "because of" << gEvent;
                             QCoreApplication::sendEvent(obj, &ce);
                             gEvent->accept();
-                            if (btn) {
+                            if (QPushButton *btn = dynamic_cast<QPushButton*>(obj)) {
                                 btn->setDown(false);
-                            } else if (tbtn) {
+                            } else if (QToolButton *tbtn = dynamic_cast<QToolButton*>(obj)) {
                                 tbtn->setDown(false);
                             }
                             return true;
@@ -157,6 +166,8 @@ public:
                 }
                 break;
             }
+            default:
+                break;
         }
 #endif
         return false;
