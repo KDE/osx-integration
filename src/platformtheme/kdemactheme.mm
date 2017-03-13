@@ -110,11 +110,9 @@ public:
                 if (me->button() == Qt::LeftButton && me->modifiers() == Qt::NoModifier) {
                     QWidget *w = dynamic_cast<QWidget*>(obj);
                     QPushButton *btn = dynamic_cast<QPushButton*>(obj);
-                    if (w
-                            && !dynamic_cast<QToolButton*>(obj)
-                            && !dynamic_cast<QMenu*>(obj)
-                            && !dynamic_cast<QMenuBar*>(obj)
-                            && (!btn || !btn->menu())) {
+                    QToolButton *tbtn = dynamic_cast<QToolButton*>(obj);
+                    if (w && ((tbtn && !tbtn->menu())
+                            || (btn && !btn->menu()))) {
                         // ideally we'd check first - if we could.
                         // storing all grabbed QObjects is potentially dangerous since we won't
                         // know when they go stale.
@@ -140,7 +138,8 @@ public:
                     if (heldTap->state() == Qt::GestureFinished) {
                         QToolButton *tbtn = dynamic_cast<QToolButton*>(obj);
                         QPushButton *btn = dynamic_cast<QPushButton*>(obj);
-                        if ((!tbtn || !tbtn->menu()) && (!btn || !btn->menu())) {
+                        if ((tbtn && !tbtn->menu())
+                                || (btn && !btn->menu())) {
                             // user clicked and held a button, send it a simulated ContextMenuEvent:
                             QContextMenuEvent ce(QContextMenuEvent::Mouse, heldTap->position().toPoint(),
                                 heldTap->hotSpot().toPoint());
