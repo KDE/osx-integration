@@ -107,13 +107,20 @@ public:
 #ifndef QT_NO_GESTURES
     inline bool handleGestureForObject(const QObject *obj) const
     {
+        // this function is called with an <obj> that is or inherits a QWidget
         const QPushButton *btn = qobject_cast<const QPushButton*>(obj);
         const QToolButton *tbtn = qobject_cast<const QToolButton*>(obj);
-        return ((tbtn && !tbtn->menu())
-            || (btn && !btn->menu())
-            || qobject_cast<const QTabBar*>(obj) || qobject_cast<const QTabWidget*>(obj)
-//             || obj->inherits("QTabBar") || obj->inherits("QTabWidget")
-            || qobject_cast<const QMdiSubWindow*>(obj));
+        if (tbtn) {
+            return !tbtn->menu();
+        } else if (btn) {
+            return !btn->menu();
+        } else {
+            return (qobject_cast<const QTabBar*>(obj) || qobject_cast<const QTabWidget*>(obj)
+//                 || obj->inherits("QTabBar") || obj->inherits("QTabWidget")
+                || qobject_cast<const QMdiSubWindow*>(obj)
+                // this catches items in directory lists and the like
+                || obj->objectName() == QStringLiteral("qt_scrollarea_viewport"));
+        }
     }
 #endif
 
@@ -135,6 +142,11 @@ public:
                         QVariant isGrabbed = obj->property("OurTaHGestureActive");
                         QVariant grabbed(true);
                         obj->setProperty("OurTaHGestureActive", grabbed);
+#ifdef TAPANDHOLD_DEBUG
+                        if (!qgetenv("TAPANDHOLD_CONTEXTMENU_DEBUG").isEmpty()) {
+                            qWarning() << "event=" << event << "grabbing obj=" << obj << "parent=" << obj->parent();
+                        }
+#endif
                         // isGrabbed.toBool() will return false unless it contains a bool true value (i.e. also when invalid).
                         if (!m_grabbing.contains(obj)) {
                             QMouseEvent relay(*me);
@@ -145,17 +157,21 @@ public:
                             return ret;
                         }
                     }
-//                     else if (w && !qgetenv("TAPANDHOLD_CONTEXTMENU_DEBUG").isEmpty()) {
-//                         qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent();
-//                     }
+#ifdef TAPANDHOLD_DEBUG
+                    else if (w && !qgetenv("TAPANDHOLD_CONTEXTMENU_DEBUG").isEmpty()) {
+                        qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent();
+                    }
+#endif
                 }
                 // NB: don't "eat" the event if no action was taken!
                 break;
             }
             case QEvent::MouseButtonRelease: {
                 if (obj->property("OurTaHGestureActive").toBool()) {
+#ifdef TAPANDHOLD_DEBUG
                     qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent()
                         << "grabbed=" << obj->property("OurTaHGestureActive");
+#endif
                     QVariant grabbed(false);
                     obj->setProperty("OurTaHGestureActive", grabbed);
                 }
@@ -171,10 +187,18 @@ public:
                             // user clicked and held a button, send it a simulated ContextMenuEvent
                             // but send a simulated buttonrelease event first.
                             QPoint localPos = w->mapFromGlobal(heldTap->position().toPoint());
-                            QMouseEvent me(QEvent::MouseButtonRelease, localPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
                             QContextMenuEvent ce(QContextMenuEvent::Mouse, localPos, heldTap->hotSpot().toPoint());
-                            qWarning() << "Sending" << &me << "and" << &ce << "to" << obj << "because of" << gEvent << "isGrabbed=" << isGrabbed;
-                            QCoreApplication::sendEvent(obj, &me);
+                            // don't send a ButtonRelease event to Q*Buttons because we don't want to trigger them
+                            if (QPushButton *btn = qobject_cast<QPushButton*>(obj)) {
+                                btn->setDown(false);
+                            } else if (QToolButton *tbtn = qobject_cast<QToolButton*>(obj)) {
+                                tbtn->setDown(false);
+                            } else {
+                                QMouseEvent me(QEvent::MouseButtonRelease, localPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+                                qWarning() << "Sending" << &me;
+                                QCoreApplication::sendEvent(obj, &me);
+                            }
+                            qWarning() << "Sending" << &ce << "to" << obj << "because of" << gEvent << "isGrabbed=" << isGrabbed;
                             QCoreApplication::sendEvent(obj, &ce);
                             gEvent->accept();
                             return true;
@@ -183,12 +207,14 @@ public:
                 }
                 break;
             }
-//             case QEvent::ContextMenu:
-//                 if (!qgetenv("TAPANDHOLD_CONTEXTMENU_DEBUG").isEmpty()) {
-//                     qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent()
-//                         << "grabbed=" << obj->property("OurTaHGestureActive");
-//                 }
-//                 break;
+#ifdef TAPANDHOLD_DEBUG
+            case QEvent::ContextMenu:
+                if (!qgetenv("TAPANDHOLD_CONTEXTMENU_DEBUG").isEmpty()) {
+                    qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent()
+                        << "grabbed=" << obj->property("OurTaHGestureActive");
+                }
+                break;
+#endif
             default:
                 break;
         }
