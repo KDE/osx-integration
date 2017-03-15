@@ -121,7 +121,7 @@ public:
             case QEvent::MouseButtonPress: {
                 QMouseEvent *me = dynamic_cast<QMouseEvent*>(event);
                 if (me->button() == Qt::LeftButton && me->modifiers() == Qt::NoModifier) {
-                    QWidget *w = dynamic_cast<QWidget*>(obj);
+                    QWidget *w = qobject_cast<QWidget*>(obj);
                     if (w && handleGestureForObject(obj)) {
                         // ideally we'd check first - if we could.
                         // storing all grabbed QObjects is potentially dangerous since we won't
@@ -157,9 +157,9 @@ public:
                             qWarning() << "Sending" << &ce << "to" << obj << "because of" << gEvent;
                             QCoreApplication::sendEvent(obj, &ce);
                             gEvent->accept();
-                            if (QPushButton *btn = dynamic_cast<QPushButton*>(obj)) {
+                            if (QPushButton *btn = qobject_cast<QPushButton*>(obj)) {
                                 btn->setDown(false);
-                            } else if (QToolButton *tbtn = dynamic_cast<QToolButton*>(obj)) {
+                            } else if (QToolButton *tbtn = qobject_cast<QToolButton*>(obj)) {
                                 tbtn->setDown(false);
                             }
                             return true;
