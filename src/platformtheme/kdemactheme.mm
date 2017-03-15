@@ -54,6 +54,8 @@
 #include <QTabBar>
 #include <QTabWidget>
 #include <QMdiSubWindow>
+#include <QTextEdit>
+#include <QScrollBar>
 #endif
 
 // instantiating the native platform theme requires the use of private APIs
@@ -79,6 +81,8 @@
 // RightCommand+RightAlt=1573200
 
 static QString platformName = QStringLiteral("<unset>");
+
+// #define TAPANDHOLD_DEBUG
 
 class KdeMacThemeEventFilter : public QObject
 #ifdef ADD_MENU_KEY
@@ -118,8 +122,13 @@ public:
             return (qobject_cast<const QTabBar*>(obj) || qobject_cast<const QTabWidget*>(obj)
 //                 || obj->inherits("QTabBar") || obj->inherits("QTabWidget")
                 || qobject_cast<const QMdiSubWindow*>(obj)
+                || qobject_cast<const QTextEdit*>(obj)
+                || qobject_cast<const QScrollBar*>(obj)
                 // this catches items in directory lists and the like
-                || obj->objectName() == QStringLiteral("qt_scrollarea_viewport"));
+                || obj->objectName() == QStringLiteral("qt_scrollarea_viewport")
+                || obj->inherits("KateViewInternal"));
+            // Konsole windows can be found as obj->inherits("Konsole::TerminalDisplay") but
+            // for some reason Konsole doesn't respond to synthetic ContextMenu events
         }
     }
 #endif
@@ -127,6 +136,7 @@ public:
     bool eventFilter(QObject *obj, QEvent *event) override
     {
 #ifndef QT_NO_GESTURES
+        static QVariant qTrue(true), qFalse(false);
         switch (event->type()) {
             case QEvent::MouseButtonPress: {
                 QMouseEvent *me = dynamic_cast<QMouseEvent*>(event);
@@ -140,8 +150,7 @@ public:
                         // accept this event but resend it so that the 1st mousepress
                         // can also trigger a tap-and-hold!
                         QVariant isGrabbed = obj->property("OurTaHGestureActive");
-                        QVariant grabbed(true);
-                        obj->setProperty("OurTaHGestureActive", grabbed);
+                        obj->setProperty("OurTaHGestureActive", qTrue);
 #ifdef TAPANDHOLD_DEBUG
                         if (!qgetenv("TAPANDHOLD_CONTEXTMENU_DEBUG").isEmpty()) {
                             qWarning() << "event=" << event << "grabbing obj=" << obj << "parent=" << obj->parent();
@@ -172,8 +181,7 @@ public:
                     qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent()
                         << "grabbed=" << obj->property("OurTaHGestureActive");
 #endif
-                    QVariant grabbed(false);
-                    obj->setProperty("OurTaHGestureActive", grabbed);
+                    obj->setProperty("OurTaHGestureActive", qFalse);
                 }
                 break;
             }
@@ -191,11 +199,16 @@ public:
                             // don't send a ButtonRelease event to Q*Buttons because we don't want to trigger them
                             if (QPushButton *btn = qobject_cast<QPushButton*>(obj)) {
                                 btn->setDown(false);
+                                obj->setProperty("OurTaHGestureActive", qFalse);
                             } else if (QToolButton *tbtn = qobject_cast<QToolButton*>(obj)) {
                                 tbtn->setDown(false);
+                                obj->setProperty("OurTaHGestureActive", qFalse);
                             } else {
                                 QMouseEvent me(QEvent::MouseButtonRelease, localPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+#ifdef TAPANDHOLD_DEBUG
                                 qWarning() << "Sending" << &me;
+#endif
+                                // we'll be unsetting OurTaHGestureActive in the MouseButtonRelease handler above
                                 QCoreApplication::sendEvent(obj, &me);
                             }
                             qWarning() << "Sending" << &ce << "to" << obj << "because of" << gEvent << "isGrabbed=" << isGrabbed;
