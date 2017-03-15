@@ -106,13 +106,11 @@ public:
 #ifndef QT_NO_GESTURES
     inline bool handleGestureForObject(const QObject *obj) const
     {
-        const QPushButton *btn = dynamic_cast<const QPushButton*>(obj);
-        const QToolButton *tbtn = dynamic_cast<const QToolButton*>(obj);
-//         const QTabBar *qtb = dynamic_cast<const QTabBar*>(obj);
-//         const QTabWidget *qtw = dynamic_cast<const QTabWidget*>(obj);
+        const QPushButton *btn = qobject_cast<const QPushButton*>(obj);
+        const QToolButton *tbtn = qobject_cast<const QToolButton*>(obj);
         return ((tbtn && !tbtn->menu())
             || (btn && !btn->menu())
-            || obj->inherits("QTabBar") || obj->inherits("QTabWidget"));
+            || qobject_cast<const QTabBar*>(obj) || qobject_cast<const QTabWidget*>(obj));
     }
 #endif
 
@@ -131,12 +129,15 @@ public:
                         w->grabGesture(Qt::TapAndHoldGesture);
                         // accept this event but resend it so that the 1st mousepress
                         // can also trigger a tap-and-hold!
-                        if (!m_grabbing.contains(obj)) {
-                            QMouseEvent relay(*me);
+                        QVariant isGrabbed = obj->property("TapAndHoldGestureGrabbed");
+                        obj->setProperty("TapAndHoldGestureGrabbed", QVariant(true));
+                        // isGrabbed.toBool() will return false unless it contains a bool true value (i.e. also when invalid).
+                        if (!isGrabbed.toBool()) {
+                            const QMouseEvent relay(*me);
                             me->accept();
-                            m_grabbing.insert(obj);
+//                             m_grabbing.insert(obj);
                             int ret = QCoreApplication::sendEvent(obj, &relay);
-                            m_grabbing.remove(obj);
+//                             m_grabbing.remove(obj);
                             return ret;
                         }
                     }
@@ -148,9 +149,10 @@ public:
                 QGestureEvent *gEvent = static_cast<QGestureEvent*>(event);
                 if (QTapAndHoldGesture *heldTap = static_cast<QTapAndHoldGesture*>(gEvent->gesture(Qt::TapAndHoldGesture))) {
                     if (heldTap->state() == Qt::GestureFinished) {
-                        if (handleGestureForObject(obj)) {
+                        QVariant isGrabbed = obj->property("TapAndHoldGestureGrabbed");
+                        if (isGrabbed.toBool()) {
                             // user clicked and held a button, send it a simulated ContextMenuEvent:
-                            QContextMenuEvent ce(QContextMenuEvent::Mouse, heldTap->position().toPoint(),
+                            const QContextMenuEvent ce(QContextMenuEvent::Mouse, heldTap->position().toPoint(),
                                 heldTap->hotSpot().toPoint());
                             qWarning() << "Sending" << &ce << "to" << obj << "because of" << gEvent;
                             QCoreApplication::sendEvent(obj, &ce);
@@ -173,7 +175,7 @@ public:
         return false;
     }
 #ifndef QT_NO_GESTURES
-    QSet<QObject*> m_grabbing;
+//     QSet<QObject*> m_grabbing;
 #endif
 };
 
