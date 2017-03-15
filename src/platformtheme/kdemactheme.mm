@@ -53,6 +53,7 @@
 #include <QMenuBar>
 #include <QTabBar>
 #include <QTabWidget>
+#include <QMdiSubWindow>
 #endif
 
 // instantiating the native platform theme requires the use of private APIs
@@ -110,7 +111,9 @@ public:
         const QToolButton *tbtn = qobject_cast<const QToolButton*>(obj);
         return ((tbtn && !tbtn->menu())
             || (btn && !btn->menu())
-            || qobject_cast<const QTabBar*>(obj) || qobject_cast<const QTabWidget*>(obj));
+            || qobject_cast<const QTabBar*>(obj) || qobject_cast<const QTabWidget*>(obj)
+//             || obj->inherits("QTabBar") || obj->inherits("QTabWidget")
+            || qobject_cast<const QMdiSubWindow*>(obj));
     }
 #endif
 
@@ -129,45 +132,63 @@ public:
                         w->grabGesture(Qt::TapAndHoldGesture);
                         // accept this event but resend it so that the 1st mousepress
                         // can also trigger a tap-and-hold!
-                        QVariant isGrabbed = obj->property("TapAndHoldGestureGrabbed");
-                        obj->setProperty("TapAndHoldGestureGrabbed", QVariant(true));
+                        QVariant isGrabbed = obj->property("OurTaHGestureActive");
+                        QVariant grabbed(true);
+                        obj->setProperty("OurTaHGestureActive", grabbed);
                         // isGrabbed.toBool() will return false unless it contains a bool true value (i.e. also when invalid).
-                        if (!isGrabbed.toBool()) {
-                            const QMouseEvent relay(*me);
+                        if (!m_grabbing.contains(obj)) {
+                            QMouseEvent relay(*me);
                             me->accept();
-//                             m_grabbing.insert(obj);
+                            m_grabbing.insert(obj);
                             int ret = QCoreApplication::sendEvent(obj, &relay);
-//                             m_grabbing.remove(obj);
+                            m_grabbing.remove(obj);
                             return ret;
                         }
                     }
+//                     else if (w && !qgetenv("TAPANDHOLD_CONTEXTMENU_DEBUG").isEmpty()) {
+//                         qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent();
+//                     }
                 }
                 // NB: don't "eat" the event if no action was taken!
+                break;
+            }
+            case QEvent::MouseButtonRelease: {
+                if (obj->property("OurTaHGestureActive").toBool()) {
+                    qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent()
+                        << "grabbed=" << obj->property("OurTaHGestureActive");
+                    QVariant grabbed(false);
+                    obj->setProperty("OurTaHGestureActive", grabbed);
+                }
                 break;
             }
             case QEvent::Gesture: {
                 QGestureEvent *gEvent = static_cast<QGestureEvent*>(event);
                 if (QTapAndHoldGesture *heldTap = static_cast<QTapAndHoldGesture*>(gEvent->gesture(Qt::TapAndHoldGesture))) {
                     if (heldTap->state() == Qt::GestureFinished) {
-                        QVariant isGrabbed = obj->property("TapAndHoldGestureGrabbed");
+                        QVariant isGrabbed = obj->property("OurTaHGestureActive");
                         if (isGrabbed.toBool()) {
-                            // user clicked and held a button, send it a simulated ContextMenuEvent:
-                            const QContextMenuEvent ce(QContextMenuEvent::Mouse, heldTap->position().toPoint(),
-                                heldTap->hotSpot().toPoint());
-                            qWarning() << "Sending" << &ce << "to" << obj << "because of" << gEvent;
+                            QWidget *w = qobject_cast<QWidget*>(obj);
+                            // user clicked and held a button, send it a simulated ContextMenuEvent
+                            // but send a simulated buttonrelease event first.
+                            QPoint localPos = w->mapFromGlobal(heldTap->position().toPoint());
+                            QMouseEvent me(QEvent::MouseButtonRelease, localPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+                            QContextMenuEvent ce(QContextMenuEvent::Mouse, localPos, heldTap->hotSpot().toPoint());
+                            qWarning() << "Sending" << &me << "and" << &ce << "to" << obj << "because of" << gEvent << "isGrabbed=" << isGrabbed;
+                            QCoreApplication::sendEvent(obj, &me);
                             QCoreApplication::sendEvent(obj, &ce);
                             gEvent->accept();
-                            if (QPushButton *btn = qobject_cast<QPushButton*>(obj)) {
-                                btn->setDown(false);
-                            } else if (QToolButton *tbtn = qobject_cast<QToolButton*>(obj)) {
-                                tbtn->setDown(false);
-                            }
                             return true;
                         }
                     }
                 }
                 break;
             }
+//             case QEvent::ContextMenu:
+//                 if (!qgetenv("TAPANDHOLD_CONTEXTMENU_DEBUG").isEmpty()) {
+//                     qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent()
+//                         << "grabbed=" << obj->property("OurTaHGestureActive");
+//                 }
+//                 break;
             default:
                 break;
         }
@@ -175,7 +196,7 @@ public:
         return false;
     }
 #ifndef QT_NO_GESTURES
-//     QSet<QObject*> m_grabbing;
+    QSet<QObject*> m_grabbing;
 #endif
 };
 
