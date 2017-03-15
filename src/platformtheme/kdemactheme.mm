@@ -152,7 +152,7 @@ public:
                         QVariant isGrabbed = obj->property("OurTaHGestureActive");
                         obj->setProperty("OurTaHGestureActive", qTrue);
 #ifdef TAPANDHOLD_DEBUG
-                        if (!qgetenv("TAPANDHOLD_CONTEXTMENU_DEBUG").isEmpty()) {
+                        if (qEnvironmentVariableIsSet("TAPANDHOLD_CONTEXTMENU_DEBUG")) {
                             qWarning() << "event=" << event << "grabbing obj=" << obj << "parent=" << obj->parent();
                         }
 #endif
@@ -167,7 +167,7 @@ public:
                         }
                     }
 #ifdef TAPANDHOLD_DEBUG
-                    else if (w && !qgetenv("TAPANDHOLD_CONTEXTMENU_DEBUG").isEmpty()) {
+                    else if (w && qEnvironmentVariableIsSet("TAPANDHOLD_CONTEXTMENU_DEBUG")) {
                         qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent();
                     }
 #endif
@@ -222,7 +222,7 @@ public:
             }
 #ifdef TAPANDHOLD_DEBUG
             case QEvent::ContextMenu:
-                if (!qgetenv("TAPANDHOLD_CONTEXTMENU_DEBUG").isEmpty()) {
+                if (qEnvironmentVariableIsSet("TAPANDHOLD_CONTEXTMENU_DEBUG")) {
                     qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent()
                         << "grabbed=" << obj->property("OurTaHGestureActive");
                 }
