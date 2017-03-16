@@ -175,6 +175,7 @@ public:
                 // NB: don't "eat" the event if no action was taken!
                 break;
             }
+            case QEvent::MouseMove:
             case QEvent::MouseButtonRelease: {
                 if (obj->property("OurTaHGestureActive").toBool()) {
 #ifdef TAPANDHOLD_DEBUG
