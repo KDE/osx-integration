@@ -90,9 +90,7 @@ void initDefaultFonts()
 
     if (!LocalDefaultFont) {
         fn = fontNameFor(QFontDatabase::GeneralFont);
-        if (fn) {
-            LocalDefaultFont = fn;
-        }
+        LocalDefaultFont = fn;
     }
     for (int i = 0 ; i < KFontSettingsDataMac::FontTypesCount ; ++i) {
         switch(i) {
@@ -110,7 +108,9 @@ void initDefaultFonts()
                 break;
         }
         if (fn) {
-            if (DefaultFontData[i].FontName != DefaultFont && DefaultFontData[i].FontName != DefaultFixedFont) {
+            if (DefaultFontData[i].FontName != DefaultFont
+                    && DefaultFontData[i].FontName != DefaultFixedFont
+                    && DefaultFontData[i].FontName != LocalDefaultFont) {
                 free((void*)DefaultFontData[i].FontName);
             }
             DefaultFontData[i].FontName = fn;
@@ -136,10 +136,10 @@ KFontSettingsDataMac::KFontSettingsDataMac()
 KFontSettingsDataMac::~KFontSettingsDataMac()
 {
     for (int i = 0 ; i < KFontSettingsDataMac::FontTypesCount ; ++i) {
-        if (DefaultFontData[i].FontName != DefaultFont) {
+        if (DefaultFontData[i].FontName != DefaultFont
+                && DefaultFontData[i].FontName != DefaultFixedFont) {
             if (DefaultFontData[i].FontName
-                    && DefaultFontData[i].FontName != LocalDefaultFont
-                    && DefaultFontData[i].FontName != DefaultFixedFont) {
+                    && DefaultFontData[i].FontName != LocalDefaultFont) {
                 free((void*)(DefaultFontData[i].FontName));
             }
             DefaultFontData[i].FontName = (i == FixedFont)? DefaultFixedFont : DefaultFont;
