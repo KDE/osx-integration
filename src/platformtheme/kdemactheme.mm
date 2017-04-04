@@ -213,8 +213,9 @@ public:
                                 QCoreApplication::sendEvent(obj, &me);
                             }
                             qWarning() << "Sending" << &ce << "to" << obj << "because of" << gEvent << "isGrabbed=" << isGrabbed;
-                            QCoreApplication::sendEvent(obj, &ce);
+                            int ret = QCoreApplication::sendEvent(obj, &ce);
                             gEvent->accept();
+                            qWarning() << "\tsendEvent" << &ce << "returned" << ret;
                             return true;
                         }
                     }
