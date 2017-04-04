@@ -46,4 +46,6 @@ ExternalProject_Add(qaltmacstyle
     BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libqaltmacstyle.dylib DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/styles)
+
 feature_summary(WHAT ALL   FATAL_ON_MISSING_REQUIRED_PACKAGES)
