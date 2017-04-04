@@ -1,0 +1,35 @@
+[CustomDefinesAndIncludes][ProjectPath0]
+Path=.
+parseAmbiguousAsCPP=true
+parserArguments=-ferror-limit=100 -fspell-checking -Wdocumentation -Wunused-parameter -Wunreachable-code -Wall -std=c++11
+parserArgumentsC=-ferror-limit=100 -fspell-checking -Wdocumentation -Wunused-parameter -Wunreachable-code -Wall -std=c99
+
+[CustomDefinesAndIncludes][ProjectPath0][Compiler]
+Name=Clang
+
+[CustomDefinesAndIncludes][ProjectPath0][Includes]
+1=/opt/local/include/qt5
+
+[MakeBuilder]
+Additional Options=--nice 10 -w V=1 VERBOSE=1
+Default Make Environment Profile=KDE/MacPorts
+Make Binary=wmake
+
+[QMake_Builder]
+Build_Folder=/Volumes/Debian/Users/bertin/work/src/new/Qt/qmacstyle-plugin/build
+Build_Type=2
+Extra_Arguments=
+Install_Prefix=/opt/local
+QMake_Binary=/opt/local/bin/qmake-qt5
+
+[QMake_Builder][]
+Build_Type=0
+Extra_Arguments=
+Install_Prefix=
+QMake_Binary=/opt/local/bin/qmake
+
+[QMake_Builder][/Volumes/Debian/Users/bertin/work/src/new/Qt/qmacstyle-plugin/build]
+Build_Type=2
+Extra_Arguments=
+Install_Prefix=/opt/local
+QMake_Binary=/opt/local/bin/qmake-qt5
