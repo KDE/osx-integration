@@ -1,6 +1,6 @@
 TEMPLATE = lib
 CONFIG += plugin
-QT += core widgets gui widgets-private core-private
+QT += core widgets widgets-private core-private
 
 TARGET = qaltmacstyle
 
