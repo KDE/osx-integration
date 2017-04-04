@@ -1,3 +1,6 @@
+[Buildset]
+BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x00)
+
 [CustomDefinesAndIncludes][ProjectPath0]
 Path=.
 parseAmbiguousAsCPP=true
@@ -14,6 +17,9 @@ Name=Clang
 Additional Options=--nice 10 -w V=1 VERBOSE=1
 Default Make Environment Profile=KDE/MacPorts
 Make Binary=wmake
+
+[Project]
+VersionControlSupport=kdevgit
 
 [QMake_Builder]
 Build_Folder=/Volumes/Debian/Users/bertin/work/src/new/Qt/qmacstyle-plugin/build
