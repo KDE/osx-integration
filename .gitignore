@@ -1,0 +1,6 @@
+.kdev4/
+.directory
+*.kdev4
+*.rej
+*.orig
+build

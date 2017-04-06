@@ -43,14 +43,13 @@ include(KDECMakeSettings)
 set(REQUIRED_QT_VERSION 5.5.0)
 find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets)
 
-execute_process(COMMAND git describe
+execute_process(COMMAND cmake/git_version.sh
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   OUTPUT_VARIABLE KF5_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 message(STATUS "KF5_VERSION=${KF5_VERSION}")
-# is there a more streamlined way to include sub-patch level versioning info into KF5_VERSION?
 # 20170119: v5.30.0 is synced with plasma-integration 5.8.95
-set(KF5_VERSION "5.31.0.1")
 set(KF5_DEP_VERSION "5.20.0") # handled by release scripts
 
 ecm_setup_version(${KF5_VERSION} VARIABLE_PREFIX OSXINTEGRATION
