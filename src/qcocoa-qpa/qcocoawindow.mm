@@ -1727,6 +1727,8 @@ void QCocoaWindow::applyContentBorderThickness(NSWindow *window)
     if (!window)
         return;
 
+    QMacAutoReleasePool pool;
+
     if (!m_drawContentBorderGradient) {
         [window setStyleMask:[window styleMask] & ~NSTexturedBackgroundWindowMask];
         [[[window contentView] superview] setNeedsDisplay:YES];
