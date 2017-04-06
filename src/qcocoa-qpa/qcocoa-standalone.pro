@@ -1,6 +1,13 @@
 TEMPLATE = lib
 CONFIG += plugin
 
+# generate the target under a different name so it can co-exist with the
+# stock QPA plugin. When multiple plugins share the same name to load order
+# appears to be
+# 1 platform theme plugin 
+# 2 "external" platform plugin
+# 3 built-in platform plugin
+
 TARGET = qaltcocoa
 
 OBJECTIVE_SOURCES += main.mm \
