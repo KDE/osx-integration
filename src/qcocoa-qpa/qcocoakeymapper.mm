@@ -270,11 +270,24 @@ static qt_mac_enum_mapper qt_mac_private_unicode[] = {
     {   0,    QT_MAC_MAP_ENUM(0) }
 };
 
-static int qt_mac_get_key(int modif, const QChar &key, int virtualKey)
+static int qt_mac_get_key(int modif, const QChar &key, int virtualKey, const QKeyEvent *event)
 {
 #ifdef DEBUG_KEY_BINDINGS
-    qDebug("**Mapping key: %d (0x%04x) - %d (0x%04x)", key.unicode(), key.unicode(), virtualKey, virtualKey);
+    if (event) {
+        qDebug("**Mapping key: %d (0x%04x|0x%04x) - %d (0x%04x)", key.unicode(), key.unicode(), event->key(), virtualKey, virtualKey);
+    } else {
+        qDebug("**Mapping key: %d (0x%04x) - %d (0x%04x)", key.unicode(), key.unicode(), virtualKey, virtualKey);
+    }
 #endif
+
+    if (event) {
+        int rawKey = event->key();
+        // check if the event's key "code" can be a 16 bit Unicode QChar or if not
+        // if it's in the appropriate range corresponding to extended Qt::Key_* codes
+        if (rawKey > 0xffff && rawKey >= Qt::Key_Escape && rawKey < Qt::Key_unknown) {
+            return rawKey;
+        }
+    }
 
     if (key == kClearCharCode && virtualKey == 0x47)
         return Qt::Key_Clear;
@@ -416,8 +429,9 @@ void QCocoaKeyMapper::clearMappings()
     updateKeyboard();
 }
 
-void QCocoaKeyMapper::updateKeyMap(unsigned short macVirtualKey, QChar unicodeKey)
+void QCocoaKeyMapper::updateKeyMap(unsigned short macVirtualKey, const QKeyEvent *event)
 {
+    QChar unicodeKey = QChar(event->key());
     if (updateKeyboard()) {
         // ### Qt 4 did this:
         // QKeyMapper::changeKeyboard();
@@ -428,6 +442,9 @@ void QCocoaKeyMapper::updateKeyMap(unsigned short macVirtualKey, QChar unicodeKe
     UniCharCount buffer_size = 10;
     UniChar buffer[buffer_size];
     keyLayout[macVirtualKey] = new KeyboardLayoutItem;
+#ifdef DEBUG_KEY_BINDINGS
+    qDebug("updateKeyMap for virtual key = 0x%02x unicodeKey=0x%04x!", (uint)macVirtualKey, unicodeKey);
+#endif
     for (int i = 0; i < 16; ++i) {
         UniCharCount out_buffer_size = 0;
         keyLayout[macVirtualKey]->qtKey[i] = 0;
@@ -437,19 +454,19 @@ void QCocoaKeyMapper::updateKeyMap(unsigned short macVirtualKey, QChar unicodeKe
                                       keyboard_kind, 0, &keyboard_dead, buffer_size, &out_buffer_size, buffer);
         if (err == noErr && out_buffer_size) {
             const QChar unicode(buffer[0]);
-            int qtkey = qt_mac_get_key(keyModifier, unicode, macVirtualKey);
+            int qtkey = qt_mac_get_key(keyModifier, unicode, macVirtualKey, NULL);
             if (qtkey == Qt::Key_unknown)
                 qtkey = unicode.unicode();
             keyLayout[macVirtualKey]->qtKey[i] = qtkey;
         } else {
-            int qtkey = qt_mac_get_key(keyModifier, unicodeKey, macVirtualKey);
+            int qtkey = qt_mac_get_key(keyModifier, unicodeKey, macVirtualKey, event);
             if (qtkey == Qt::Key_unknown)
                 qtkey = unicodeKey.unicode();
             keyLayout[macVirtualKey]->qtKey[i] = qtkey;
         }
     }
 #ifdef DEBUG_KEY_MAPS
-    qDebug("updateKeyMap for virtual key = 0x%02x!", (uint)macVirtualKey);
+    qDebug("updateKeyMap for virtual key = 0x%02x unicodeKey=0x%04x!", (uint)macVirtualKey, unicodeKey);
     for (int i = 0; i < 16; ++i) {
         qDebug("    [%d] (%d,0x%02x,'%c')", i,
                keyLayout[macVirtualKey]->qtKey[i],
@@ -462,7 +479,7 @@ void QCocoaKeyMapper::updateKeyMap(unsigned short macVirtualKey, QChar unicodeKe
 QList<int> QCocoaKeyMapper::possibleKeys(const QKeyEvent *event) const
 {
     QList<int> ret;
-    const_cast<QCocoaKeyMapper *>(this)->updateKeyMap(event->nativeVirtualKey(), QChar(event->key()));
+    const_cast<QCocoaKeyMapper *>(this)->updateKeyMap(event->nativeVirtualKey(), event);
 
     KeyboardLayoutItem *kbItem = keyLayout[event->nativeVirtualKey()];
 
