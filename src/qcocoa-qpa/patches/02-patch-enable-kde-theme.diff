@@ -1,0 +1,19 @@
+diff --git a/cocoa/qcocoaintegration.mm b/cocoa/qcocoaintegration.mm
+index 92fffb4..91fcd1c 100644
+--- a/cocoa/qcocoaintegration.mm
++++ b/cocoa/qcocoaintegration.mm
+@@ -546,7 +546,13 @@ QCocoaDrag *QCocoaIntegration::drag() const
+ 
+ QStringList QCocoaIntegration::themeNames() const
+ {
+-    return QStringList(QLatin1String(QCocoaTheme::name));
++    QStringList themes;
++    themes.push_back(QLatin1String(QCocoaTheme::name));
++    const QByteArray kdeSessionVersion = qgetenv("KDE_SESSION_VERSION");
++    const int kdeVersion = kdeSessionVersion.toInt();
++    if (kdeVersion >= 4)
++        themes.push_back(QLatin1String("kde"));
++    return themes;
+ }
+ 
+ QPlatformTheme *QCocoaIntegration::createPlatformTheme(const QString &name) const

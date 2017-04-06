@@ -1,0 +1,82 @@
+diff --git a/cocoa/qcocoafontdialoghelper.mm b/cocoa/qcocoafontdialoghelper.mm
+index 33dd426..295984a 100644
+--- a/cocoa/qcocoafontdialoghelper.mm
++++ b/cocoa/qcocoafontdialoghelper.mm
+@@ -336,19 +336,68 @@ public:
+ 
+         int weight = 5;
+         NSFontTraitMask mask = 0;
+-        if (font.style() == QFont::StyleItalic) {
++        if (font.style() == QFont::StyleItalic || font.style() == QFont::StyleOblique) {
+             mask |= NSItalicFontMask;
+         }
+-        if (font.weight() == QFont::Bold) {
+-            weight = 9;
+-            mask |= NSBoldFontMask;
+-        }
++        // RJVB
++        // UltraLight -> 2 or 3
++        // Thin,Light -> 3, Book -> 4
++        // Normal/Regular -> 5
++        // Medium/SemiBold/Demibold -> 6,7,8
++        // Bold -> 9
++        // Ultra/Black/Heavy -> 10,11
++        QVector<int> weights;
++        switch (font.weight()) {
++            case QFont::Thin:
++                weights << 2;
++                // fall through;
++            case QFont::Light:
++            case QFont::ExtraLight:
++                weights << 3 << 4;
++                break;
++            case QFont::Normal:
++                weights << 5;
++                break;
++            case QFont::Medium:
++                weights << 6;
++                // fall through
++            case QFont::DemiBold:
++                weights << 7 << 8;
++                break;
++            case QFont::Bold:
++                weights << 9;
++                break;
++            case QFont::Black:
++                weights << 10 << 11;
++                break;
++         }
+ 
+         QFontInfo fontInfo(font);
+-        nsFont = [mgr fontWithFamily:fontInfo.family().toNSString()
+-            traits:mask
+-            weight:weight
+-            size:fontInfo.pointSize()];
++        if (!weights.isEmpty()) {
++            for (int i = 0; i < weights.size() && !nsFont; ++i) {
++                weight = weights[i];
++                nsFont = [mgr fontWithFamily:fontInfo.family().toNSString()
++                         traits:mask
++                         weight:weight
++                         size:fontInfo.pointSize()];
++//                  qDebug() << "setCurrentFont: found" << font << "with Qt weight" << font.weight() << "as NSFont weight" << weight << "(index" << i << ")";
++//                  NSLog(@"NSFont=%@", nsFont);
++                 if ([mgr weightOfFont:const_cast<NSFont *>(nsFont)] != weight) {
++                     nsFont = NULL;
++                 }
++            }
++        }
++        if (!nsFont) {
++            // fallback to the older approach
++            if (font.weight() == QFont::Bold) {
++                weight = 9;
++                mask |= NSBoldFontMask;
++            }
++            nsFont = [mgr fontWithFamily:fontInfo.family().toNSString()
++                     traits:mask
++                     weight:weight
++                     size:fontInfo.pointSize()];
++        }
+ 
+         [mgr setSelectedFont:const_cast<NSFont *>(nsFont) isMultiple:NO];
+         mDelegate->mQtFont = font;
