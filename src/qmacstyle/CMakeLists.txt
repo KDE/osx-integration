@@ -37,20 +37,20 @@ if(Qt5_FOUND AND (NOT ${Qt5_VERSION} VERSION_LESS ${QT_MIN_VERSION}))
         private/qstylehelper.cpp
     )
 
-    include_directories(
-        ${CMAKE_CURRENT_LIST_DIR}/private
-        ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
-        ${Qt5Core_PRIVATE_INCLUDE_DIRS}
-    )
-
-    ExternalProject_Add(qaltmacstyle
+    ExternalProject_Add(qaltmacstyle_qmake
         DOWNLOAD_COMMAND ""
         SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}
         CONFIGURE_COMMAND ${QMAKE_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/macstyle.pro
-        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}
+        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/qmake
+    )
+    add_custom_target(qaltmacstyle ALL
+        DEPENDS qaltmacstyle_qmake
+        COMMAND ${CMAKE_MAKE_PROGRAM}
+        BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/qmake/libqaltmacstyle.dylib
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/qmake
     )
 
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libqaltmacstyle.dylib DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/styles)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/qmake/libqaltmacstyle.dylib DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/styles)
 else()
     message(STATUS "QAltMacStyle needs a more recent Qt5 version - skipping")
 endif()

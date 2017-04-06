@@ -28,20 +28,20 @@ endif()
 find_package(Qt5 ${REQUIRED_QT_VERSION} OPTIONAL_COMPONENTS Core Widgets Gui PrintSupport)
 if(Qt5_FOUND AND (NOT ${Qt5_VERSION} VERSION_LESS ${QT_MIN_VERSION}))
 
-    include_directories(
-        ${CMAKE_CURRENT_LIST_DIR}/private
-        ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
-        ${Qt5Core_PRIVATE_INCLUDE_DIRS}
-    )
-
-    ExternalProject_Add(qaltcocoa
+    ExternalProject_Add(qaltcocoa_qmake
         DOWNLOAD_COMMAND ""
         SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}
         CONFIGURE_COMMAND ${QMAKE_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/qcocoa-standalone.pro
-        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}
+        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/qmake
+    )
+    add_custom_target(qaltcocoa ALL
+        DEPENDS qaltcocoa_qmake
+        COMMAND ${CMAKE_MAKE_PROGRAM}
+        BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/qmake/libqaltcocoa.dylib
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/qmake
     )
 
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libqaltcocoa.dylib DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/platforms)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/qmake/libqaltcocoa.dylib DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/platforms)
 else()
     message(STATUS "QAltCocoa needs a more recent Qt5 version - skipping")
 endif()

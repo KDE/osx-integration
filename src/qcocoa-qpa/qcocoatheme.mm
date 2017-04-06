@@ -319,7 +319,7 @@ QVariant QCocoaTheme::themeHint(ThemeHint hint) const
 {
     switch (hint) {
     case QPlatformTheme::StyleNames:
-        return QStringList(QStringLiteral("macintosh"));
+        return QStringList({QStringLiteral("aqua"), QStringLiteral("macintosh")});
     case QPlatformTheme::DialogButtonBoxLayout:
         return QVariant(QPlatformDialogHelper::MacLayout);
     case KeyboardScheme:

@@ -103,7 +103,8 @@ KHintsSettingsMac::KHintsSettingsMac()
 #endif
 
     QStringList styleNames;
-    styleNames << QStringLiteral("macintosh")
+    styleNames << QStringLiteral("aqua")
+               << QStringLiteral("macintosh")
                << QStringLiteral("fusion")
                << QStringLiteral("windows");
     const QString configuredStyle = cg.readEntry("widgetStyle", QString());
@@ -243,6 +244,7 @@ void KHintsSettingsMac::slotNotifyChange(int type, int arg)
 
         QStringList styleNames;
         styleNames << cg.readEntry("widgetStyle", QString())
+                << QStringLiteral("aqua")
                 << QStringLiteral("macintosh")
                 << QStringLiteral("fusion")
                 << QStringLiteral("windows");
