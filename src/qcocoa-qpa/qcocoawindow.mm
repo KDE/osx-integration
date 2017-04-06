@@ -1824,7 +1824,7 @@ void QCocoaWindow::exposeWindow()
     NSUInteger screenIndex = [[NSScreen screens] indexOfObject:m_nsWindow.screen];
     if (screenIndex != NSNotFound) {
         QCocoaScreen *cocoaScreen = QCocoaIntegration::instance()->screenAtIndex(screenIndex);
-        if (cocoaScreen)
+        if (cocoaScreen && !window()->parent())
             window()->setScreen(cocoaScreen->screen());
     }
 
