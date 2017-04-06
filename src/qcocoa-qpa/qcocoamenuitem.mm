@@ -222,13 +222,18 @@ void QCocoaMenuItem::setNativeContents(WId item)
 
 NSMenuItem *QCocoaMenuItem::sync()
 {
-    if (m_isSeparator != [m_native isSeparatorItem]) {
+    bool isNativeSeparator = [m_native isSeparatorItem];
+    bool noText = m_text.isEmpty();
+    if ( (m_isSeparator != isNativeSeparator && noText)
+        || (isNativeSeparator && !noText)) {
         [m_native release];
-        if (m_isSeparator) {
+        if (m_isSeparator && m_text.isEmpty()) {
             m_native = [[NSMenuItem separatorItem] retain];
             [m_native setTag:reinterpret_cast<NSInteger>(this)];
-        } else
+        } else {
             m_native = nil;
+            isNativeSeparator = false;
+        }
     }
 
     if ((m_role != NoRole && !m_textSynced) || m_merged) {
@@ -329,22 +334,49 @@ NSMenuItem *QCocoaMenuItem::sync()
 
     QString finalString = QPlatformTheme::removeMnemonics(text);
     bool useAttributedTitle = false;
+    NSFont *customMenuFont = NULL;
+    NSMutableArray *keys = [NSMutableArray arrayWithCapacity:1];
+    NSMutableArray *objects = [NSMutableArray arrayWithCapacity:1];
     // Cocoa Font and title
     if (m_font.resolve()) {
-        NSFont *customMenuFont = [NSFont fontWithName:m_font.family().toNSString()
+        customMenuFont = [NSFont fontWithName:m_font.family().toNSString()
                                   size:m_font.pointSize()];
         if (customMenuFont) {
-            NSArray *keys = [NSArray arrayWithObjects:NSFontAttributeName, nil];
-            NSArray *objects = [NSArray arrayWithObjects:customMenuFont, nil];
-            NSDictionary *attributes = [NSDictionary dictionaryWithObjects:objects forKeys:keys];
-            NSAttributedString *str = [[[NSAttributedString alloc] initWithString:finalString.toNSString()
-                                     attributes:attributes] autorelease];
-            [m_native setAttributedTitle: str];
+            [keys addObject:NSFontAttributeName];
+            [objects addObject:customMenuFont];
             useAttributedTitle = true;
         }
     }
+    if (m_isSeparator && !m_text.isEmpty()) {
+        if (!customMenuFont) {
+            // make sure we use an appropriate font
+            customMenuFont = [NSFont menuBarFontOfSize:0];
+            if (customMenuFont) {
+                [keys addObject:NSFontAttributeName];
+                [objects addObject:customMenuFont];
+            }
+        }
+        [keys addObject:NSUnderlineStyleAttributeName];
+        [objects addObject:[NSNumber numberWithInt:NSUnderlineStyleSingle|NSUnderlinePatternSolid]];
+        // the text will be drawn with a slightly heavier stroke:
+        [keys addObject:NSStrokeWidthAttributeName];
+        [objects addObject:[NSNumber numberWithDouble:-1.5]];
+        // narrow the text ever so slightly:
+        [keys addObject:NSExpansionAttributeName];
+        [objects addObject:[NSNumber numberWithDouble:-0.05]];
+        // add some additional vertical space:
+        [keys addObject:NSBaselineOffsetAttributeName];
+        [objects addObject:[NSNumber numberWithDouble:-5]];
+        useAttributedTitle = true;
+        setEnabled(false);
+    }
     if (!useAttributedTitle) {
        [m_native setTitle:finalString.toNSString()];
+    } else {
+        NSDictionary *attributes = [NSDictionary dictionaryWithObjects:objects forKeys:keys];
+        NSAttributedString *str = [[[NSAttributedString alloc] initWithString:finalString.toNSString()
+                                 attributes:attributes] autorelease];
+        [m_native setAttributedTitle: str];
     }
 
 #ifndef QT_NO_SHORTCUT
