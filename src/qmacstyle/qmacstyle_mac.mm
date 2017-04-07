@@ -1003,8 +1003,13 @@ void QMacStylePrivate::drawFocusRing(QPainter *p, const QRect &targetRect, int h
             CGContextSetAlpha(ctx, 0.5); // As applied to the stroke color below
 
             [NSGraphicsContext saveGraphicsState];
+#if QT_MACOS_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_11)
             [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithCGContext:ctx
                                                                                          flipped:NO]];
+#else
+            [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithGraphicsPort:ctx
+                                                                                         flipped:NO]];
+#endif
             CGRect focusRingRect = CGRectMake(hMargin, vMargin, size, size);
             NSBezierPath *focusRingPath;
             if (radius > 0) {
@@ -3540,10 +3545,13 @@ void QMacStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPai
     case PE_IndicatorTabClose: {
         // Make close button visible only on the hovered tab.
         if (QTabBar *tabBar = qobject_cast<QTabBar*>(w->parentWidget())) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
             const QTabBarPrivate *tabBarPrivate = static_cast<QTabBarPrivate *>(QObjectPrivate::get(tabBar));
             const int hoveredTabIndex = tabBarPrivate->hoveredTabIndex();
             if (hoveredTabIndex != -1 && ((w == tabBar->tabButton(hoveredTabIndex, QTabBar::LeftSide)) ||
-                                          (w == tabBar->tabButton(hoveredTabIndex, QTabBar::RightSide)))) {
+                                          (w == tabBar->tabButton(hoveredTabIndex, QTabBar::RightSide))))
+#endif
+            {
                 const bool hover = (opt->state & State_MouseOver);
                 const bool selected = (opt->state & State_Selected);
                 const bool pressed = (opt->state & State_Sunken);

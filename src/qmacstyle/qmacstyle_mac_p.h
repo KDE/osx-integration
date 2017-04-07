@@ -51,6 +51,7 @@
 // We mean it.
 //
 
+#include "qtcore-config.h"
 #include <QtWidgets/private/qtwidgetsglobal_p.h>
 #include <QtWidgets/qcommonstyle.h>
 
