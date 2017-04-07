@@ -26,7 +26,7 @@ option(DISABLE_DBUS_SUPPORT
         OFF)
 option(EMULATE_MENU_KEY
         "Emulate the presence of a Menu key as on PC keyboards when the right Command+Option keys are pressed.
-        Requires a patched Qt that respects the simulate keystroke so context menus open."
+        BUILD_QT_PLUGINS must be set for this to have any effect."
         OFF)
 
 include(FeatureSummary)
