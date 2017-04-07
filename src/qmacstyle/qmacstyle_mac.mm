@@ -111,16 +111,16 @@ static QWindow *qt_getWindow(const QWidget *widget)
     return widget ? widget->window()->windowHandle() : 0;
 }
 
-@interface QT_MANGLE_NAMESPACE(NotificationReceiver) : NSObject {
+@interface QT_MANGLE_NAMESPACE(AltNotificationReceiver) : NSObject {
 QMacStylePrivate *mPrivate;
 }
 - (id)initWithPrivate:(QMacStylePrivate *)priv;
 - (void)scrollBarStyleDidChange:(NSNotification *)notification;
 @end
 
-QT_NAMESPACE_ALIAS_OBJC_CLASS(NotificationReceiver);
+QT_NAMESPACE_ALIAS_OBJC_CLASS(AltNotificationReceiver);
 
-@implementation NotificationReceiver
+@implementation AltNotificationReceiver
 - (id)initWithPrivate:(QMacStylePrivate *)priv
 {
     self = [super init];
@@ -2109,8 +2109,8 @@ QMacStyle::QMacStyle()
     Q_D(QMacStyle);
     QMacAutoReleasePool pool;
 
-    d->receiver = [[NotificationReceiver alloc] initWithPrivate:d];
-    NotificationReceiver *receiver = static_cast<NotificationReceiver *>(d->receiver);
+    d->receiver = [[AltNotificationReceiver alloc] initWithPrivate:d];
+    AltNotificationReceiver *receiver = static_cast<AltNotificationReceiver *>(d->receiver);
 
     [[NSNotificationCenter defaultCenter] addObserver:receiver
                                                       selector:@selector(scrollBarStyleDidChange:)
@@ -2128,7 +2128,7 @@ QMacStyle::~QMacStyle()
 
     [reinterpret_cast<NSScroller*>(d->nsscroller) release];
 
-    NotificationReceiver *receiver = static_cast<NotificationReceiver *>(d->receiver);
+    AltNotificationReceiver *receiver = static_cast<AltNotificationReceiver *>(d->receiver);
     [[NSNotificationCenter defaultCenter] removeObserver:receiver];
     [receiver release];
 
