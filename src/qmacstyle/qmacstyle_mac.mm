@@ -4201,7 +4201,10 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
             // (QComboMenuItem is internal and should never be seen by the
             // outside world, unless they read the source, in which case, it's
             // their own fault).
-            bool nonDefaultFont = p->font() != qt_app_fonts_hash()->value("QComboMenuItem");
+//             bool nonDefaultFont = p->font() != qt_app_fonts_hash()->value("QComboMenuItem");
+            // We support non-native themes in this patched Qt version, so we cannot rely on the result
+            // of the test above. It's best to presume it always returns true.
+            bool nonDefaultFont = true;
             if (verticalTabs || nonDefaultFont || !tab->icon.isNull()
                 || !myTab.leftButtonSize.isEmpty() || !myTab.rightButtonSize.isEmpty()) {
                 int heightOffset = 0;
