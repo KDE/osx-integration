@@ -46,16 +46,20 @@
 
 #include <QtWidgets/private/qtwidgetsglobal_p.h>
 #include "qmacstyle_mac_p.h"
-#include "QtWidgets/private/qcommonstyle_p.h"
+#include "qcommonstyle_p.h"
 #include <private/qapplication_p.h>
 #include <private/qcombobox_p.h>
 #include <private/qpainter_p.h>
 #include <private/qstylehelper_p.h>
 #include <qapplication.h>
 #include <qbitmap.h>
+#if QT_CONFIG(checkbox)
 #include <qcheckbox.h>
+#endif
 #include <qcombobox.h>
+#if QT_CONFIG(dialogbuttonbox)
 #include <qdialogbuttonbox.h>
+#endif
 #include <qdockwidget.h>
 #include <qevent.h>
 #include <qfocusframe.h>
@@ -74,7 +78,9 @@
 #include <qpixmapcache.h>
 #include <qpointer.h>
 #include <qprogressbar.h>
+#if QT_CONFIG(pushbutton)
 #include <qpushbutton.h>
+#endif
 #include <qradiobutton.h>
 #include <qrubberband.h>
 #include <qsizegrip.h>
@@ -89,7 +95,6 @@
 #include <qtableview.h>
 #include <qwizard.h>
 #include <qdebug.h>
-#include <qlibrary.h>
 #include <qdatetimeedit.h>
 #include <qmath.h>
 #include <qpair.h>
@@ -154,7 +159,9 @@ typedef void (^QCocoaDrawRectBlock)(NSRect, CGContextRef);
         return sizes[controlSize]; \
     } while (0)
 
+#if QT_CONFIG(pushbutton)
 bool qt_mac_buttonIsRenderedFlat(const QPushButton *pushButton, const QStyleOptionButton *option);
+#endif
 
 class QMacStylePrivate : public QCommonStylePrivate
 {
@@ -220,6 +227,10 @@ public:
     void resolveCurrentNSView(QWindow *window);
 
     void drawFocusRing(QPainter *p, const QRect &targetRect, int hMargin, int vMargin, qreal radius = 0) const;
+
+#ifndef QT_NO_TABBAR
+    void tabLayout(const QStyleOptionTab *opt, const QWidget *widget, QRect *textRect) const;
+#endif
 
 public:
     mutable QPointer<QObject> pressedButton;
