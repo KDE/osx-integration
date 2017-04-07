@@ -54,6 +54,7 @@
 #include <private/qcombobox_p.h>
 #include <private/qtabbar_p.h>
 #include <private/qpainter_p.h>
+#include <private/qapplication_p.h>
 #include <qapplication.h>
 #include <qbitmap.h>
 #include <qcombobox.h>
@@ -97,8 +98,8 @@
 #include <QtWidgets/qgraphicsproxywidget.h>
 #include <QtWidgets/qgraphicsview.h>
 #include <QtCore/qvariant.h>
-#include <private/qstylehelper_p.h>
-#include <private/qstyleanimation_p.h>
+#include "qstylehelper_p.h"
+#include "qstyleanimation_p.h"
 #include <qpa/qplatformfontdatabase.h>
 #include <qpa/qplatformtheme.h>
 #include <QtGui/private/qcoregraphics_p.h>
@@ -155,6 +156,12 @@ const int QMacStylePrivate::BevelButtonH = 22;
 const int QMacStylePrivate::PushButtonContentPadding = 6;
 
 QVector<QPointer<QObject> > QMacStylePrivate::scrollBars;
+
+Q_GLOBAL_STATIC(FontHash, app_fonts)
+FontHash *qt_app_fonts_hash()
+{
+    return app_fonts();
+}
 
 // Title bar gradient colors for Lion were determined by inspecting PSDs exported
 // using CoreUI's CoreThemeDocument; there is no public API to retrieve them
@@ -3845,7 +3852,8 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
             }
 
             // TODO: find out the pressed button in a qwidget independent way
-            extern QWidget *qt_button_down; // qwidgetwindow.cpp
+//             extern QWidget *qt_button_down; // qwidgetwindow.cpp
+            QWidget *qt_button_down = nullptr;
             if (opt->styleObject == qt_button_down)
                 d->pressedButton = opt->styleObject;
             else if (d->pressedButton == opt->styleObject)
