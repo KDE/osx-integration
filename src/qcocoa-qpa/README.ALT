@@ -1,0 +1,142 @@
+commit cbf229875c49c2a57d7b62b641d866134e569a1a
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Thu Apr 6 21:57:00 2017 +0200
+
+    12-deactivate-menurole-heuristics.patch
+    
+    this patch deactivates the worst of the TextHeuristic menu role guessmatics
+    that can lead to putting the wrong QAction under the Mac's About or
+    Preferences menu items in the Application menu. Many KDE applications have
+    more than 1 About and Configure menu actions and are thus especially
+    at risk.
+    KDE applications that use KStandardActions to create the standard menu items
+    will see the appropriate actions assigned to the About and Preferences
+    menu items because their roles are set explicitly.
+    
+    Committed from host : Portia.local
+
+commit af7c4544d1883e9978609742b48dbb152e880c34
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Thu Apr 6 21:50:46 2017 +0200
+
+    11-patch-keyboard-support-menukey.diff
+    
+    this patch introduces support for a Menu key. Macs don't normally have one
+    but the SDKs do provide a special keysym (NSMenuFunctionKey) which might be
+    used (generated) by 3rd party keyboard drivers or even a native event filter.
+    The patch completes the pre-existing support and generates a ContextMenu
+    event at an appropriate location when the keysym is received.
+    
+    Committed from host : Portia.local
+
+commit c45430fc3c1827b44dd9002932b7b582da19729e
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Thu Apr 6 19:22:14 2017 +0200
+
+    10-patch-keyboard-mapping.diff
+    
+    From 3ee093b47109e2b24ab77ccdecde84437c5aced9 Mon Sep 17 00:00:00 2001
+    From: Timur Pocheptsov <timur.pocheptsov@qt.io>
+    Date: Wed, 2 Nov 2016 14:19:26 +0100
+    Subject: [PATCH] WIP - Cocoa integration: fix incorrect keyboard mapping
+    
+    When switching between different input sources, we have to update layouts.
+    
+    Task-number: QTBUG-50865
+    Change-Id: I19ee45feabf014e61dfef7454b5468e596ce2786
+    Committed from host : Portia.local
+
+commit 65de5666d5574a08a2fe49b82f29fd0b8a6b3cbf
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Thu Apr 6 19:21:36 2017 +0200
+
+    09-patch-silence-setscreen-warning.diff
+    
+    Prevent an unnecessary warning
+    
+    Committed from host : Portia.local
+
+commit 07527d713953a417b93393558cfb44475bc42d23
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Thu Apr 6 19:20:56 2017 +0200
+
+    08-patch-freetype-gamma-cocoa.diff
+    
+    Adapt the font smoothing gamma when using the FreeType rendering engine.
+    
+    Committed from host : Portia.local
+
+commit a7b0481d07c592c1a1810160e317d6792eeb7a5d
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Thu Apr 6 19:19:32 2017 +0200
+
+    06-patch-respect-DontSwapCtrlMeta.diff
+    
+    From ce953f011356257c1e1862d0353f785453559028 Mon Sep 17 00:00:00 2001
+    From: Dyami Caliri <dyami@dragonframe.com>
+    Date: Tue, 16 Sep 2014 17:32:22 -0700
+    Subject: [PATCH] OS X: Handle Qt::AA_MacDontSwapCtrlAndMeta for regular key
+     events
+    
+    The flag Qt::AA_MacDontSwapCtrlAndMeta was only being used with shortcut
+    detection. Now trying to incorporate flag in normal key events.
+    
+    Task-number: QTBUG-22775
+    Change-Id: I9edf97d0de93aa225435c9802372e33641cdac73
+    Committed from host : Portia.local
+
+commit 5ffc2fff1bd729ec9e54120e424fdfd51197f438
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Thu Apr 6 19:18:46 2017 +0200
+
+    05-patch-improve-fontweight-support9.diff
+    
+    part of a more comprehensive patch improving support for less-common font
+    weights. I'm not sure how much effect it has on its own but it should not
+    have adverse effects when used without the companion modifications.
+    
+    Committed from host : Portia.local
+
+commit 658f1d0e2fe5a9a678bdae712cc5a47878bc59de
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Thu Apr 6 19:16:29 2017 +0200
+
+    04-patch-qmenuAddSection.diff
+    
+    add support for named menu sections ("texted separators") in menus that
+    are part of the native menubar. This requires the companion patch to the
+    "native" Macintosh theme otherwise named sections won't appear when they
+    are the 1st item in a menu.
+    
+    Committed from host : Portia.local
+
+commit 42f58e14282bf4beae408f5440397dd5a6b30471
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Thu Apr 6 19:14:00 2017 +0200
+
+    03-patch-better-menuitem-insert-warning.diff
+    
+    Provide a more helpful warning when adding an item to an additional menu
+    or removing it from the wrong menu.
+    
+    Committed from host : Portia.local
+
+commit f5bbcfc20e52dfcfa27eedb4a1240e2fccf5fb93
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Thu Apr 6 19:12:01 2017 +0200
+
+    02-patch-enable-kde-theme.diff
+    
+    advertise the existence of support for the KDE platform theme plugin
+    when KDE_SESSION_VERSION is set to at least 4 in the environment.
+    
+    Committed from host : Portia.local
+
+commit f3707f1516f1393235c178d5829cf3f88d5844e1
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Thu Apr 6 19:03:23 2017 +0200
+
+    01-patch-missing-autoreleasepools.diff
+    
+    Add autorelease pools to functions that (used to) need them. This is safe
+    and comes at almost no cost.
