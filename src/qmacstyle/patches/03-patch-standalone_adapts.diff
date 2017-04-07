@@ -1,14 +1,14 @@
 --- a/qmacstyle_mac.mm	2017-03-31 13:28:18.000000000 +0200
 +++ b/qmacstyle_mac.mm	2017-04-04 18:03:15.000000000 +0200
-@@ -53,6 +53,7 @@
- #include <private/qcore_mac_p.h>
+@@ -54,6 +54,7 @@
  #include <private/qcombobox_p.h>
+ #include <private/qtabbar_p.h>
  #include <private/qpainter_p.h>
 +#include <private/qapplication_p.h>
  #include <qapplication.h>
  #include <qbitmap.h>
- #include <qcheckbox.h>
-@@ -92,8 +93,8 @@
+ #include <qcombobox.h>
+@@ -97,8 +98,8 @@
  #include <QtWidgets/qgraphicsproxywidget.h>
  #include <QtWidgets/qgraphicsview.h>
  #include <QtCore/qvariant.h>
@@ -19,7 +19,7 @@
  #include <qpa/qplatformfontdatabase.h>
  #include <qpa/qplatformtheme.h>
  #include <QtGui/private/qcoregraphics_p.h>
-@@ -151,6 +152,12 @@
+@@ -156,6 +157,12 @@ const int QMacStylePrivate::PushButtonContentPadding = 6;
  
  QVector<QPointer<QObject> > QMacStylePrivate::scrollBars;
  
@@ -32,7 +32,7 @@
  // Title bar gradient colors for Lion were determined by inspecting PSDs exported
  // using CoreUI's CoreThemeDocument; there is no public API to retrieve them
  
-@@ -3828,7 +3835,8 @@
+@@ -3845,7 +3852,8 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
              }
  
              // TODO: find out the pressed button in a qwidget independent way

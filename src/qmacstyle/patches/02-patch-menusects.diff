@@ -1,8 +1,8 @@
 diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
-index 007ce20175454100f9adf652fb80c8c656df9136..2cbf9735c57a378bd5e169a228402558e1a11b36 100644
+index a9aab10e0fa4b326b3618cb96ad0d0fbdbf9f121..0c0ad1a5d4be5d209036f47d67b894598cedaaad 100644
 --- a/qmacstyle_mac.mm
 +++ b/qmacstyle_mac.mm
-@@ -3037,6 +3037,9 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
+@@ -3041,6 +3041,9 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
      case SH_ItemView_ScrollMode:
          ret = QAbstractItemView::ScrollPerPixel;
          break;
@@ -12,7 +12,7 @@ index 007ce20175454100f9adf652fb80c8c656df9136..2cbf9735c57a378bd5e169a228402558
      default:
          ret = QCommonStyle::styleHint(sh, opt, w, hret);
          break;
-@@ -4390,6 +4396,9 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4358,6 +4361,9 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                  mdi.itemType |= kThemeMenuItemHierarchical | kThemeMenuItemHierBackground;
              else
                  mdi.itemType |= kThemeMenuItemPopUpBackground;
@@ -22,7 +22,7 @@ index 007ce20175454100f9adf652fb80c8c656df9136..2cbf9735c57a378bd5e169a228402558
              if (enabled)
                  mdi.state = kThemeMenuActive;
              else
-@@ -4397,7 +4406,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4365,7 +4371,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
              if (active)
                  mdi.state |= kThemeMenuSelected;
              QRect contentRect;
@@ -31,105 +31,32 @@ index 007ce20175454100f9adf652fb80c8c656df9136..2cbf9735c57a378bd5e169a228402558
                  // First arg should be &menurect, but wacky stuff happens then.
                  HIThemeDrawMenuSeparator(&itemRect, &itemRect, &mdi,
                                           cg, kHIThemeOrientationNormal);
-@@ -4426,88 +4435,90 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4394,54 +4400,56 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
              else
                  p->setPen(mi->palette.buttonText().color());
  
 -            if (mi->checked) {
--                // Use the HIThemeTextInfo foo to draw the check mark correctly, if we do it,
--                // we somehow need to use a special encoding as it doesn't look right with our
--                // drawText().
--                p->save();
--                CGContextSetShouldAntialias(cg, true);
--                CGContextSetShouldSmoothFonts(cg, true);
--                QColor textColor = p->pen().color();
--                CGFloat colorComp[] = { static_cast<CGFloat>(textColor.redF()), static_cast<CGFloat>(textColor.greenF()),
--                                      static_cast<CGFloat>(textColor.blueF()), static_cast<CGFloat>(textColor.alphaF()) };
--                CGContextSetFillColorSpace(cg, qt_mac_genericColorSpace());
--                CGContextSetFillColor(cg, colorComp);
--                HIThemeTextInfo tti;
--                tti.version = qt_mac_hitheme_version;
--                tti.state = tds;
--                if (active && enabled)
--                    tti.state = kThemeStatePressed;
--                switch (widgetSize) {
--                case QAquaSizeUnknown:
--                case QAquaSizeLarge:
--                    tti.fontID = kThemeMenuItemMarkFont;
--                    break;
--                case QAquaSizeSmall:
--                    tti.fontID = kThemeSmallSystemFont;
--                    break;
--                case QAquaSizeMini:
--                    tti.fontID = kThemeMiniSystemFont;
--                    break;
--                }
--                tti.horizontalFlushness = kHIThemeTextHorizontalFlushLeft;
--                tti.verticalFlushness = kHIThemeTextVerticalFlushCenter;
--                tti.options = kHIThemeTextBoxOptionNone;
--                tti.truncationPosition = kHIThemeTextTruncationNone;
--                tti.truncationMaxLines = 1;
--                QCFString checkmark;
-+            if (mi->menuItemType != QStyleOptionMenuItem::Separator) {
-+                if (mi->checked) {
-+                    // Use the HIThemeTextInfo foo to draw the check mark correctly, if we do it,
-+                    // we somehow need to use a special encoding as it doesn't look right with our
-+                    // drawText().
-+                    p->save();
-+                    CGContextSetShouldAntialias(cg, true);
-+                    CGContextSetShouldSmoothFonts(cg, true);
-+                    QColor textColor = p->pen().color();
-+                    CGFloat colorComp[] = { static_cast<CGFloat>(textColor.redF()), static_cast<CGFloat>(textColor.greenF()),
-+                                          static_cast<CGFloat>(textColor.blueF()), static_cast<CGFloat>(textColor.alphaF()) };
-+                    CGContextSetFillColorSpace(cg, qt_mac_genericColorSpace());
-+                    CGContextSetFillColor(cg, colorComp);
-+                    HIThemeTextInfo tti;
-+                    tti.version = qt_mac_hitheme_version;
-+                    tti.state = tds;
-+                    if (active && enabled)
-+                        tti.state = kThemeStatePressed;
-+                    switch (widgetSize) {
-+                    case QAquaSizeUnknown:
-+                    case QAquaSizeLarge:
-+                        tti.fontID = kThemeMenuItemMarkFont;
-+                        break;
-+                    case QAquaSizeSmall:
-+                        tti.fontID = kThemeSmallSystemFont;
-+                        break;
-+                    case QAquaSizeMini:
-+                        tti.fontID = kThemeMiniSystemFont;
-+                        break;
-+                    }
-+                    tti.horizontalFlushness = kHIThemeTextHorizontalFlushLeft;
-+                    tti.verticalFlushness = kHIThemeTextVerticalFlushCenter;
-+                    tti.options = kHIThemeTextBoxOptionNone;
-+                    tti.truncationPosition = kHIThemeTextTruncationNone;
-+                    tti.truncationMaxLines = 1;
-+                    QCFString checkmark;
- #if 0
--                if (mi->checkType == QStyleOptionMenuItem::Exclusive)
--                    checkmark = QString(QChar(kDiamondUnicode));
--                else
-+                    if (mi->checkType == QStyleOptionMenuItem::Exclusive)
-+                        checkmark = QString(QChar(kDiamondUnicode));
-+                    else
- #endif
--                    checkmark = QString(QChar(kCheckUnicode));
--                int mw = checkcol + macItemFrame;
--                int mh = contentRect.height() - 2 * macItemFrame;
--                int xp = contentRect.x();
--                xp += macItemFrame;
--                CGFloat outWidth, outHeight, outBaseline;
--                HIThemeGetTextDimensions(checkmark, 0, &tti, &outWidth, &outHeight,
--                                         &outBaseline);
+-                QStyleOption checkmarkOpt;
+-                checkmarkOpt.initFrom(w);
+-
+-                const int mw = checkcol + macItemFrame;
+-                const int mh = contentRect.height() + macItemFrame;
+-                const int xp = contentRect.x() + macItemFrame;
+-                checkmarkOpt.rect = QRect(xp, contentRect.y() - checkmarkOpt.fontMetrics.descent(), mw, mh);
+-
+-                checkmarkOpt.state |= State_On; // Always on. Never rendered when off.
+-                checkmarkOpt.state.setFlag(State_Selected, active);
+-                checkmarkOpt.state.setFlag(State_Enabled, enabled);
 -                if (widgetSize == QAquaSizeMini)
--                    outBaseline += 1;
--                QRect r(xp, contentRect.y(), mw, mh);
--                r.translate(0, p->fontMetrics().ascent() - int(outBaseline) + 1);
--                HIRect bounds = qt_hirectForQRect(r);
--                HIThemeDrawTextBox(checkmark, &bounds, &tti,
--                                   cg, kHIThemeOrientationNormal);
--                p->restore();
+-                    checkmarkOpt.state |= State_Mini;
+-                else if (widgetSize == QAquaSizeSmall)
+-                    checkmarkOpt.state |= State_Small;
+-
+-                // We let drawPrimitive(PE_IndicatorMenuCheckMark) pick the right color
+-                checkmarkOpt.palette.setColor(QPalette::HighlightedText, p->pen().color());
+-                checkmarkOpt.palette.setColor(QPalette::Text, p->pen().color());
+-
+-                proxy()->drawPrimitive(PE_IndicatorMenuCheckMark, &checkmarkOpt, p, w);
 -            }
 -            if (!mi->icon.isNull()) {
 -                QIcon::Mode mode = (mi->state & State_Enabled) ? QIcon::Normal
@@ -140,22 +67,29 @@ index 007ce20175454100f9adf652fb80c8c656df9136..2cbf9735c57a378bd5e169a228402558
 -#ifndef QT_NO_COMBOBOX
 -                if (const QComboBox *comboBox = qobject_cast<const QComboBox *>(w)) {
 -                    iconSize = comboBox->iconSize();
-+                        checkmark = QString(QChar(kCheckUnicode));
-+                    int mw = checkcol + macItemFrame;
-+                    int mh = contentRect.height() - 2 * macItemFrame;
-+                    int xp = contentRect.x();
-+                    xp += macItemFrame;
-+                    CGFloat outWidth, outHeight, outBaseline;
-+                    HIThemeGetTextDimensions(checkmark, 0, &tti, &outWidth, &outHeight,
-+                                             &outBaseline);
++            if (mi->menuItemType != QStyleOptionMenuItem::Separator) {
++                if (mi->checked) {
++                    QStyleOption checkmarkOpt;
++                    checkmarkOpt.initFrom(w);
++
++                    const int mw = checkcol + macItemFrame;
++                    const int mh = contentRect.height() + macItemFrame;
++                    const int xp = contentRect.x() + macItemFrame;
++                    checkmarkOpt.rect = QRect(xp, contentRect.y() - checkmarkOpt.fontMetrics.descent(), mw, mh);
++
++                    checkmarkOpt.state |= State_On; // Always on. Never rendered when off.
++                    checkmarkOpt.state.setFlag(State_Selected, active);
++                    checkmarkOpt.state.setFlag(State_Enabled, enabled);
 +                    if (widgetSize == QAquaSizeMini)
-+                        outBaseline += 1;
-+                    QRect r(xp, contentRect.y(), mw, mh);
-+                    r.translate(0, p->fontMetrics().ascent() - int(outBaseline) + 1);
-+                    HIRect bounds = qt_hirectForQRect(r);
-+                    HIThemeDrawTextBox(checkmark, &bounds, &tti,
-+                                       cg, kHIThemeOrientationNormal);
-+                    p->restore();
++                        checkmarkOpt.state |= State_Mini;
++                    else if (widgetSize == QAquaSizeSmall)
++                        checkmarkOpt.state |= State_Small;
++
++                    // We let drawPrimitive(PE_IndicatorMenuCheckMark) pick the right color
++                    checkmarkOpt.palette.setColor(QPalette::HighlightedText, p->pen().color());
++                    checkmarkOpt.palette.setColor(QPalette::Text, p->pen().color());
++
++                    proxy()->drawPrimitive(PE_IndicatorMenuCheckMark, &checkmarkOpt, p, w);
                  }
 +                if (!mi->icon.isNull()) {
 +                    QIcon::Mode mode = (mi->state & State_Enabled) ? QIcon::Normal
@@ -195,7 +129,7 @@ index 007ce20175454100f9adf652fb80c8c656df9136..2cbf9735c57a378bd5e169a228402558
                                   | Qt::TextSingleLine | Qt::AlignAbsolute;
                  int yPos = contentRect.y();
                  if (widgetSize == QAquaSizeMini)
-@@ -4517,7 +4528,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4451,7 +4459,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                      p->setFont(qt_app_fonts_hash()->value("QMenuItem", p->font()));
                      int xp = contentRect.right() - tabwidth - macRightBorder
                               - macItemHMargin - macItemFrame + 1;
@@ -204,7 +138,7 @@ index 007ce20175454100f9adf652fb80c8c656df9136..2cbf9735c57a378bd5e169a228402558
                                  s.mid(t + 1));
                      s = s.left(t);
                  }
-@@ -4530,9 +4541,32 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4464,9 +4472,32 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                  // and then the combo inherits it and passes it onward. At that point the resolve mask
                  // is very, very weak. This makes it stonger.
                  myFont.setPointSizeF(QFontInfo(mi->font).pointSizeF());
@@ -240,7 +174,7 @@ index 007ce20175454100f9adf652fb80c8c656df9136..2cbf9735c57a378bd5e169a228402558
                  p->restore();
              }
          }
-@@ -6697,10 +6731,16 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+@@ -6685,10 +6716,16 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
              int w = sz.width(),
                  h = sz.height();
              if (mi->menuItemType == QStyleOptionMenuItem::Separator) {
@@ -258,4 +192,3 @@ index 007ce20175454100f9adf652fb80c8c656df9136..2cbf9735c57a378bd5e169a228402558
              } else {
                  h = mi->fontMetrics.height() + 2;
                  if (!mi->icon.isNull()) {
-

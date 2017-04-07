@@ -1,0 +1,45 @@
+diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
+index 403df1fa8807feba893f203c13b9c8b2069c5992..c55477a6bdc295454c850c3e4fa09b7d626210e7 100644
+--- a/qmacstyle_mac.mm
++++ b/qmacstyle_mac.mm
+@@ -1003,8 +1003,13 @@ void QMacStylePrivate::drawFocusRing(QPainter *p, const QRect &targetRect, int h
+             CGContextSetAlpha(ctx, 0.5); // As applied to the stroke color below
+ 
+             [NSGraphicsContext saveGraphicsState];
++#if QT_MACOS_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_11)
+             [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithCGContext:ctx
+                                                                                          flipped:NO]];
++#else
++            [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithGraphicsPort:ctx
++                                                                                         flipped:NO]];
++#endif
+             CGRect focusRingRect = CGRectMake(hMargin, vMargin, size, size);
+             NSBezierPath *focusRingPath;
+             if (radius > 0) {
+@@ -3540,10 +3545,13 @@ void QMacStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPai
+     case PE_IndicatorTabClose: {
+         // Make close button visible only on the hovered tab.
+         if (QTabBar *tabBar = qobject_cast<QTabBar*>(w->parentWidget())) {
++#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+             const QTabBarPrivate *tabBarPrivate = static_cast<QTabBarPrivate *>(QObjectPrivate::get(tabBar));
+             const int hoveredTabIndex = tabBarPrivate->hoveredTabIndex();
+             if (hoveredTabIndex != -1 && ((w == tabBar->tabButton(hoveredTabIndex, QTabBar::LeftSide)) ||
+-                                          (w == tabBar->tabButton(hoveredTabIndex, QTabBar::RightSide)))) {
++                                          (w == tabBar->tabButton(hoveredTabIndex, QTabBar::RightSide))))
++#endif
++            {
+                 const bool hover = (opt->state & State_MouseOver);
+                 const bool selected = (opt->state & State_Selected);
+                 const bool pressed = (opt->state & State_Sunken);
+diff --git a/qmacstyle_mac_p.h b/qmacstyle_mac_p.h
+index 7296539356413d3a8b97fb0c598cd24da9730d8c..e7ac3811a7455c16e26b3a024ffdc72b77cc501d 100644
+--- a/qmacstyle_mac_p.h
++++ b/qmacstyle_mac_p.h
+@@ -51,6 +51,7 @@
+ // We mean it.
+ //
+ 
++#include "qtcore-config.h"
+ #include <QtWidgets/private/qtwidgetsglobal_p.h>
+ #include <QtWidgets/qcommonstyle.h>
+ 

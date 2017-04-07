@@ -2,7 +2,7 @@ diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
 index 007ce20..dedd142 100644
 --- a/qmacstyle_mac.mm
 +++ b/qmacstyle_mac.mm
-@@ -4218,7 +4218,10 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4201,7 +4201,10 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
              // (QComboMenuItem is internal and should never be seen by the
              // outside world, unless they read the source, in which case, it's
              // their own fault).
@@ -11,7 +11,6 @@ index 007ce20..dedd142 100644
 +            // We support non-native themes in this patched Qt version, so we cannot rely on the result
 +            // of the test above. It's best to presume it always returns true.
 +            bool nonDefaultFont = true;
-             bool isSelectedAndNeedsShadow = selected && !usingYosemiteOrLater;
-             if (isSelectedAndNeedsShadow || verticalTabs || nonDefaultFont || !tab->icon.isNull()
+             if (verticalTabs || nonDefaultFont || !tab->icon.isNull()
                  || !myTab.leftButtonSize.isEmpty() || !myTab.rightButtonSize.isEmpty()) {
-
+                 int heightOffset = 0;
