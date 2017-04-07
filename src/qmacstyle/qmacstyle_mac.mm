@@ -3041,6 +3041,9 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
     case SH_ItemView_ScrollMode:
         ret = QAbstractItemView::ScrollPerPixel;
         break;
+    case SH_Menu_SupportsSections:
+        ret = true;
+        break;
     default:
         ret = QCommonStyle::styleHint(sh, opt, w, hret);
         break;
@@ -4358,6 +4361,9 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                 mdi.itemType |= kThemeMenuItemHierarchical | kThemeMenuItemHierBackground;
             else
                 mdi.itemType |= kThemeMenuItemPopUpBackground;
+            if (mi->menuItemType == QStyleOptionMenuItem::Separator) {
+                enabled = active = false;
+            }
             if (enabled)
                 mdi.state = kThemeMenuActive;
             else
@@ -4365,7 +4371,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
             if (active)
                 mdi.state |= kThemeMenuSelected;
             QRect contentRect;
-            if (mi->menuItemType == QStyleOptionMenuItem::Separator) {
+            if (mi->menuItemType == QStyleOptionMenuItem::Separator && mi->text.isEmpty()) {
                 // First arg should be &menurect, but wacky stuff happens then.
                 HIThemeDrawMenuSeparator(&itemRect, &itemRect, &mdi,
                                          cg, kHIThemeOrientationNormal);
@@ -4394,54 +4400,56 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
             else
                 p->setPen(mi->palette.buttonText().color());
 
-            if (mi->checked) {
-                QStyleOption checkmarkOpt;
-                checkmarkOpt.initFrom(w);
+            if (mi->menuItemType != QStyleOptionMenuItem::Separator) {
+                if (mi->checked) {
+                    QStyleOption checkmarkOpt;
+                    checkmarkOpt.initFrom(w);
 
-                const int mw = checkcol + macItemFrame;
-                const int mh = contentRect.height() + macItemFrame;
-                const int xp = contentRect.x() + macItemFrame;
-                checkmarkOpt.rect = QRect(xp, contentRect.y() - checkmarkOpt.fontMetrics.descent(), mw, mh);
+                    const int mw = checkcol + macItemFrame;
+                    const int mh = contentRect.height() + macItemFrame;
+                    const int xp = contentRect.x() + macItemFrame;
+                    checkmarkOpt.rect = QRect(xp, contentRect.y() - checkmarkOpt.fontMetrics.descent(), mw, mh);
 
-                checkmarkOpt.state |= State_On; // Always on. Never rendered when off.
-                checkmarkOpt.state.setFlag(State_Selected, active);
-                checkmarkOpt.state.setFlag(State_Enabled, enabled);
-                if (widgetSize == QAquaSizeMini)
-                    checkmarkOpt.state |= State_Mini;
-                else if (widgetSize == QAquaSizeSmall)
-                    checkmarkOpt.state |= State_Small;
+                    checkmarkOpt.state |= State_On; // Always on. Never rendered when off.
+                    checkmarkOpt.state.setFlag(State_Selected, active);
+                    checkmarkOpt.state.setFlag(State_Enabled, enabled);
+                    if (widgetSize == QAquaSizeMini)
+                        checkmarkOpt.state |= State_Mini;
+                    else if (widgetSize == QAquaSizeSmall)
+                        checkmarkOpt.state |= State_Small;
 
-                // We let drawPrimitive(PE_IndicatorMenuCheckMark) pick the right color
-                checkmarkOpt.palette.setColor(QPalette::HighlightedText, p->pen().color());
-                checkmarkOpt.palette.setColor(QPalette::Text, p->pen().color());
+                    // We let drawPrimitive(PE_IndicatorMenuCheckMark) pick the right color
+                    checkmarkOpt.palette.setColor(QPalette::HighlightedText, p->pen().color());
+                    checkmarkOpt.palette.setColor(QPalette::Text, p->pen().color());
 
-                proxy()->drawPrimitive(PE_IndicatorMenuCheckMark, &checkmarkOpt, p, w);
-            }
-            if (!mi->icon.isNull()) {
-                QIcon::Mode mode = (mi->state & State_Enabled) ? QIcon::Normal
-                                                               : QIcon::Disabled;
-                // Always be normal or disabled to follow the Mac style.
-                int smallIconSize = proxy()->pixelMetric(PM_SmallIconSize);
-                QSize iconSize(smallIconSize, smallIconSize);
-#ifndef QT_NO_COMBOBOX
-                if (const QComboBox *comboBox = qobject_cast<const QComboBox *>(w)) {
-                    iconSize = comboBox->iconSize();
+                    proxy()->drawPrimitive(PE_IndicatorMenuCheckMark, &checkmarkOpt, p, w);
                 }
+                if (!mi->icon.isNull()) {
+                    QIcon::Mode mode = (mi->state & State_Enabled) ? QIcon::Normal
+                                                                   : QIcon::Disabled;
+                    // Always be normal or disabled to follow the Mac style.
+                    int smallIconSize = proxy()->pixelMetric(PM_SmallIconSize);
+                    QSize iconSize(smallIconSize, smallIconSize);
+#ifndef QT_NO_COMBOBOX
+                    if (const QComboBox *comboBox = qobject_cast<const QComboBox *>(w)) {
+                        iconSize = comboBox->iconSize();
+                    }
 #endif
-                QPixmap pixmap = mi->icon.pixmap(window, iconSize, mode);
-                int pixw = pixmap.width() / pixmap.devicePixelRatio();
-                int pixh = pixmap.height() / pixmap.devicePixelRatio();
-                QRect cr(xpos, contentRect.y(), checkcol, contentRect.height());
-                QRect pmr(0, 0, pixw, pixh);
-                pmr.moveCenter(cr.center());
-                p->drawPixmap(pmr.topLeft(), pixmap);
-                xpos += pixw + 6;
+                    QPixmap pixmap = mi->icon.pixmap(window, iconSize, mode);
+                    int pixw = pixmap.width() / pixmap.devicePixelRatio();
+                    int pixh = pixmap.height() / pixmap.devicePixelRatio();
+                    QRect cr(xpos, contentRect.y(), checkcol, contentRect.height());
+                    QRect pmr(0, 0, pixw, pixh);
+                    pmr.moveCenter(cr.center());
+                    p->drawPixmap(pmr.topLeft(), pixmap);
+                    xpos += pixw + 6;
+                }
             }
 
             QString s = mi->text;
             if (!s.isEmpty()) {
                 int t = s.indexOf(QLatin1Char('\t'));
-                int text_flags = Qt::AlignRight | Qt::AlignVCenter | Qt::TextHideMnemonic
+                int text_flags = Qt::AlignVCenter | Qt::TextHideMnemonic
                                  | Qt::TextSingleLine | Qt::AlignAbsolute;
                 int yPos = contentRect.y();
                 if (widgetSize == QAquaSizeMini)
@@ -4451,7 +4459,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                     p->setFont(qt_app_fonts_hash()->value("QMenuItem", p->font()));
                     int xp = contentRect.right() - tabwidth - macRightBorder
                              - macItemHMargin - macItemFrame + 1;
-                    p->drawText(xp, yPos, tabwidth, contentRect.height(), text_flags,
+                    p->drawText(xp, yPos, tabwidth, contentRect.height(), text_flags | Qt::AlignRight,
                                 s.mid(t + 1));
                     s = s.left(t);
                 }
@@ -4464,9 +4472,32 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                 // and then the combo inherits it and passes it onward. At that point the resolve mask
                 // is very, very weak. This makes it stonger.
                 myFont.setPointSizeF(QFontInfo(mi->font).pointSizeF());
-                p->setFont(myFont);
-                p->drawText(xpos, yPos, contentRect.width() - xm - tabwidth + 1,
-                            contentRect.height(), text_flags ^ Qt::AlignRight, s);
+                if (mi->menuItemType == QStyleOptionMenuItem::Separator) {
+                    // render the text as much as possible as QCocoaMenuItem does
+                    // for native menubar menu items
+                    myFont.setUnderline(true);
+                    myFont.setWeight(QFont::DemiBold);
+                    myFont.setLetterSpacing(QFont::PercentageSpacing, 95);
+                    // use an appropriate pen:
+                    p->setPen(mi->palette.color(QPalette::Disabled, QPalette::Text));
+                    p->setFont(myFont);
+                    // draw the separator line above the section title text
+                    QRect lr(mi->rect);
+                    lr.translate(0, - p->fontMetrics().ascent() / 2 - 5);
+                    if (lr.y() >= 0) {
+                        // draw the overlying separator line only if not the 1st thing in the menu
+                        HIRect hiLr = qt_hirectForQRect(lr);
+                        HIThemeDrawMenuSeparator(&hiLr, &hiLr, &mdi,
+                                             cg, kHIThemeOrientationNormal);
+                    }
+                    // draw the text left-aligned w.r.t. the icon location
+                    p->drawText(contentRect.x() + macItemHMargin, yPos, contentRect.width(),
+                                contentRect.height(), text_flags | Qt::AlignLeft, s);
+                } else {
+                    p->setFont(myFont);
+                    p->drawText(xpos, yPos, contentRect.width() - xm - tabwidth + 1,
+                                contentRect.height(), text_flags | Qt::AlignLeft, s);
+                }
                 p->restore();
             }
         }
@@ -6685,10 +6716,16 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
             int w = sz.width(),
                 h = sz.height();
             if (mi->menuItemType == QStyleOptionMenuItem::Separator) {
-                w = 10;
                 SInt16 ash;
                 GetThemeMenuSeparatorHeight(&ash);
                 h = ash;
+                if (!mi->text.isEmpty()) {
+                    // make room for the overlying separator line and 
+                    // don't change the base width .
+                    h += mi->fontMetrics.height() / 2 + 4;
+                } else {
+                    w = 10;
+                }
             } else {
                 h = mi->fontMetrics.height() + 2;
                 if (!mi->icon.isNull()) {
