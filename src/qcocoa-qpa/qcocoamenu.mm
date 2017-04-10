@@ -372,9 +372,18 @@ void QCocoaMenu::insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem)
             qWarning("No non-merged before menu item found");
             return;
         }
+        if (item->isSeparator() && !item->text().isEmpty()) {
+            // menu section: add a separator before the section title text
+            const NSInteger idx = [m_nativeMenu indexOfItem:beforeItem->nsItem()];
+            [m_nativeMenu insertItem:[NSMenuItem separatorItem] atIndex:idx];
+        }
         const NSInteger nativeIndex = [m_nativeMenu indexOfItem:beforeItem->nsItem()];
         [m_nativeMenu insertItem:nativeItem atIndex:nativeIndex];
     } else {
+        if (item->isSeparator() && !item->text().isEmpty()) {
+            // menu section: add a separator before the section title text
+            [m_nativeMenu addItem:[NSMenuItem separatorItem]];
+        }
         [m_nativeMenu addItem:nativeItem];
     }
     item->setMenuParent(this);
@@ -488,7 +497,7 @@ void QCocoaMenu::syncSeparatorsCollapsible(bool enable)
         }
     } else {
         foreach (QCocoaMenuItem *item, m_menuItems) {
-            if (!item->isSeparator())
+            if (!item->isSeparator() || !item->text().isEmpty())
                 continue;
 
             // sync the visiblity directly

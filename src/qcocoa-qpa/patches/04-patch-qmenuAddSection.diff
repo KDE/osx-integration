@@ -85,7 +85,7 @@ diff --git a/cocoa/qcocoamenu.mm b/cocoa/qcocoamenu.mm
 index e177a24e737be5e8277afaf8ffd01c516b9a8f06..0a8ed6cbf9d4954daa776e1d4e988f5557ca078b 100644
 --- a/cocoa/qcocoamenu.mm
 +++ b/cocoa/qcocoamenu.mm
-@@ -359,9 +372,18 @@ void QCocoaMenu::insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem)
+@@ -372,9 +372,18 @@ void QCocoaMenu::insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem)
              qWarning("No non-merged before menu item found");
              return;
          }
@@ -104,7 +104,7 @@ index e177a24e737be5e8277afaf8ffd01c516b9a8f06..0a8ed6cbf9d4954daa776e1d4e988f55
          [m_nativeMenu addItem:nativeItem];
      }
      item->setMenuParent(this);
-@@ -474,7 +497,7 @@ void QCocoaMenu::syncSeparatorsCollapsible(bool enable)
+@@ -488,7 +497,7 @@ void QCocoaMenu::syncSeparatorsCollapsible(bool enable)
          }
      } else {
          foreach (QCocoaMenuItem *item, m_menuItems) {
