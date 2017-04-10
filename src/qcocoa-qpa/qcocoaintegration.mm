@@ -69,8 +69,8 @@ static void initResources()
 
 QT_BEGIN_NAMESPACE
 
-QCocoaScreen::QCocoaScreen(int screenIndex) :
-    QPlatformScreen(), m_screenIndex(screenIndex), m_refreshRate(60.0)
+QCocoaScreen::QCocoaScreen(int screenIndex)
+    : QPlatformScreen(), m_screenIndex(screenIndex), m_refreshRate(60.0)
 {
     updateGeometry();
     m_cursor = new QCocoaCursor;
@@ -81,41 +81,65 @@ QCocoaScreen::~QCocoaScreen()
     delete m_cursor;
 }
 
-NSScreen *QCocoaScreen::osScreen() const
+NSScreen *QCocoaScreen::nativeScreen() const
 {
     NSArray *screens = [NSScreen screens];
-    return ((NSUInteger)m_screenIndex < [screens count]) ? [screens objectAtIndex:m_screenIndex] : nil;
+
+    // Stale reference, screen configuration has changed
+    if (m_screenIndex < 0 || (NSUInteger)m_screenIndex >= [screens count])
+        return nil;
+
+    return [screens objectAtIndex:m_screenIndex];
+}
+
+/*!
+    Flips the Y coordinate of the point between quadrant I and IV.
+
+    The native coordinate system on macOS uses quadrant I, with origin
+    in bottom left, and Qt uses quadrant IV, with origin in top left.
+
+    By flippig the Y coordinate, we can map the position between the
+    two coordinate systems.
+*/
+QPointF QCocoaScreen::flipCoordinate(const QPointF &pos) const
+{
+    return QPointF(pos.x(), m_geometry.height() - pos.y());
+}
+
+/*!
+    Flips the Y coordinate of the rectangle between quadrant I and IV.
+
+    The native coordinate system on macOS uses quadrant I, with origin
+    in bottom left, and Qt uses quadrant IV, with origin in top left.
+
+    By flippig the Y coordinate, we can map the rectangle between the
+    two coordinate systems.
+*/
+QRectF QCocoaScreen::flipCoordinate(const QRectF &rect) const
+{
+    return QRectF(flipCoordinate(rect.topLeft() + QPoint(0, rect.height())), rect.size());
 }
 
 void QCocoaScreen::updateGeometry()
 {
-    NSScreen *nsScreen = osScreen();
+    NSScreen *nsScreen = nativeScreen();
     if (!nsScreen)
         return;
 
-    NSRect frameRect = [nsScreen frame];
+    // At this point the geometry is in native coordinates, but the size
+    // is correct, which we take advantage of next when we map the native
+    // coordinates to the Qt coordinate system.
+    m_geometry = QRectF::fromCGRect(NSRectToCGRect(nsScreen.frame)).toRect();
+    m_availableGeometry = QRectF::fromCGRect(NSRectToCGRect(nsScreen.visibleFrame)).toRect();
 
-    if (m_screenIndex == 0) {
-        m_geometry = QRect(frameRect.origin.x, frameRect.origin.y, frameRect.size.width, frameRect.size.height);
-        // This is the primary screen, the one that contains the menubar. Its origin should be
-        // (0, 0), and it's the only one whose available geometry differs from its full geometry.
-        NSRect visibleRect = [nsScreen visibleFrame];
-        m_availableGeometry = QRect(visibleRect.origin.x,
-                                    frameRect.size.height - (visibleRect.origin.y + visibleRect.size.height), // invert y
-                                    visibleRect.size.width, visibleRect.size.height);
-    } else {
-        // NSScreen origin is at the bottom-left corner, QScreen is at the top-left corner.
-        // When we get the NSScreen frame rect, we need to re-align its origin y coordinate
-        // w.r.t. the primary screen, whose origin is (0, 0).
-        NSRect r = [[[NSScreen screens] objectAtIndex:0] frame];
-        QRect referenceScreenGeometry = QRect(r.origin.x, r.origin.y, r.size.width, r.size.height);
-        m_geometry = QRect(frameRect.origin.x,
-                           referenceScreenGeometry.height() - (frameRect.origin.y + frameRect.size.height),
-                           frameRect.size.width, frameRect.size.height);
+    // The reference screen for the geometry is always the primary screen, but since
+    // we may be in the process of creating and registering the primary screen, we
+    // must special-case that and assign it direcly.
+    QCocoaScreen *primaryScreen = (nsScreen == [[NSScreen screens] firstObject]) ?
+        this : static_cast<QCocoaScreen*>(QGuiApplication::primaryScreen()->handle());
 
-        // Not primary screen. See above.
-        m_availableGeometry = m_geometry;
-    }
+    m_geometry = primaryScreen->mapFromNative(m_geometry).toRect();
+    m_availableGeometry = primaryScreen->mapFromNative(m_availableGeometry).toRect();
 
     m_format = QImage::Format_RGB32;
     m_depth = NSBitsPerPixelFromDepth([nsScreen depth]);
@@ -147,8 +171,8 @@ void QCocoaScreen::updateGeometry()
 qreal QCocoaScreen::devicePixelRatio() const
 {
     QMacAutoReleasePool pool;
-    NSScreen * screen = osScreen();
-    return qreal(screen ? [screen backingScaleFactor] : 1.0);
+    NSScreen *nsScreen = nativeScreen();
+    return qreal(nsScreen ? [nsScreen backingScaleFactor] : 1.0);
 }
 
 QPlatformScreen::SubpixelAntialiasingType QCocoaScreen::subpixelAntialiasingTypeHint() const
@@ -312,11 +336,15 @@ QCocoaIntegration::QCocoaIntegration(const QStringList &paramList)
         // see the function implementation for exceptions.)
         qt_mac_transformProccessToForegroundApplication();
 
-        // Move the application window to front to avoid launching behind the terminal.
-        // Ignoring other apps is neccessary (we must ignore the terminal), but makes
-        // Qt apps play slightly less nice with other apps when lanching from Finder
-        // (See the activateIgnoringOtherApps docs.)
-        [cocoaApplication activateIgnoringOtherApps : YES];
+        // Move the application window to front to make it take focus, also when launching
+        // from the terminal. On 10.12+ this call has been moved to applicationDidFinishLauching
+        // to work around issues with loss of focus at startup.
+        if (QSysInfo::macVersion() < QSysInfo::MV_10_12) {
+            // Ignoring other apps is necessary (we must ignore the terminal), but makes
+            // Qt apps play slightly less nice with other apps when lanching from Finder
+            // (See the activateIgnoringOtherApps docs.)
+            [cocoaApplication activateIgnoringOtherApps : YES];
+        }
     }
 
     // ### For AA_MacPluginApplication we don't want to load the menu nib.
@@ -423,7 +451,7 @@ void QCocoaIntegration::updateScreens()
             // NSScreen documentation says do not cache the array returned from [NSScreen screens].
             // However in practice, we can identify a screen by its pointer: if resolution changes,
             // the NSScreen object will be the same instance, just with different values.
-            if (existingScr->osScreen() == scr) {
+            if (existingScr->nativeScreen() == scr) {
                 screen = existingScr;
                 break;
             }
@@ -447,20 +475,27 @@ void QCocoaIntegration::updateScreens()
     // Now the leftovers in remainingScreens are no longer current, so we can delete them.
     foreach (QCocoaScreen* screen, remainingScreens) {
         mScreens.removeOne(screen);
+        // Prevent stale references to NSScreen during destroy
+        screen->m_screenIndex = -1;
         destroyScreen(screen);
     }
 }
 
-QCocoaScreen *QCocoaIntegration::screenAtIndex(int index)
+QCocoaScreen *QCocoaIntegration::screenForNSScreen(NSScreen *nsScreen)
 {
-    if (index >= mScreens.count())
+    NSUInteger index = [[NSScreen screens] indexOfObject:nsScreen];
+    if (index == NSNotFound)
+        return 0;
+
+    if (index >= unsigned(mScreens.count()))
         updateScreens();
 
-    // It is possible that the screen got removed while updateScreens was called
-    // so we do a sanity check to be certain
-    if (index >= mScreens.count())
-        return 0;
-    return mScreens.at(index);
+    for (QCocoaScreen *screen : mScreens) {
+        if (screen->nativeScreen() == nsScreen)
+            return screen;
+    }
+
+    return 0;
 }
 
 bool QCocoaIntegration::hasCapability(QPlatformIntegration::Capability cap) const
@@ -487,6 +522,11 @@ bool QCocoaIntegration::hasCapability(QPlatformIntegration::Capability cap) cons
 QPlatformWindow *QCocoaIntegration::createPlatformWindow(QWindow *window) const
 {
     return new QCocoaWindow(window);
+}
+
+QPlatformWindow *QCocoaIntegration::createForeignWindow(QWindow *window, WId nativeHandle) const
+{
+    return new QCocoaWindow(window, nativeHandle);
 }
 
 #ifndef QT_NO_OPENGL
@@ -546,13 +586,7 @@ QCocoaDrag *QCocoaIntegration::drag() const
 
 QStringList QCocoaIntegration::themeNames() const
 {
-    QStringList themes;
-    themes.push_back(QLatin1String(QCocoaTheme::name));
-    const QByteArray kdeSessionVersion = qgetenv("KDE_SESSION_VERSION");
-    const int kdeVersion = kdeSessionVersion.toInt();
-    if (kdeVersion >= 4)
-        themes.push_back(QLatin1String("kde"));
-    return themes;
+    return QStringList(QLatin1String(QCocoaTheme::name));
 }
 
 QPlatformTheme *QCocoaIntegration::createPlatformTheme(const QString &name) const
@@ -570,7 +604,7 @@ QCocoaServices *QCocoaIntegration::services() const
 QVariant QCocoaIntegration::styleHint(StyleHint hint) const
 {
     if (hint == QPlatformIntegration::FontSmoothingGamma)
-        return mOptions.testFlag(UseFreeTypeFontEngine)? 0.975 : 2.0;
+        return 2.0;
 
     return QPlatformIntegration::styleHint(hint);
 }

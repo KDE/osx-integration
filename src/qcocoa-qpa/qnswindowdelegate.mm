@@ -41,61 +41,17 @@
 #include "qcocoahelpers.h"
 
 #include <QDebug>
+#include <qpa/qplatformscreen.h>
 #include <qpa/qwindowsysteminterface.h>
 
 @implementation QNSWindowDelegate
 
-- (id) initWithQCocoaWindow: (QCocoaWindow *) cocoaWindow
+- (id)initWithQCocoaWindow:(QCocoaWindow *)cocoaWindow
 {
-    self = [super init];
-
-    if (self) {
+    if (self = [super init])
         m_cocoaWindow = cocoaWindow;
-    }
+
     return self;
-}
-
-- (void)windowDidBecomeKey:(NSNotification *)notification
-{
-    Q_UNUSED(notification);
-    if (m_cocoaWindow->m_windowUnderMouse) {
-        QPointF windowPoint;
-        QPointF screenPoint;
-        [qnsview_cast(m_cocoaWindow->view()) convertFromScreen:[NSEvent mouseLocation] toWindowPoint:&windowPoint andScreenPoint:&screenPoint];
-        QWindowSystemInterface::handleEnterEvent(m_cocoaWindow->m_enterLeaveTargetWindow, windowPoint, screenPoint);
-    }
-}
-
-- (void)windowDidResize:(NSNotification *)notification
-{
-    Q_UNUSED(notification);
-    if (m_cocoaWindow) {
-        m_cocoaWindow->windowDidResize();
-    }
-}
-
-- (void)windowDidEndLiveResize:(NSNotification *)notification
-{
-    Q_UNUSED(notification);
-    if (m_cocoaWindow) {
-        m_cocoaWindow->windowDidEndLiveResize();
-    }
-}
-
-- (void)windowWillMove:(NSNotification *)notification
-{
-    Q_UNUSED(notification);
-    if (m_cocoaWindow) {
-        m_cocoaWindow->windowWillMove();
-    }
-}
-
-- (void)windowDidMove:(NSNotification *)notification
-{
-    Q_UNUSED(notification);
-    if (m_cocoaWindow) {
-        m_cocoaWindow->windowDidMove();
-    }
 }
 
 - (BOOL)windowShouldClose:(NSNotification *)notification
@@ -107,20 +63,19 @@
 
     return YES;
 }
-
-- (BOOL)windowShouldZoom:(NSWindow *)window toFrame:(NSRect)newFrame
+/*!
+    Overridden to ensure that the zoomed state always results in a maximized
+    window, which would otherwise not be the case for borderless windows.
+*/
+- (NSRect)windowWillUseStandardFrame:(NSWindow *)window defaultFrame:(NSRect)newFrame
 {
     Q_UNUSED(newFrame);
-    if (m_cocoaWindow && m_cocoaWindow->window()->type() != Qt::ForeignWindow)
-        [qnsview_cast(m_cocoaWindow->view()) notifyWindowWillZoom:![window isZoomed]];
-    return YES;
-}
 
-- (void)windowWillClose:(NSNotification *)notification
-{
-    Q_UNUSED(notification);
-    if (m_cocoaWindow)
-        m_cocoaWindow->windowWillClose();
+    // We explicitly go through the QScreen API here instead of just using
+    // window.screen.visibleFrame directly, as that ensures we have the same
+    // behavior for both use-cases/APIs.
+    Q_ASSERT(window == m_cocoaWindow->nativeWindow());
+    return m_cocoaWindow->screen()->availableGeometry().toCGRect();
 }
 
 - (BOOL)window:(NSWindow *)window shouldPopUpDocumentPathMenu:(NSMenu *)menu

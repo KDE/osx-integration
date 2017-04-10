@@ -151,7 +151,8 @@ Qt::DropActions qt_mac_mapNSDragOperations(NSDragOperation nsActions)
     a no-op.
 
     For extra verbosity and clearer code, please consider checking
-    that window()->type() != Qt::ForeignWindow before using this cast.
+    that the platform window is not a foreign window before using
+    this cast, via QPlatformWindow::isForeignWindow().
 
     Do not use this method soley to check for foreign windows, as
     that will make the code harder to read for people not working
@@ -160,10 +161,8 @@ Qt::DropActions qt_mac_mapNSDragOperations(NSDragOperation nsActions)
 */
 QNSView *qnsview_cast(NSView *view)
 {
-    if (![view isKindOfClass:[QNSView class]]) {
-        qCWarning(lcQpaCocoaWindow) << "NSView is not QNSView, consider checking for Qt::ForeignWindow";
+    if (![view isKindOfClass:[QNSView class]])
         return nil;
-    }
 
     return static_cast<QNSView *>(view);
 }
@@ -235,13 +234,13 @@ QString qt_mac_applicationName()
     return appName;
 }
 
-int qt_mac_mainScreenHeight()
+int qt_mac_primaryScreenHeight()
 {
     QMacAutoReleasePool pool;
     NSArray *screens = [NSScreen screens];
     if ([screens count] > 0) {
-        // The first screen in the screens array is documented
-        // to have the (0,0) origin.
+        // The first screen in the screens array is documented to
+        // have the (0,0) origin and is designated the primary screen.
         NSRect screenFrame = [[screens objectAtIndex: 0] frame];
         return screenFrame.size.height;
     }
@@ -250,12 +249,12 @@ int qt_mac_mainScreenHeight()
 
 int qt_mac_flipYCoordinate(int y)
 {
-    return qt_mac_mainScreenHeight() - y;
+    return qt_mac_primaryScreenHeight() - y;
 }
 
 qreal qt_mac_flipYCoordinate(qreal y)
 {
-    return qt_mac_mainScreenHeight() - y;
+    return qt_mac_primaryScreenHeight() - y;
 }
 
 QPointF qt_mac_flipPoint(const NSPoint &p)
@@ -281,16 +280,8 @@ NSRect qt_mac_flipRect(const QRect &rect)
 
 Qt::MouseButton cocoaButton2QtButton(NSInteger buttonNum)
 {
-    if (buttonNum == 0)
-        return Qt::LeftButton;
-    if (buttonNum == 1)
-        return Qt::RightButton;
-    if (buttonNum == 2)
-        return Qt::MiddleButton;
-    if (buttonNum >= 3 && buttonNum <= 31) { // handle XButton1 and higher via logical shift
-        return Qt::MouseButton(uint(Qt::MiddleButton) << (buttonNum - 3));
-    }
-    // else error: buttonNum too high, or negative
+    if (buttonNum >= 0 && buttonNum <= 31)
+        return Qt::MouseButton(1 << buttonNum);
     return Qt::NoButton;
 }
 

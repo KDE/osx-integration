@@ -84,8 +84,17 @@ public:
     // ----------------------------------------------------
     // Additional methods
     void setVirtualSiblings(const QList<QPlatformScreen *> &siblings) { m_siblings = siblings; }
-    NSScreen *osScreen() const;
+    NSScreen *nativeScreen() const;
     void updateGeometry();
+
+    QPointF mapToNative(const QPointF &pos) const { return flipCoordinate(pos); }
+    QRectF mapToNative(const QRectF &rect) const { return flipCoordinate(rect); }
+    QPointF mapFromNative(const QPointF &pos) const { return flipCoordinate(pos); }
+    QRectF mapFromNative(const QRectF &rect) const { return flipCoordinate(rect); }
+
+private:
+    QPointF flipCoordinate(const QPointF &pos) const;
+    QRectF flipCoordinate(const QRectF &rect) const;
 
 public:
     int m_screenIndex;
@@ -117,6 +126,7 @@ public:
 
     bool hasCapability(QPlatformIntegration::Capability cap) const Q_DECL_OVERRIDE;
     QPlatformWindow *createPlatformWindow(QWindow *window) const Q_DECL_OVERRIDE;
+    QPlatformWindow *createForeignWindow(QWindow *window, WId nativeHandle) const Q_DECL_OVERRIDE;
 #ifndef QT_NO_OPENGL
     QPlatformOpenGLContext *createPlatformOpenGLContext(QOpenGLContext *context) const Q_DECL_OVERRIDE;
 #endif
@@ -144,7 +154,7 @@ public:
     QList<int> possibleKeys(const QKeyEvent *event) const Q_DECL_OVERRIDE;
 
     void updateScreens();
-    QCocoaScreen *screenAtIndex(int index);
+    QCocoaScreen *screenForNSScreen(NSScreen *nsScreen);
 
     void setToolbar(QWindow *window, NSToolbar *toolbar);
     NSToolbar *toolbar(QWindow *window) const;

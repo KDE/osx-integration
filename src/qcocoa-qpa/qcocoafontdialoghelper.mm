@@ -106,7 +106,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSFontPanelDelegate);
     mHelper = 0;
     mStolenContentView = 0;
     mPanelButtons = 0;
-    mResultCode = NSCancelButton;
+    mResultCode = NSModalResponseCancel;
     mDialogIsExecuting = false;
     mResultSet = false;
 
@@ -171,7 +171,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSFontPanelDelegate);
 - (void)onOkClicked
 {
     [mFontPanel close];
-    [self finishOffWithCode:NSOKButton];
+    [self finishOffWithCode:NSModalResponseOK];
 }
 
 - (void)onCancelClicked
@@ -179,7 +179,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSFontPanelDelegate);
     if (mPanelButtons) {
         [mFontPanel close];
         mQtFont = QFont();
-        [self finishOffWithCode:NSCancelButton];
+        [self finishOffWithCode:NSModalResponseCancel];
     }
 }
 
@@ -224,12 +224,12 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSFontPanelDelegate);
 
     [NSApp runModalForWindow:mFontPanel];
     mDialogIsExecuting = false;
-    return (mResultCode == NSOKButton);
+    return (mResultCode == NSModalResponseOK);
 }
 
 - (QPlatformDialogHelper::DialogCode)dialogResultCode
 {
-    return (mResultCode == NSOKButton) ? QPlatformDialogHelper::Accepted : QPlatformDialogHelper::Rejected;
+    return (mResultCode == NSModalResponseOK) ? QPlatformDialogHelper::Accepted : QPlatformDialogHelper::Rejected;
 }
 
 - (BOOL)windowShouldClose:(id)window
@@ -238,7 +238,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSFontPanelDelegate);
     if (!mPanelButtons)
         [self updateQtFont];
     if (mDialogIsExecuting) {
-        [self finishOffWithCode:NSCancelButton];
+        [self finishOffWithCode:NSModalResponseCancel];
     } else {
         mResultSet = true;
         if (mHelper)
@@ -264,7 +264,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSFontPanelDelegate);
         // This check will prevent any such recursion.
         if (!mResultSet) {
             mResultSet = true;
-            if (mResultCode == NSCancelButton) {
+            if (mResultCode == NSModalResponseCancel) {
                 emit mHelper->reject();
             } else {
                 emit mHelper->accept();
@@ -336,68 +336,19 @@ public:
 
         int weight = 5;
         NSFontTraitMask mask = 0;
-        if (font.style() == QFont::StyleItalic || font.style() == QFont::StyleOblique) {
+        if (font.style() == QFont::StyleItalic) {
             mask |= NSItalicFontMask;
         }
-        // RJVB
-        // UltraLight -> 2 or 3
-        // Thin,Light -> 3, Book -> 4
-        // Normal/Regular -> 5
-        // Medium/SemiBold/Demibold -> 6,7,8
-        // Bold -> 9
-        // Ultra/Black/Heavy -> 10,11
-        QVector<int> weights;
-        switch (font.weight()) {
-            case QFont::Thin:
-                weights << 2;
-                // fall through;
-            case QFont::Light:
-            case QFont::ExtraLight:
-                weights << 3 << 4;
-                break;
-            case QFont::Normal:
-                weights << 5;
-                break;
-            case QFont::Medium:
-                weights << 6;
-                // fall through
-            case QFont::DemiBold:
-                weights << 7 << 8;
-                break;
-            case QFont::Bold:
-                weights << 9;
-                break;
-            case QFont::Black:
-                weights << 10 << 11;
-                break;
-         }
+        if (font.weight() == QFont::Bold) {
+            weight = 9;
+            mask |= NSBoldFontMask;
+        }
 
         QFontInfo fontInfo(font);
-        if (!weights.isEmpty()) {
-            for (int i = 0; i < weights.size() && !nsFont; ++i) {
-                weight = weights[i];
-                nsFont = [mgr fontWithFamily:fontInfo.family().toNSString()
-                         traits:mask
-                         weight:weight
-                         size:fontInfo.pointSize()];
-//                  qDebug() << "setCurrentFont: found" << font << "with Qt weight" << font.weight() << "as NSFont weight" << weight << "(index" << i << ")";
-//                  NSLog(@"NSFont=%@", nsFont);
-                 if ([mgr weightOfFont:const_cast<NSFont *>(nsFont)] != weight) {
-                     nsFont = NULL;
-                 }
-            }
-        }
-        if (!nsFont) {
-            // fallback to the older approach
-            if (font.weight() == QFont::Bold) {
-                weight = 9;
-                mask |= NSBoldFontMask;
-            }
-            nsFont = [mgr fontWithFamily:fontInfo.family().toNSString()
-                     traits:mask
-                     weight:weight
-                     size:fontInfo.pointSize()];
-        }
+        nsFont = [mgr fontWithFamily:fontInfo.family().toNSString()
+            traits:mask
+            weight:weight
+            size:fontInfo.pointSize()];
 
         [mgr setSelectedFont:const_cast<NSFont *>(nsFont) isMultiple:NO];
         mDelegate->mQtFont = font;

@@ -343,19 +343,6 @@ void QCocoaMenu::insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem)
     if (item->isMerged())
         return;
 
-    NSMenu *m = [item->nsItem() menu];
-    if (m) {
-        QString mTitle = QString::fromNSString([m title]);
-        if (beforeItem) {
-            qWarning() << Q_FUNC_INFO << "Menu item" << item->text() << "is already in menu" << mTitle
-                       << "after item" << beforeItem->text()
-                       << ", remove it from the other menu first before inserting into" << QString::fromNSString([nsMenu() title]);
-        } else {
-            qWarning() << Q_FUNC_INFO << "Menu item" << item->text() << "is already in menu" << mTitle
-                       << ", remove it from the other menu first before inserting into" << QString::fromNSString([nsMenu() title]);
-        }
-        return;
-    }
     // if the item we're inserting before is merged, skip along until
     // we find a non-merged real item to insert ahead of.
     while (beforeItem && beforeItem->isMerged()) {
@@ -372,18 +359,9 @@ void QCocoaMenu::insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem)
             qWarning("No non-merged before menu item found");
             return;
         }
-        if (item->isSeparator() && !item->text().isEmpty()) {
-            // menu section: add a separator before the section title text
-            const NSInteger idx = [m_nativeMenu indexOfItem:beforeItem->nsItem()];
-            [m_nativeMenu insertItem:[NSMenuItem separatorItem] atIndex:idx];
-        }
         const NSInteger nativeIndex = [m_nativeMenu indexOfItem:beforeItem->nsItem()];
         [m_nativeMenu insertItem:nativeItem atIndex:nativeIndex];
     } else {
-        if (item->isSeparator() && !item->text().isEmpty()) {
-            // menu section: add a separator before the section title text
-            [m_nativeMenu addItem:[NSMenuItem separatorItem]];
-        }
         [m_nativeMenu addItem:nativeItem];
     }
     item->setMenuParent(this);
@@ -417,8 +395,7 @@ void QCocoaMenu::removeMenuItem(QPlatformMenuItem *menuItem)
     m_menuItems.removeOne(cocoaItem);
     if (!cocoaItem->isMerged()) {
         if (m_nativeMenu != [cocoaItem->nsItem() menu]) {
-            qWarning() << Q_FUNC_INFO << "Item" << cocoaItem->text() << "to remove does not belong to this menu"
-                << QString::fromNSString([nsMenu() title]);
+            qWarning("Item to remove does not belong to this menu");
             return;
         }
         [m_nativeMenu removeItem: cocoaItem->nsItem()];
@@ -497,7 +474,7 @@ void QCocoaMenu::syncSeparatorsCollapsible(bool enable)
         }
     } else {
         foreach (QCocoaMenuItem *item, m_menuItems) {
-            if (!item->isSeparator() || !item->text().isEmpty())
+            if (!item->isSeparator())
                 continue;
 
             // sync the visiblity directly
@@ -604,8 +581,8 @@ void QCocoaMenu::showPopup(const QWindow *parentWindow, const QRect &targetRect,
 
     // The calls above block, and also swallow any mouse release event,
     // so we need to clear any mouse button that triggered the menu popup.
-    if ([view isKindOfClass:[QNSView class]])
-        [(QNSView *)view resetMouseButtons];
+    if (!cocoaWindow->isForeignWindow())
+        [qnsview_cast(view) resetMouseButtons];
 }
 
 void QCocoaMenu::dismiss()

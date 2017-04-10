@@ -85,7 +85,7 @@ public:
     QList<int> possibleKeys(const QKeyEvent *event) const;
     bool updateKeyboard();
     void deleteLayouts();
-    void updateKeyMap(unsigned short macVirtualKey, const QKeyEvent *event);
+    void updateKeyMap(unsigned short macVirtualKey, QChar unicodeKey);
     void clearMappings();
 
 private:

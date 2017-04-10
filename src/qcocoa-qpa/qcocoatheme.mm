@@ -319,7 +319,7 @@ QVariant QCocoaTheme::themeHint(ThemeHint hint) const
 {
     switch (hint) {
     case QPlatformTheme::StyleNames:
-        return QStringList({QStringLiteral("aqua"), QStringLiteral("macintosh")});
+        return QStringList(QStringLiteral("macintosh"));
     case QPlatformTheme::DialogButtonBoxLayout:
         return QVariant(QPlatformDialogHelper::MacLayout);
     case KeyboardScheme:
@@ -342,6 +342,12 @@ QVariant QCocoaTheme::themeHint(ThemeHint hint) const
 QString QCocoaTheme::standardButtonText(int button) const
 {
     return button == QPlatformDialogHelper::Discard ? msgDialogButtonDiscard() : QPlatformTheme::standardButtonText(button);
+}
+
+QKeySequence QCocoaTheme::standardButtonShortcut(int button) const
+{
+    return button == QPlatformDialogHelper::Discard ? QKeySequence(Qt::CTRL | Qt::Key_Delete)
+                                                    : QPlatformTheme::standardButtonShortcut(button);
 }
 
 QPlatformMenuItem *QCocoaTheme::createPlatformMenuItem() const
