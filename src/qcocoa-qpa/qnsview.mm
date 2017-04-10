@@ -1525,6 +1525,18 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
 
     if (eventType == QEvent::KeyPress) {
 
+        if (keyCode == Qt::Key_Menu && modifiers == Qt::NoModifier) {
+            QPoint globalPos, pos;
+            if (window) {
+                QNSView *targetView = (QNSView*)(window->winId());
+                QPointF qtWindowPoint, qtScreenPoint;
+                [targetView convertFromScreen:[nsevent locationInWindow] toWindowPoint:&qtWindowPoint andScreenPoint:&qtScreenPoint];
+                globalPos = qtScreenPoint.toPoint();
+                pos = qtWindowPoint.toPoint();
+            }
+            QWindowSystemInterface::handleContextMenuEvent(window, false, pos, globalPos, modifiers);
+        }
+
         if (m_composingText.isEmpty()) {
             m_sendKeyEvent = !QWindowSystemInterface::handleShortcutEvent(window, timestamp, keyCode,
                 modifiers, nativeScanCode, nativeVirtualKey, nativeModifiers, text, [nsevent isARepeat], 1);
