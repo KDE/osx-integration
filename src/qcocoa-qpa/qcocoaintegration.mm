@@ -586,7 +586,13 @@ QCocoaDrag *QCocoaIntegration::drag() const
 
 QStringList QCocoaIntegration::themeNames() const
 {
-    return QStringList(QLatin1String(QCocoaTheme::name));
+    QStringList themes;
+    themes.push_back(QLatin1String(QCocoaTheme::name));
+    const QByteArray kdeSessionVersion = qgetenv("KDE_SESSION_VERSION");
+    const int kdeVersion = kdeSessionVersion.toInt();
+    if (kdeVersion >= 4)
+        themes.push_back(QLatin1String("kde"));
+    return themes;
 }
 
 QPlatformTheme *QCocoaIntegration::createPlatformTheme(const QString &name) const

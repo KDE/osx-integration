@@ -2,7 +2,7 @@ diff --git a/cocoa/qcocoanativeinterface.mm b/cocoa/qcocoanativeinterface.mm
 index 9722303..b0eacc2 100644
 --- a/cocoa/qcocoanativeinterface.mm
 +++ b/cocoa/qcocoanativeinterface.mm
-@@ -260,6 +260,7 @@ void QCocoaNativeInterface::setDockMenu(QPlatformMenu *platformMenu)
+@@ -261,6 +261,7 @@ void QCocoaNativeInterface::setDockMenu(QPlatformMenu *platformMenu)
  
  void *QCocoaNativeInterface::qMenuToNSMenu(QPlatformMenu *platformMenu)
  {
@@ -14,7 +14,7 @@ diff --git a/cocoa/qcocoawindow.mm b/cocoa/qcocoawindow.mm
 index 602da0a..a8f7cd8 100644
 --- a/cocoa/qcocoawindow.mm
 +++ b/cocoa/qcocoawindow.mm
-@@ -1727,6 +1727,8 @@ void QCocoaWindow::applyContentBorderThickness(NSWindow *window)
+@@ -2056,6 +2056,8 @@ void QCocoaWindow::applyContentBorderThickness(NSWindow *window)
      if (!window)
          return;
  
