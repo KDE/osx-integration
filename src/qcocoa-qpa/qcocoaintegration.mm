@@ -610,7 +610,7 @@ QCocoaServices *QCocoaIntegration::services() const
 QVariant QCocoaIntegration::styleHint(StyleHint hint) const
 {
     if (hint == QPlatformIntegration::FontSmoothingGamma)
-        return 2.0;
+        return mOptions.testFlag(UseFreeTypeFontEngine)? 0.975 : 2.0;
 
     return QPlatformIntegration::styleHint(hint);
 }
