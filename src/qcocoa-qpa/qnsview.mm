@@ -1462,15 +1462,16 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
 
 + (Qt::KeyboardModifiers) convertKeyModifiers : (ulong)modifierFlags
 {
+    const bool swapCtrlAndMeta = !qApp->testAttribute(Qt::AA_MacDontSwapCtrlAndMeta);
     Qt::KeyboardModifiers qtMods =Qt::NoModifier;
     if (modifierFlags &  NSShiftKeyMask)
         qtMods |= Qt::ShiftModifier;
     if (modifierFlags & NSControlKeyMask)
-        qtMods |= Qt::MetaModifier;
+        qtMods |= (swapCtrlAndMeta ? Qt::MetaModifier : Qt::ControlModifier);
     if (modifierFlags & NSAlternateKeyMask)
         qtMods |= Qt::AltModifier;
     if (modifierFlags & NSCommandKeyMask)
-        qtMods |= Qt::ControlModifier;
+        qtMods |= (swapCtrlAndMeta ? Qt::ControlModifier : Qt::MetaModifier);
     if (modifierFlags & NSNumericPadKeyMask)
         qtMods |= Qt::KeypadModifier;
     return qtMods;
@@ -1494,10 +1495,11 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
     quint32 nativeScanCode = 1;
     quint32 nativeVirtualKey = [nsevent keyCode];
 
+    const bool swapCtrlAndMeta = !qApp->testAttribute(Qt::AA_MacDontSwapCtrlAndMeta);
     QChar ch = QChar::ReplacementCharacter;
     int keyCode = Qt::Key_unknown;
     if ([characters length] != 0) {
-        if (((modifiers & Qt::MetaModifier) || (modifiers & Qt::AltModifier)) && ([charactersIgnoringModifiers length] != 0))
+        if (((modifiers & (swapCtrlAndMeta ? Qt::MetaModifier : Qt::ControlModifier)) || (modifiers & Qt::AltModifier)) && ([charactersIgnoringModifiers length] != 0))
             ch = QChar([charactersIgnoringModifiers characterAtIndex:0]);
         else
             ch = QChar([characters characterAtIndex:0]);
@@ -1624,6 +1626,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
     ulong lastKnownModifiers = m_lastKnownModifiers;
     ulong delta = lastKnownModifiers ^ modifiers;
     m_lastKnownModifiers = modifiers;
+    const bool swapCtrlAndMeta = !qApp->testAttribute(Qt::AA_MacDontSwapCtrlAndMeta);
 
     struct qt_mac_enum_mapper
     {
@@ -1632,8 +1635,8 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
     };
     static qt_mac_enum_mapper modifier_key_symbols[] = {
         { NSShiftKeyMask, Qt::Key_Shift },
-        { NSControlKeyMask, Qt::Key_Meta },
-        { NSCommandKeyMask, Qt::Key_Control },
+        { NSControlKeyMask, (swapCtrlAndMeta ? Qt::Key_Meta :  Qt::Key_Control) },
+        { NSCommandKeyMask, (swapCtrlAndMeta ? Qt::Key_Control : Qt::Key_Meta) },
         { NSAlternateKeyMask, Qt::Key_Alt },
         { NSAlphaShiftKeyMask, Qt::Key_CapsLock },
         { 0ul, Qt::Key_unknown } };

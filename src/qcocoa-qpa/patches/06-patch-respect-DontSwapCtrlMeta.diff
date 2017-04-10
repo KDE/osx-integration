@@ -21,7 +21,7 @@ diff --git a/cocoa/qnsview.mm b/cocoa/qnsview.mm
 index a63bc4d..14f82e1 100644
 --- a/cocoa/qnsview.mm
 +++ b/cocoa/qnsview.mm
-@@ -1523,15 +1523,16 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+@@ -1462,15 +1462,16 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
  
  + (Qt::KeyboardModifiers) convertKeyModifiers : (ulong)modifierFlags
  {
@@ -40,7 +40,7 @@ index a63bc4d..14f82e1 100644
      if (modifierFlags & NSNumericPadKeyMask)
          qtMods |= Qt::KeypadModifier;
      return qtMods;
-@@ -1555,10 +1556,11 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+@@ -1494,10 +1495,11 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
      quint32 nativeScanCode = 1;
      quint32 nativeVirtualKey = [nsevent keyCode];
  
@@ -53,7 +53,7 @@ index a63bc4d..14f82e1 100644
              ch = QChar([charactersIgnoringModifiers characterAtIndex:0]);
          else
              ch = QChar([characters characterAtIndex:0]);
-@@ -1685,6 +1687,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+@@ -1624,6 +1626,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
      ulong lastKnownModifiers = m_lastKnownModifiers;
      ulong delta = lastKnownModifiers ^ modifiers;
      m_lastKnownModifiers = modifiers;
@@ -61,7 +61,7 @@ index a63bc4d..14f82e1 100644
  
      struct qt_mac_enum_mapper
      {
-@@ -1693,8 +1696,8 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+@@ -1632,8 +1635,8 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
      };
      static qt_mac_enum_mapper modifier_key_symbols[] = {
          { NSShiftKeyMask, Qt::Key_Shift },
