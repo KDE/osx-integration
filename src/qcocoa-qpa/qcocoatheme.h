@@ -43,6 +43,14 @@
 #include <QtCore/QHash>
 #include <qpa/qplatformtheme.h>
 
+#ifndef Q_DECL_MAYBE_OVERRIDE
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+#define Q_DECL_MAYBE_OVERRIDE   Q_DECL_OVERRIDE
+#else
+#define Q_DECL_MAYBE_OVERRIDE   /**/
+#endif
+#endif
+
 Q_FORWARD_DECLARE_OBJC_CLASS(QT_MANGLE_NAMESPACE(QCocoaThemeNotificationReceiver));
 
 QT_BEGIN_NAMESPACE
@@ -74,7 +82,7 @@ public:
 
     QVariant themeHint(ThemeHint hint) const Q_DECL_OVERRIDE;
     QString standardButtonText(int button) const Q_DECL_OVERRIDE;
-    QKeySequence standardButtonShortcut(int button) const Q_DECL_OVERRIDE;
+    QKeySequence standardButtonShortcut(int button) const Q_DECL_MAYBE_OVERRIDE;
 
     static const char *name;
 

@@ -1944,8 +1944,12 @@ void QCocoaWindow::reportCurrentWindowState(bool unconditionally)
     if (!unconditionally && currentState == m_lastReportedWindowState)
         return;
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
     QWindowSystemInterface::handleWindowStateChanged<QWindowSystemInterface::SynchronousDelivery>(
         window(), currentState, m_lastReportedWindowState);
+#else
+    QWindowSystemInterface::handleWindowStateChanged(window(), currentState);
+#endif
     m_lastReportedWindowState = currentState;
 }
 

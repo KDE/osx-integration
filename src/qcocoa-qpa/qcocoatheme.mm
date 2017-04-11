@@ -346,8 +346,13 @@ QString QCocoaTheme::standardButtonText(int button) const
 
 QKeySequence QCocoaTheme::standardButtonShortcut(int button) const
 {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
     return button == QPlatformDialogHelper::Discard ? QKeySequence(Qt::CTRL | Qt::Key_Delete)
                                                     : QPlatformTheme::standardButtonShortcut(button);
+#else
+    return button == QPlatformDialogHelper::Discard ? QKeySequence(Qt::CTRL | Qt::Key_Delete)
+                                                    : QKeySequence();
+#endif
 }
 
 QPlatformMenuItem *QCocoaTheme::createPlatformMenuItem() const

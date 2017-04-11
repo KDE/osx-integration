@@ -150,6 +150,14 @@ QT_BEGIN_NAMESPACE
 #define Q_NOTIFICATION_PREFIX QT_STRINGIFY2(Q_COCOA_NOTIFICATION_)
 #endif
 
+#ifndef Q_DECL_MAYBE_OVERRIDE
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+#define Q_DECL_MAYBE_OVERRIDE   Q_DECL_OVERRIDE
+#else
+#define Q_DECL_MAYBE_OVERRIDE   /**/
+#endif
+#endif
+
 class QCocoaMenuBar;
 
 class QCocoaWindow : public QObject, public QPlatformWindow
@@ -186,7 +194,7 @@ public:
     QMargins frameMargins() const Q_DECL_OVERRIDE;
     QSurfaceFormat format() const Q_DECL_OVERRIDE;
 
-    bool isForeignWindow() const Q_DECL_OVERRIDE;
+    bool isForeignWindow() const Q_DECL_MAYBE_OVERRIDE;
 
     void requestActivateWindow() Q_DECL_OVERRIDE;
 

@@ -63,6 +63,10 @@
 #include <accessibilityinspector.h>
 #endif
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 9, 0)
+#include <qaltoperatingsystemversion.h>
+#endif
+
 Q_LOGGING_CATEGORY(lcQpaTouch, "qt.qpa.input.touch")
 #ifndef QT_NO_GESTURES
 Q_LOGGING_CATEGORY(lcQpaGestures, "qt.qpa.input.gestures")

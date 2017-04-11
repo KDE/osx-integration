@@ -161,8 +161,13 @@ Qt::DropActions qt_mac_mapNSDragOperations(NSDragOperation nsActions)
 */
 QNSView *qnsview_cast(NSView *view)
 {
-    if (![view isKindOfClass:[QNSView class]])
+    if (![view isKindOfClass:[QNSView class]]) {
+#if QT_VERSION < QT_VERSION_CHECK(5, 9, 0)
+        qCDebug(lcQpaCocoaWindow) << "NSView [" << QString::fromNSString([view description])
+            << "] is not QNSView, consider checking for Qt::ForeignWindow";
+#endif
         return nil;
+    }
 
     return static_cast<QNSView *>(view);
 }

@@ -1,8 +1,8 @@
-diff --git a/src/qcocoa-qpa/qaltoperatingsystemversion.h b/src/qcocoa-qpa/qaltoperatingsystemversion.h
+diff --git a/cocoa/qaltoperatingsystemversion.h b/cocoa/qaltoperatingsystemversion.h
 new file mode 100644
 index 0000000000000000000000000000000000000000..3dc7c22011af30e5af2708212ff3ec264667dfb7
 --- /dev/null
-+++ b/src/qcocoa-qpa/qaltoperatingsystemversion.h
++++ b/cocoa/qaltoperatingsystemversion.h
 @@ -0,0 +1,117 @@
 +/****************************************************************************
 +**
@@ -121,10 +121,10 @@ index 0000000000000000000000000000000000000000..3dc7c22011af30e5af2708212ff3ec26
 +QT_END_NAMESPACE
 +
 +#endif // QOPERATINGSYSTEMVERSION_H
-diff --git a/src/qcocoa-qpa/qcocoafiledialoghelper.mm b/src/qcocoa-qpa/qcocoafiledialoghelper.mm
+diff --git a/cocoa/qcocoafiledialoghelper.mm b/cocoa/qcocoafiledialoghelper.mm
 index e39d5e454688480da3093d54172b65ea0dc7a109..bc1bf073124766865fe09b1d36109062ccc8daba 100644
---- a/src/qcocoa-qpa/qcocoafiledialoghelper.mm
-+++ b/src/qcocoa-qpa/qcocoafiledialoghelper.mm
+--- a/cocoa/qcocoafiledialoghelper.mm
++++ b/cocoa/qcocoafiledialoghelper.mm
 @@ -63,7 +63,11 @@
  #include <stdlib.h>
  #include <qabstracteventdispatcher.h>
@@ -137,10 +137,29 @@ index e39d5e454688480da3093d54172b65ea0dc7a109..bc1bf073124766865fe09b1d36109062
  #include <qglobal.h>
  #include <QDir>
  
-diff --git a/src/qcocoa-qpa/qcocoaintegration.h b/src/qcocoa-qpa/qcocoaintegration.h
+diff --git a/cocoa/qcocoahelpers.mm b/cocoa/qcocoahelpers.mm
+index 232e40769ba5a2d0187b28442329df78854f4e81..20c6133941b6f178a3887a057e73d6199b4939c6 100644
+--- a/cocoa/qcocoahelpers.mm
++++ b/cocoa/qcocoahelpers.mm
+@@ -161,8 +161,13 @@ Qt::DropActions qt_mac_mapNSDragOperations(NSDragOperation nsActions)
+ */
+ QNSView *qnsview_cast(NSView *view)
+ {
+-    if (![view isKindOfClass:[QNSView class]])
++    if (![view isKindOfClass:[QNSView class]]) {
++#if QT_VERSION < QT_VERSION_CHECK(5, 9, 0)
++        qCDebug(lcQpaCocoaWindow) << "NSView [" << QString::fromNSString([view description])
++            << "] is not QNSView, consider checking for Qt::ForeignWindow";
++#endif
+         return nil;
++    }
+ 
+     return static_cast<QNSView *>(view);
+ }
+diff --git a/cocoa/qcocoaintegration.h b/cocoa/qcocoaintegration.h
 index ecdd20c4dc06e97e4ea8a201adc63d51b4de1935..f41f023198148cf2081a32d9aad0a4a11c412776 100644
---- a/src/qcocoa-qpa/qcocoaintegration.h
-+++ b/src/qcocoa-qpa/qcocoaintegration.h
+--- a/cocoa/qcocoaintegration.h
++++ b/cocoa/qcocoaintegration.h
 @@ -126,7 +126,7 @@ public:
  
      bool hasCapability(QPlatformIntegration::Capability cap) const Q_DECL_OVERRIDE;
@@ -150,10 +169,10 @@ index ecdd20c4dc06e97e4ea8a201adc63d51b4de1935..f41f023198148cf2081a32d9aad0a4a1
  #ifndef QT_NO_OPENGL
      QPlatformOpenGLContext *createPlatformOpenGLContext(QOpenGLContext *context) const Q_DECL_OVERRIDE;
  #endif
-diff --git a/src/qcocoa-qpa/qcocoatheme.h b/src/qcocoa-qpa/qcocoatheme.h
+diff --git a/cocoa/qcocoatheme.h b/cocoa/qcocoatheme.h
 index 27c071a8cd2f82b8f880e3336ea684dd840eb830..f5e065047889aeccf0af0708468531e87ef75391 100644
---- a/src/qcocoa-qpa/qcocoatheme.h
-+++ b/src/qcocoa-qpa/qcocoatheme.h
+--- a/cocoa/qcocoatheme.h
++++ b/cocoa/qcocoatheme.h
 @@ -43,6 +43,14 @@
  #include <QtCore/QHash>
  #include <qpa/qplatformtheme.h>
@@ -178,10 +197,10 @@ index 27c071a8cd2f82b8f880e3336ea684dd840eb830..f5e065047889aeccf0af0708468531e8
  
      static const char *name;
  
-diff --git a/src/qcocoa-qpa/qcocoatheme.mm b/src/qcocoa-qpa/qcocoatheme.mm
+diff --git a/cocoa/qcocoatheme.mm b/cocoa/qcocoatheme.mm
 index a638002a426dcb5b1edc9fcc22a9473431e6ccc1..18dc1dbe85f540186ccea448d3466b8d92a6c2cc 100644
---- a/src/qcocoa-qpa/qcocoatheme.mm
-+++ b/src/qcocoa-qpa/qcocoatheme.mm
+--- a/cocoa/qcocoatheme.mm
++++ b/cocoa/qcocoatheme.mm
 @@ -346,8 +346,13 @@ QString QCocoaTheme::standardButtonText(int button) const
  
  QKeySequence QCocoaTheme::standardButtonShortcut(int button) const
@@ -196,10 +215,10 @@ index a638002a426dcb5b1edc9fcc22a9473431e6ccc1..18dc1dbe85f540186ccea448d3466b8d
  }
  
  QPlatformMenuItem *QCocoaTheme::createPlatformMenuItem() const
-diff --git a/src/qcocoa-qpa/qcocoawindow.h b/src/qcocoa-qpa/qcocoawindow.h
+diff --git a/cocoa/qcocoawindow.h b/cocoa/qcocoawindow.h
 index 567eb7438b4e33ae0c08c2811623b98a166239c4..4e8649b5482a7bce3582d42690a9f7ebdcb7b747 100644
---- a/src/qcocoa-qpa/qcocoawindow.h
-+++ b/src/qcocoa-qpa/qcocoawindow.h
+--- a/cocoa/qcocoawindow.h
++++ b/cocoa/qcocoawindow.h
 @@ -150,6 +150,14 @@ QT_BEGIN_NAMESPACE
  #define Q_NOTIFICATION_PREFIX QT_STRINGIFY2(Q_COCOA_NOTIFICATION_)
  #endif
@@ -224,10 +243,10 @@ index 567eb7438b4e33ae0c08c2811623b98a166239c4..4e8649b5482a7bce3582d42690a9f7eb
  
      void requestActivateWindow() Q_DECL_OVERRIDE;
  
-diff --git a/src/qcocoa-qpa/qcocoawindow.mm b/src/qcocoa-qpa/qcocoawindow.mm
+diff --git a/cocoa/qcocoawindow.mm b/cocoa/qcocoawindow.mm
 index 32b918e25ebaf501ea9455e05f7c1765656ba154..b0b5e590dbc46ec690873c365b001a54eefcfb24 100644
---- a/src/qcocoa-qpa/qcocoawindow.mm
-+++ b/src/qcocoa-qpa/qcocoawindow.mm
+--- a/cocoa/qcocoawindow.mm
++++ b/cocoa/qcocoawindow.mm
 @@ -1944,8 +1944,12 @@ void QCocoaWindow::reportCurrentWindowState(bool unconditionally)
      if (!unconditionally && currentState == m_lastReportedWindowState)
          return;
@@ -241,10 +260,10 @@ index 32b918e25ebaf501ea9455e05f7c1765656ba154..b0b5e590dbc46ec690873c365b001a54
      m_lastReportedWindowState = currentState;
  }
  
-diff --git a/src/qcocoa-qpa/qnsview.mm b/src/qcocoa-qpa/qnsview.mm
+diff --git a/cocoa/qnsview.mm b/cocoa/qnsview.mm
 index 1bbc4b4caa3d2381be7135a2e5a14a09ba68e3a1..e81773d29f15cade5084558afd39816e95c75269 100644
---- a/src/qcocoa-qpa/qnsview.mm
-+++ b/src/qcocoa-qpa/qnsview.mm
+--- a/cocoa/qnsview.mm
++++ b/cocoa/qnsview.mm
 @@ -63,6 +63,10 @@
  #include <accessibilityinspector.h>
  #endif
@@ -256,4 +275,3 @@ index 1bbc4b4caa3d2381be7135a2e5a14a09ba68e3a1..e81773d29f15cade5084558afd39816e
  Q_LOGGING_CATEGORY(lcQpaTouch, "qt.qpa.input.touch")
  #ifndef QT_NO_GESTURES
  Q_LOGGING_CATEGORY(lcQpaGestures, "qt.qpa.input.gestures")
-

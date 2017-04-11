@@ -63,7 +63,11 @@
 #include <stdlib.h>
 #include <qabstracteventdispatcher.h>
 #include <qsysinfo.h>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
 #include <qoperatingsystemversion.h>
+#else
+#include <qaltoperatingsystemversion.h>
+#endif
 #include <qglobal.h>
 #include <QDir>
 
