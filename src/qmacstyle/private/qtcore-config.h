@@ -54,3 +54,7 @@
 #ifndef QT_FEATURE_pushbutton
 #define QT_FEATURE_pushbutton 1
 #endif
+
+#ifndef QT_FEATURE_formlayout
+#define QT_FEATURE_formlayout 1
+#endif

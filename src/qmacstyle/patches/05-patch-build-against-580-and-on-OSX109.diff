@@ -1,3 +1,41 @@
+diff --git a/private/qtcore-config.h b/private/qtcore-config.h
+index 5a9ae48bb8b62dc3f2cdf10f9cc68a08f4eaa64e..d4afd9efad313a491a35926df2dd98b7e2f6f06b 100644
+--- a/private/qtcore-config.h
++++ b/private/qtcore-config.h
+@@ -54,3 +54,7 @@
+ #ifndef QT_FEATURE_pushbutton
+ #define QT_FEATURE_pushbutton 1
+ #endif
++
++#ifndef QT_FEATURE_formlayout
++#define QT_FEATURE_formlayout 1
++#endif
+diff --git a/private/qcommonstyle.cpp b/private/qcommonstyle.cpp
+index cdb80d7581c22eefa1686f20cf06e800e388222a..f936f46db497e0453fc3036cb9ad2cc8fe5fc220 100644
+--- a/private/qcommonstyle.cpp
++++ b/private/qcommonstyle.cpp
+@@ -37,6 +37,7 @@
+ **
+ ****************************************************************************/
+ 
++#include "qtcore-config.h"
+ #include "qcommonstyle.h"
+ #include "qcommonstyle_p.h"
+ 
+diff --git a/private/qcombobox.cpp b/private/qcombobox.cpp
+index b18066c174636fac07ebc2cc3b1d36a6b137ee0c..f26db95fa5fce11be9bd0f9af2e0605e56acb913 100644
+--- a/private/qcombobox.cpp
++++ b/private/qcombobox.cpp
+@@ -1793,7 +1793,9 @@ void QComboBox::setLineEdit(QLineEdit *edit)
+     connect(d->lineEdit, SIGNAL(textChanged(QString)), this, SIGNAL(currentTextChanged(QString)));
+     connect(d->lineEdit, SIGNAL(cursorPositionChanged(int,int)), this, SLOT(updateMicroFocus()));
+     connect(d->lineEdit, SIGNAL(selectionChanged()), this, SLOT(updateMicroFocus()));
++#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+     connect(d->lineEdit->d_func()->control, SIGNAL(updateMicroFocus()), this, SLOT(updateMicroFocus()));
++#endif
+     d->lineEdit->setFrame(false);
+     d->lineEdit->setContextMenuPolicy(Qt::NoContextMenu);
+     d->updateFocusPolicy();
 diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
 index 403df1fa8807feba893f203c13b9c8b2069c5992..c55477a6bdc295454c850c3e4fa09b7d626210e7 100644
 --- a/qmacstyle_mac.mm

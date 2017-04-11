@@ -37,6 +37,7 @@
 **
 ****************************************************************************/
 
+#include "qtcore-config.h"
 #include "qcommonstyle.h"
 #include "qcommonstyle_p.h"
 
