@@ -368,6 +368,9 @@ public: // for QNSView
     QHash<quintptr, bool> m_enabledContentBorderAreas; // identifer -> enabled state (true/false)
 
     bool m_hasWindowFilePath;
+    bool m_fullScreenActivated;
+    QRect m_normalGeo;
+    Qt::WindowFlags m_normalFlags;
 };
 
 QT_END_NAMESPACE
