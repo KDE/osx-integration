@@ -1,5 +1,5 @@
 diff --git a/cocoa/qcocoawindow.h b/cocoa/qcocoawindow.h
-index 4e8649b5482a7bce3582d42690a9f7ebdcb7b747..408917801e333697e37ee28bc429c8652c66528c 100644
+index 4e8649b..4089178 100644
 --- a/cocoa/qcocoawindow.h
 +++ b/cocoa/qcocoawindow.h
 @@ -368,6 +368,10 @@ public: // for QNSView
@@ -14,7 +14,7 @@ index 4e8649b5482a7bce3582d42690a9f7ebdcb7b747..408917801e333697e37ee28bc429c865
  
  QT_END_NAMESPACE
 diff --git a/cocoa/qcocoawindow.mm b/cocoa/qcocoawindow.mm
-index b0b5e590dbc46ec690873c365b001a54eefcfb24..5a8a8ef5daf7012cfd482417f3ed94212aab9bda 100644
+index b0b5e59..20e6bcb 100644
 --- a/cocoa/qcocoawindow.mm
 +++ b/cocoa/qcocoawindow.mm
 @@ -467,6 +467,7 @@ QCocoaWindow::QCocoaWindow(QWindow *tlw, WId nativeHandle)
@@ -25,7 +25,17 @@ index b0b5e590dbc46ec690873c365b001a54eefcfb24..5a8a8ef5daf7012cfd482417f3ed9421
  {
      qCDebug(lcQpaCocoaWindow) << "QCocoaWindow::QCocoaWindow" << window();
  
-@@ -1904,13 +1905,66 @@ void QCocoaWindow::toggleMaximized()
+@@ -994,7 +995,8 @@ void QCocoaWindow::setWindowFlags(Qt::WindowFlags flags)
+         Qt::WindowType type = window()->type();
+         if ((type & Qt::Popup) != Qt::Popup && (type & Qt::Dialog) != Qt::Dialog) {
+             NSWindowCollectionBehavior behavior = [m_nsWindow collectionBehavior];
+-            if (flags & Qt::WindowFullscreenButtonHint) {
++            // Ignore Qt::WindowFullscreenButtonHint if an explicit request for "legacy" fullscreen mode exists.
++            if ((flags & Qt::WindowFullscreenButtonHint) && !qEnvironmentVariableIsSet("QT_LEGACY_FULLSCREEN")) {
+                 behavior |= NSWindowCollectionBehaviorFullScreenPrimary;
+                 behavior &= ~NSWindowCollectionBehaviorFullScreenAuxiliary;
+             } else {
+@@ -1904,13 +1906,60 @@ void QCocoaWindow::toggleMaximized()
  
  void QCocoaWindow::toggleFullScreen()
  {
@@ -33,18 +43,11 @@ index b0b5e590dbc46ec690873c365b001a54eefcfb24..5a8a8ef5daf7012cfd482417f3ed9421
 -    // toggleFullScreen call to have an effect. The collection behavior
 -    // will be reset in windowDidEnterFullScreen/windowDidLeaveFullScreen.
 -    m_nsWindow.collectionBehavior |= NSWindowCollectionBehaviorFullScreenPrimary;
--
++    // Use the "native" fullscreen mode if the window has the corresponding titlebar button
++    if (m_nsWindow.collectionBehavior & NSWindowCollectionBehaviorFullScreenPrimary) {
+ 
 -    const id sender = m_nsWindow;
 -    [m_nsWindow toggleFullScreen:sender];
-+    // Use the "native" fullscreen mode if the window has the corresponding titlebar button
-+    // and no explicit request for "legacy" fullscreen mode has been made.
-+    if ((m_nsWindow.collectionBehavior & NSWindowCollectionBehaviorFullScreenPrimary)
-+        && !qEnvironmentVariableIsSet("QT_LEGACY_FULLSCREEN")) {
-+        // The window needs to have the correct collection behavior for the
-+        // toggleFullScreen call to have an effect. The collection behavior
-+        // will be reset in windowDidEnterFullScreen/windowDidLeaveFullScreen.
-+        m_nsWindow.collectionBehavior |= NSWindowCollectionBehaviorFullScreenPrimary;
-+
 +        const id sender = m_nsWindow;
 +        [m_nsWindow toggleFullScreen:sender];
 +    } else {
