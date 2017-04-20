@@ -468,6 +468,7 @@ QCocoaWindow::QCocoaWindow(QWindow *tlw, WId nativeHandle)
     , m_bottomContentBorderThickness(0)
     , m_hasWindowFilePath(false)
     , m_fullScreenActivated(false)
+    , m_windowIcon(nil)
 {
     qCDebug(lcQpaCocoaWindow) << "QCocoaWindow::QCocoaWindow" << window();
 
@@ -530,6 +531,7 @@ QCocoaWindow::~QCocoaWindow()
         [m_nsWindow removeChildWindow:childWindow->m_nsWindow];
     });
 
+    [m_windowIcon release];
     [m_view release];
     [m_nsWindow release];
     [m_windowCursor release];
@@ -1054,14 +1056,14 @@ void QCocoaWindow::setWindowIcon(const QIcon &icon)
         [m_nsWindow setRepresentedURL:[NSURL fileURLWithPath:title]];
         iconButton = [m_nsWindow standardWindowButton:NSWindowDocumentIconButton];
     }
+    [m_windowIcon release];
     if (icon.isNull()) {
-        [iconButton setImage:nil];
+        m_windowIcon = nil;
     } else {
         QPixmap pixmap = icon.pixmap(QSize(22, 22));
-        NSImage *image = static_cast<NSImage *>(qt_mac_create_nsimage(pixmap));
-        [iconButton setImage:image];
-        [image release];
+        m_windowIcon = static_cast<NSImage *>(qt_mac_create_nsimage(pixmap));
     }
+    [iconButton setImage:m_windowIcon];
 }
 
 void QCocoaWindow::setAlertState(bool enabled)
@@ -1914,8 +1916,6 @@ void QCocoaWindow::toggleFullScreen()
     } else {
         NSNotification *fullScreenNotification;
         NSWindow *nsWin = m_view.window;
-        NSScreen *primaryScreen = [[NSScreen screens] firstObject];
-        NSApplication *nsApp = [NSApplication sharedApplication];
         bool wasActive = ([NSApp keyWindow] == nsWin);
 #if QT_MACOS_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_9)
         bool menuBarsOnAllScreens = [NSScreen screensHaveSeparateSpaces];
@@ -1927,20 +1927,22 @@ void QCocoaWindow::toggleFullScreen()
             // exit from fullscreen mode
             setWindowFlags(m_normalFlags);
             setCocoaGeometry(m_normalGeo);
-            if (menuBarsOnAllScreens || [nsWin screen] == primaryScreen) {
+            if (menuBarsOnAllScreens || [nsWin screen] == [[NSScreen screens] firstObject]) {
                 // m_normalPresOpts is relevant only when the window was on the primary screen
                 // when made fullscreen but that should still be the case as fullscreen windows
                 // cannot be moved (easily).
-                [nsApp setPresentationOptions:m_normalPresOpts];
+                [NSApp setPresentationOptions:m_normalPresOpts];
             }
+            // restore the window icon from its cached NSImage
+            [[m_nsWindow standardWindowButton:NSWindowDocumentIconButton] setImage:m_windowIcon];
             fullScreenNotification = [NSNotification notificationWithName:NSWindowDidExitFullScreenNotification
                 object:nsWin];
             qCDebug(lcQpaCocoaWindow) << "Back from fullscreen ; geo=" << m_normalGeo;
         } else {
             m_normalGeo = windowGeometry();
-            if (menuBarsOnAllScreens || [nsWin screen] == primaryScreen) {
-                m_normalPresOpts = [nsApp presentationOptions];
-                [nsApp setPresentationOptions:m_normalPresOpts | NSApplicationPresentationAutoHideMenuBar | NSApplicationPresentationAutoHideDock];
+            if (menuBarsOnAllScreens || [nsWin screen] == [[NSScreen screens] firstObject]) {
+                m_normalPresOpts = [NSApp presentationOptions];
+                [NSApp setPresentationOptions:m_normalPresOpts | NSApplicationPresentationAutoHideMenuBar | NSApplicationPresentationAutoHideDock];
             }
             m_normalFlags = m_windowFlags;
             // unset WindowFullscreenButtonHint here because it can apparently interfere with the FramelessWindowHint,

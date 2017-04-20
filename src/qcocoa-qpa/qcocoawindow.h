@@ -372,6 +372,7 @@ public: // for QNSView
     QRect m_normalGeo;
     Qt::WindowFlags m_normalFlags;
     NSApplicationPresentationOptions m_normalPresOpts;
+    NSImage *m_windowIcon;
 };
 
 QT_END_NAMESPACE
