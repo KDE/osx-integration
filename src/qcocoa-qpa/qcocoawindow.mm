@@ -1905,6 +1905,8 @@ void QCocoaWindow::toggleMaximized()
 
 void QCocoaWindow::toggleFullScreen()
 {
+    // Use the "native" fullscreen mode if the window has the corresponding titlebar button
+    // and no explicit request for "legacy" fullscreen mode has been made.
     if ((m_nsWindow.collectionBehavior & NSWindowCollectionBehaviorFullScreenPrimary)
         && !qEnvironmentVariableIsSet("QT_LEGACY_FULLSCREEN")) {
         // The window needs to have the correct collection behavior for the
@@ -1919,32 +1921,46 @@ void QCocoaWindow::toggleFullScreen()
         NSWindow *nsWin = m_view.window;
         NSScreen *primaryScreen = [[NSScreen screens] firstObject];
         NSApplication *nsApp = [NSApplication sharedApplication];
-        NSApplicationPresentationOptions presOpts = [nsApp presentationOptions];
         bool wasActive = ([NSApp keyWindow] == nsWin);
+#if QT_MACOS_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_9)
+        bool menuBarsOnAllScreens = [NSScreen screensHaveSeparateSpaces];
+#else
+        // let's be exhaustive and assume we can be built on 10.8 or earlier
+        bool menuBarsOnAllScreens = false;
+#endif
         if (m_fullScreenActivated) {
             // exit from fullscreen mode
             setWindowFlags(m_normalFlags);
             setCocoaGeometry(m_normalGeo);
-            if([nsWin screen] == primaryScreen) {
-                [nsApp setPresentationOptions:presOpts & ~(NSApplicationPresentationAutoHideMenuBar | NSApplicationPresentationAutoHideDock)];
+            if (menuBarsOnAllScreens || [nsWin screen] == primaryScreen) {
+                // m_normalPresOpts is relevant only when the window was on the primary screen
+                // when made fullscreen but that should still be the case as fullscreen windows
+                // cannot be moved (easily).
+                [nsApp setPresentationOptions:m_normalPresOpts];
             }
             fullScreenNotification = [NSNotification notificationWithName:NSWindowDidExitFullScreenNotification
                 object:nsWin];
             qCDebug(lcQpaCocoaWindow) << "Back from fullscreen ; geo=" << m_normalGeo;
         } else {
             m_normalGeo = windowGeometry();
-            if([nsWin screen] == primaryScreen) {
-                [nsApp setPresentationOptions:presOpts | NSApplicationPresentationAutoHideMenuBar | NSApplicationPresentationAutoHideDock];
+            if (menuBarsOnAllScreens || [nsWin screen] == primaryScreen) {
+                m_normalPresOpts = [nsApp presentationOptions];
+                [nsApp setPresentationOptions:m_normalPresOpts | NSApplicationPresentationAutoHideMenuBar | NSApplicationPresentationAutoHideDock];
             }
             m_normalFlags = m_windowFlags;
+            // unset WindowFullscreenButtonHint here because it can apparently interfere with the FramelessWindowHint,
+            // unsetting the latter and causing the window frame to be restored. Undesirable esp. since it
+            // will move the window downwards instead of resizing it.
             setWindowFlags((m_windowFlags & ~Qt::WindowFullscreenButtonHint) | Qt::Window | Qt::FramelessWindowHint);
             qCDebug(lcQpaCocoaWindow) << m_normalGeo << "to fullscreen" << QPlatformScreen::platformScreenForWindow(window())->geometry();
             setCocoaGeometry(QPlatformScreen::platformScreenForWindow(window())->geometry());
             fullScreenNotification = [NSNotification notificationWithName:NSWindowDidEnterFullScreenNotification
                 object:nsWin];
         }
+        // send the notification used for setting m_view.window.qt_fullScreen
         [[NSNotificationCenter defaultCenter] postNotification:fullScreenNotification];
         if (wasActive) {
+            // make sure the operation doesn't cause a loss of focus
             requestActivateWindow();
         }
     }

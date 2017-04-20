@@ -371,6 +371,7 @@ public: // for QNSView
     bool m_fullScreenActivated;
     QRect m_normalGeo;
     Qt::WindowFlags m_normalFlags;
+    NSApplicationPresentationOptions m_normalPresOpts;
 };
 
 QT_END_NAMESPACE

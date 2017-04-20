@@ -1,19 +1,20 @@
 diff --git a/cocoa/qcocoawindow.h b/cocoa/qcocoawindow.h
-index 4e8649b5482a7bce3582d42690a9f7ebdcb7b747..d4f373a847ae290fc51dd2ee9477d109315ad686 100644
+index 4e8649b5482a7bce3582d42690a9f7ebdcb7b747..408917801e333697e37ee28bc429c8652c66528c 100644
 --- a/cocoa/qcocoawindow.h
 +++ b/cocoa/qcocoawindow.h
-@@ -368,6 +368,9 @@ public: // for QNSView
+@@ -368,6 +368,10 @@ public: // for QNSView
      QHash<quintptr, bool> m_enabledContentBorderAreas; // identifer -> enabled state (true/false)
  
      bool m_hasWindowFilePath;
 +    bool m_fullScreenActivated;
 +    QRect m_normalGeo;
 +    Qt::WindowFlags m_normalFlags;
++    NSApplicationPresentationOptions m_normalPresOpts;
  };
  
  QT_END_NAMESPACE
 diff --git a/cocoa/qcocoawindow.mm b/cocoa/qcocoawindow.mm
-index b0b5e590dbc46ec690873c365b001a54eefcfb24..f0029af4af9593058afa9f8bf6ead1defa3abd5e 100644
+index b0b5e590dbc46ec690873c365b001a54eefcfb24..5a8a8ef5daf7012cfd482417f3ed94212aab9bda 100644
 --- a/cocoa/qcocoawindow.mm
 +++ b/cocoa/qcocoawindow.mm
 @@ -467,6 +467,7 @@ QCocoaWindow::QCocoaWindow(QWindow *tlw, WId nativeHandle)
@@ -24,7 +25,7 @@ index b0b5e590dbc46ec690873c365b001a54eefcfb24..f0029af4af9593058afa9f8bf6ead1de
  {
      qCDebug(lcQpaCocoaWindow) << "QCocoaWindow::QCocoaWindow" << window();
  
-@@ -1904,13 +1905,50 @@ void QCocoaWindow::toggleMaximized()
+@@ -1904,13 +1905,66 @@ void QCocoaWindow::toggleMaximized()
  
  void QCocoaWindow::toggleFullScreen()
  {
@@ -32,15 +33,18 @@ index b0b5e590dbc46ec690873c365b001a54eefcfb24..f0029af4af9593058afa9f8bf6ead1de
 -    // toggleFullScreen call to have an effect. The collection behavior
 -    // will be reset in windowDidEnterFullScreen/windowDidLeaveFullScreen.
 -    m_nsWindow.collectionBehavior |= NSWindowCollectionBehaviorFullScreenPrimary;
+-
+-    const id sender = m_nsWindow;
+-    [m_nsWindow toggleFullScreen:sender];
++    // Use the "native" fullscreen mode if the window has the corresponding titlebar button
++    // and no explicit request for "legacy" fullscreen mode has been made.
 +    if ((m_nsWindow.collectionBehavior & NSWindowCollectionBehaviorFullScreenPrimary)
 +        && !qEnvironmentVariableIsSet("QT_LEGACY_FULLSCREEN")) {
 +        // The window needs to have the correct collection behavior for the
 +        // toggleFullScreen call to have an effect. The collection behavior
 +        // will be reset in windowDidEnterFullScreen/windowDidLeaveFullScreen.
 +        m_nsWindow.collectionBehavior |= NSWindowCollectionBehaviorFullScreenPrimary;
- 
--    const id sender = m_nsWindow;
--    [m_nsWindow toggleFullScreen:sender];
++
 +        const id sender = m_nsWindow;
 +        [m_nsWindow toggleFullScreen:sender];
 +    } else {
@@ -48,32 +52,46 @@ index b0b5e590dbc46ec690873c365b001a54eefcfb24..f0029af4af9593058afa9f8bf6ead1de
 +        NSWindow *nsWin = m_view.window;
 +        NSScreen *primaryScreen = [[NSScreen screens] firstObject];
 +        NSApplication *nsApp = [NSApplication sharedApplication];
-+        NSApplicationPresentationOptions presOpts = [nsApp presentationOptions];
 +        bool wasActive = ([NSApp keyWindow] == nsWin);
++#if QT_MACOS_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_9)
++        bool menuBarsOnAllScreens = [NSScreen screensHaveSeparateSpaces];
++#else
++        // let's be exhaustive and assume we can be built on 10.8 or earlier
++        bool menuBarsOnAllScreens = false;
++#endif
 +        if (m_fullScreenActivated) {
 +            // exit from fullscreen mode
 +            setWindowFlags(m_normalFlags);
 +            setCocoaGeometry(m_normalGeo);
-+            if([nsWin screen] == primaryScreen) {
-+                [nsApp setPresentationOptions:presOpts & ~(NSApplicationPresentationAutoHideMenuBar | NSApplicationPresentationAutoHideDock)];
++            if (menuBarsOnAllScreens || [nsWin screen] == primaryScreen) {
++                // m_normalPresOpts is relevant only when the window was on the primary screen
++                // when made fullscreen but that should still be the case as fullscreen windows
++                // cannot be moved (easily).
++                [nsApp setPresentationOptions:m_normalPresOpts];
 +            }
 +            fullScreenNotification = [NSNotification notificationWithName:NSWindowDidExitFullScreenNotification
 +                object:nsWin];
 +            qCDebug(lcQpaCocoaWindow) << "Back from fullscreen ; geo=" << m_normalGeo;
 +        } else {
 +            m_normalGeo = windowGeometry();
-+            if([nsWin screen] == primaryScreen) {
-+                [nsApp setPresentationOptions:presOpts | NSApplicationPresentationAutoHideMenuBar | NSApplicationPresentationAutoHideDock];
++            if (menuBarsOnAllScreens || [nsWin screen] == primaryScreen) {
++                m_normalPresOpts = [nsApp presentationOptions];
++                [nsApp setPresentationOptions:m_normalPresOpts | NSApplicationPresentationAutoHideMenuBar | NSApplicationPresentationAutoHideDock];
 +            }
 +            m_normalFlags = m_windowFlags;
++            // unset WindowFullscreenButtonHint here because it can apparently interfere with the FramelessWindowHint,
++            // unsetting the latter and causing the window frame to be restored. Undesirable esp. since it
++            // will move the window downwards instead of resizing it.
 +            setWindowFlags((m_windowFlags & ~Qt::WindowFullscreenButtonHint) | Qt::Window | Qt::FramelessWindowHint);
 +            qCDebug(lcQpaCocoaWindow) << m_normalGeo << "to fullscreen" << QPlatformScreen::platformScreenForWindow(window())->geometry();
 +            setCocoaGeometry(QPlatformScreen::platformScreenForWindow(window())->geometry());
 +            fullScreenNotification = [NSNotification notificationWithName:NSWindowDidEnterFullScreenNotification
 +                object:nsWin];
 +        }
++        // send the notification used for setting m_view.window.qt_fullScreen
 +        [[NSNotificationCenter defaultCenter] postNotification:fullScreenNotification];
 +        if (wasActive) {
++            // make sure the operation doesn't cause a loss of focus
 +            requestActivateWindow();
 +        }
 +    }
@@ -81,4 +99,3 @@ index b0b5e590dbc46ec690873c365b001a54eefcfb24..f0029af4af9593058afa9f8bf6ead1de
  }
  
  bool QCocoaWindow::isTransitioningToFullScreen() const
-
