@@ -995,8 +995,8 @@ void QCocoaWindow::setWindowFlags(Qt::WindowFlags flags)
         Qt::WindowType type = window()->type();
         if ((type & Qt::Popup) != Qt::Popup && (type & Qt::Dialog) != Qt::Dialog) {
             NSWindowCollectionBehavior behavior = [m_nsWindow collectionBehavior];
-            // Ignore Qt::WindowFullscreenButtonHint if an explicit request for "legacy" fullscreen mode exists.
-            if ((flags & Qt::WindowFullscreenButtonHint) && !qEnvironmentVariableIsSet("QT_LEGACY_FULLSCREEN")) {
+            // Ignore Qt::WindowFullscreenButtonHint if a "simple" and consistent fullscreen mode is requested.
+            if ((flags & Qt::WindowFullscreenButtonHint) && !qEnvironmentVariableIsSet("QT_CONSISTENT_FULLSCREEN")) {
                 behavior |= NSWindowCollectionBehaviorFullScreenPrimary;
                 behavior &= ~NSWindowCollectionBehaviorFullScreenAuxiliary;
             } else {
