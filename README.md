@@ -15,3 +15,15 @@ A modified fork of the native macintosh style from Qt 5.8.0 which doesn't
 impose the Mac standard font for QComboBox menu items and provides support
 for named menu sections in context menus and menus attached to a "non-native"
 menubar.
+
+### QCocoaQPA
+A modified fork of the Cocoa platform plugin from Qt 5.8.0 which provides
+support for named menu sections under the native menubar and also improves 
+the basic fullscreen mode that works consistently across Mission Control
+settings and platforms - i.e. it never blackens out other
+attached monitors but keeps their content visible and accessible. It's also a
+lot faster and supports opening new windows without side-effects when in
+fullscreen mode. This mode is active for windows lacking Qt's fullscreen hint
+window flag (and thus the fullscreen button in their titlebar).
+This plugin installs next to and will be loaded instead of the stock plugin; it
+will then give priority to the modified QMacStyle if that is installed.
