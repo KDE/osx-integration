@@ -381,6 +381,7 @@ QCocoaWindow::QCocoaWindow(QWindow *tlw)
     , m_bottomContentBorderThickness(0)
     , m_normalGeometry(QRect(0,0,-1,-1))
     , m_hasWindowFilePath(false)
+    , m_windowIcon(nil)
 {
     qCDebug(lcQpaCocoaWindow) << "QCocoaWindow::QCocoaWindow" << window();
 
@@ -445,6 +446,7 @@ QCocoaWindow::~QCocoaWindow()
         child->m_parentCocoaWindow = 0;
     }
 
+    [m_windowIcon release];
     [m_view release];
     [m_nsWindow release];
     [m_windowCursor release];
@@ -952,14 +954,14 @@ void QCocoaWindow::setWindowIcon(const QIcon &icon)
         [m_nsWindow setRepresentedURL:[NSURL fileURLWithPath:title]];
         iconButton = [m_nsWindow standardWindowButton:NSWindowDocumentIconButton];
     }
+    [m_windowIcon release];
     if (icon.isNull()) {
-        [iconButton setImage:nil];
+        m_windowIcon = nil;
     } else {
         QPixmap pixmap = icon.pixmap(QSize(22, 22));
-        NSImage *image = static_cast<NSImage *>(qt_mac_create_nsimage(pixmap));
-        [iconButton setImage:image];
-        [image release];
+        m_windowIcon = static_cast<NSImage *>(qt_mac_create_nsimage(pixmap));
     }
+    [iconButton setImage:m_windowIcon];
 }
 
 void QCocoaWindow::setAlertState(bool enabled)
@@ -1613,6 +1615,9 @@ void QCocoaWindow::syncWindowState(Qt::WindowState newState)
                     m_normalGeometry = nativeWindowGeometry();
                     setGeometry(screen->geometry());
                     if (menuBarsOnAllScreens || [nsWin screen] == [[NSScreen screens] firstObject]) {
+                        // only auto-hide the menubar if there is one on the window's screen (idem for the Dock)
+                        // [[NSScreen screens] firstObject] returns the primary screen that has its top-left
+                        // at (0,0) as well as the menubar when screens don't have separate spaces.
                         m_presentationOptions = [NSApp presentationOptions];
                         [NSApp setPresentationOptions : m_presentationOptions | NSApplicationPresentationAutoHideMenuBar | NSApplicationPresentationAutoHideDock];
                     }
@@ -1621,6 +1626,8 @@ void QCocoaWindow::syncWindowState(Qt::WindowState newState)
                 window()->setFlags(m_oldWindowFlags);
                 setGeometry(m_normalGeometry);
                 m_normalGeometry.setRect(0, 0, -1, -1);
+                // restore the window icon from its cached NSImage
+                [[m_nsWindow standardWindowButton:NSWindowDocumentIconButton] setImage:m_windowIcon];
                 if (menuBarsOnAllScreens || [nsWin screen] == [[NSScreen screens] firstObject]) {
                     [NSApp setPresentationOptions : m_presentationOptions];
                 }

@@ -326,6 +326,8 @@ public: // for QNSView
     QHash<quintptr, bool> m_enabledContentBorderAreas; // identifer -> enabled state (true/false)
 
     bool m_hasWindowFilePath;
+
+    NSImage *m_windowIcon;
 };
 
 QT_END_NAMESPACE
