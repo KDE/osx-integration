@@ -1,3 +1,46 @@
+commit 0ecceaf6d7871b
+fc42141909af210f6bb408ac61
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Thu Apr 20 20:50:58 2017 +0200
+
+    15-patch-restore-legacy-fullscreen-mode.diff
+    alternative fullscreen mode: simplified and restore window icons
+
+<snip>
+
+commit d4ce302e7c08dcf38a0f0f40b7e9183cab2fc2b1
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Wed Apr 19 23:58:24 2017 +0200
+
+    AltCocoa QPA: add a legacy fullscreen mode
+    
+    When windows don't have the fullscreen titlebar button or the env. var.
+    QT_LEGACY_FULLSCREEN is set, toggleFullScreen() adopts a legacy mode.
+    Windows are then made fullscreen by converting them to frame-less and
+    resizing them to the current screen size.
+    This is faster (instantaneous) and preserves display content on other
+    screens in multi-head set-ups.
+
+commit 85bb84969c6922667ff83e1483a7ef71628c046e
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Tue Apr 11 20:16:12 2017 +0200
+
+    qmacstyle : really build against Qt 5.8.0
+
+<snip>
+
+commit 934afde2c352b401cfffed83cb0877462dc27787
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Mon Apr 10 23:56:13 2017 +0200
+
+    modified (Alt) 5.9.0
+
+commit c8dd86fd23c6787f949c2849ccb20eaf22e118ae
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Mon Apr 10 23:45:31 2017 +0200
+
+    13-themehint-add-aqua.diff
+
 commit cbf229875c49c2a57d7b62b641d866134e569a1a
 Author: R.J.V. Bertin <rjvbertin@gmail.com>
 Date:   Thu Apr 6 21:57:00 2017 +0200
@@ -12,8 +55,6 @@ Date:   Thu Apr 6 21:57:00 2017 +0200
     KDE applications that use KStandardActions to create the standard menu items
     will see the appropriate actions assigned to the About and Preferences
     menu items because their roles are set explicitly.
-    
-    Committed from host : Portia.local
 
 commit af7c4544d1883e9978609742b48dbb152e880c34
 Author: R.J.V. Bertin <rjvbertin@gmail.com>
@@ -26,8 +67,6 @@ Date:   Thu Apr 6 21:50:46 2017 +0200
     used (generated) by 3rd party keyboard drivers or even a native event filter.
     The patch completes the pre-existing support and generates a ContextMenu
     event at an appropriate location when the keysym is received.
-    
-    Committed from host : Portia.local
 
 commit c45430fc3c1827b44dd9002932b7b582da19729e
 Author: R.J.V. Bertin <rjvbertin@gmail.com>
@@ -53,8 +92,6 @@ Date:   Thu Apr 6 19:21:36 2017 +0200
     09-patch-silence-setscreen-warning.diff
     
     Prevent an unnecessary warning
-    
-    Committed from host : Portia.local
 
 commit 07527d713953a417b93393558cfb44475bc42d23
 Author: R.J.V. Bertin <rjvbertin@gmail.com>
@@ -63,8 +100,6 @@ Date:   Thu Apr 6 19:20:56 2017 +0200
     08-patch-freetype-gamma-cocoa.diff
     
     Adapt the font smoothing gamma when using the FreeType rendering engine.
-    
-    Committed from host : Portia.local
 
 commit a7b0481d07c592c1a1810160e317d6792eeb7a5d
 Author: R.J.V. Bertin <rjvbertin@gmail.com>
@@ -94,8 +129,6 @@ Date:   Thu Apr 6 19:18:46 2017 +0200
     part of a more comprehensive patch improving support for less-common font
     weights. I'm not sure how much effect it has on its own but it should not
     have adverse effects when used without the companion modifications.
-    
-    Committed from host : Portia.local
 
 commit 658f1d0e2fe5a9a678bdae712cc5a47878bc59de
 Author: R.J.V. Bertin <rjvbertin@gmail.com>
@@ -107,8 +140,6 @@ Date:   Thu Apr 6 19:16:29 2017 +0200
     are part of the native menubar. This requires the companion patch to the
     "native" Macintosh theme otherwise named sections won't appear when they
     are the 1st item in a menu.
-    
-    Committed from host : Portia.local
 
 commit 42f58e14282bf4beae408f5440397dd5a6b30471
 Author: R.J.V. Bertin <rjvbertin@gmail.com>
@@ -118,8 +149,6 @@ Date:   Thu Apr 6 19:14:00 2017 +0200
     
     Provide a more helpful warning when adding an item to an additional menu
     or removing it from the wrong menu.
-    
-    Committed from host : Portia.local
 
 commit f5bbcfc20e52dfcfa27eedb4a1240e2fccf5fb93
 Author: R.J.V. Bertin <rjvbertin@gmail.com>
@@ -129,8 +158,6 @@ Date:   Thu Apr 6 19:12:01 2017 +0200
     
     advertise the existence of support for the KDE platform theme plugin
     when KDE_SESSION_VERSION is set to at least 4 in the environment.
-    
-    Committed from host : Portia.local
 
 commit f3707f1516f1393235c178d5829cf3f88d5844e1
 Author: R.J.V. Bertin <rjvbertin@gmail.com>
