@@ -1670,7 +1670,7 @@ void QMacStylePrivate::getSliderInfo(QStyle::ComplexControl cc, const QStyleOpti
             || slider->tickPosition == QSlider::TicksBothSides;
 
     tdi->bounds = qt_hirectForQRect(slider->rect);
-    if (isScrollbar) {
+    if (isScrollbar || QSysInfo::MacintoshVersion < QSysInfo::MV_10_10) {
         tdi->min = slider->minimum;
         tdi->max = slider->maximum;
         tdi->value = slider->sliderPosition;
@@ -4147,6 +4147,10 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
         if (const QStyleOptionComboBox *cb = qstyleoption_cast<const QStyleOptionComboBox *>(opt)) {
             QStyleOptionComboBox comboCopy = *cb;
             comboCopy.direction = Qt::LeftToRight;
+            if (opt->state & QStyle::State_Small)
+                comboCopy.rect.translate(0, w ? 0 : (usingYosemiteOrLater ? 0 : -2)); // Supports Qt Quick Controls
+            else if (QSysInfo::MacintoshVersion == QSysInfo::MV_10_9)
+                comboCopy.rect.translate(0, 1);
             QCommonStyle::drawControl(CE_ComboBoxLabel, &comboCopy, p, w);
         }
         break;
@@ -6394,8 +6398,8 @@ QRect QMacStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
             switch (sc) {
             case SC_ComboBoxEditField:{
                 ret = QMacStylePrivate::comboboxEditBounds(combo->rect, bdi);
-                // 10.10 and above need a slight shift
-                ret.setHeight(ret.height() - 1);
+                if (QSysInfo::MacintoshVersion >= QSysInfo::MV_10_10)
+                    ret.setHeight(ret.height() - 1);
                 break; }
             case SC_ComboBoxArrow:{
                 ret = QMacStylePrivate::comboboxEditBounds(combo->rect, bdi);
@@ -6860,7 +6864,7 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
     case CT_ComboBox: {
         sz.rwidth() += 50;
         const QStyleOptionComboBox *cb = qstyleoption_cast<const QStyleOptionComboBox *>(opt);
-        if (cb && !cb->editable)
+        if (QSysInfo::MacintoshVersion < QSysInfo::MV_10_10 || (cb && !cb->editable))
             sz.rheight() += 2;
         break;
     }

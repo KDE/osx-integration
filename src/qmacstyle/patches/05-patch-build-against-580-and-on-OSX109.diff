@@ -49,7 +49,7 @@ index 7296539356413d3a8b97fb0c598cd24da9730d8c..e7ac3811a7455c16e26b3a024ffdc72b
  #include <QtWidgets/qcommonstyle.h>
  
 diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
-index 403df1f..9065707 100644
+index 403df1f..5f8ce32 100644
 --- a/qmacstyle_mac.mm
 +++ b/qmacstyle_mac.mm
 @@ -1003,8 +1003,13 @@ void QMacStylePrivate::drawFocusRing(QPainter *p, const QRect &targetRect, int h
@@ -66,6 +66,15 @@ index 403df1f..9065707 100644
              CGRect focusRingRect = CGRectMake(hMargin, vMargin, size, size);
              NSBezierPath *focusRingPath;
              if (radius > 0) {
+@@ -1665,7 +1670,7 @@ void QMacStylePrivate::getSliderInfo(QStyle::ComplexControl cc, const QStyleOpti
+             || slider->tickPosition == QSlider::TicksBothSides;
+ 
+     tdi->bounds = qt_hirectForQRect(slider->rect);
+-    if (isScrollbar) {
++    if (isScrollbar || QSysInfo::MacintoshVersion < QSysInfo::MV_10_10) {
+         tdi->min = slider->minimum;
+         tdi->max = slider->maximum;
+         tdi->value = slider->sliderPosition;
 @@ -1977,6 +1982,7 @@ void QMacStylePrivate::drawColorlessButton(const HIRect &macRect, HIThemeButtonD
      const bool button = opt->type == QStyleOption::SO_Button;
      const bool viewItem = opt->type == QStyleOption::SO_ViewItem;
@@ -254,7 +263,18 @@ index 403df1f..9065707 100644
                  if (tds == kThemeStatePressed
                      || (tds == kThemeStateActive
                          && ((btn.features & QStyleOptionButton::DefaultButton && !d->autoDefaultButton)
-@@ -4144,6 +4210,12 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4081,6 +4147,10 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+         if (const QStyleOptionComboBox *cb = qstyleoption_cast<const QStyleOptionComboBox *>(opt)) {
+             QStyleOptionComboBox comboCopy = *cb;
+             comboCopy.direction = Qt::LeftToRight;
++            if (opt->state & QStyle::State_Small)
++                comboCopy.rect.translate(0, w ? 0 : (usingYosemiteOrLater ? 0 : -2)); // Supports Qt Quick Controls
++            else if (QSysInfo::MacintoshVersion == QSysInfo::MV_10_9)
++                comboCopy.rect.translate(0, 1);
+             QCommonStyle::drawControl(CE_ComboBoxLabel, &comboCopy, p, w);
+         }
+         break;
+@@ -4144,6 +4214,12 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                  tdi.adornment = kHIThemeTabAdornmentNone;
              tdi.kind = kHIThemeTabKindNormal;
  
@@ -267,7 +287,7 @@ index 403df1f..9065707 100644
              QStyleOptionTab::TabPosition tp = tabOpt->position;
              QStyleOptionTab::SelectedPosition sp = tabOpt->selectedPosition;
              if (tabOpt->direction == Qt::RightToLeft && !verticalTabs) {
-@@ -4627,7 +4699,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4627,7 +4703,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
              tdi.value = pb->progress;
              tdi.attributes = vertical ? 0 : kThemeTrackHorizontal;
  
@@ -276,7 +296,7 @@ index 403df1f..9065707 100644
                  if (QProgressStyleAnimation *animation = qobject_cast<QProgressStyleAnimation*>(d->animation(opt->styleObject)))
                      tdi.trackInfo.progress.phase = animation->animationStep();
                  else if (opt->styleObject)
-@@ -5326,6 +5398,7 @@ void QMacStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex
+@@ -5326,6 +5402,7 @@ void QMacStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex
      QWindow *window = widget && widget->window() ? widget->window()->windowHandle() :
                       QStyleHelper::styleObjectWindow(opt->styleObject);
      const_cast<QMacStylePrivate *>(d)->resolveCurrentNSView(window);
@@ -284,7 +304,7 @@ index 403df1f..9065707 100644
      switch (cc) {
      case CC_Slider:
      case CC_ScrollBar:
-@@ -5570,7 +5643,7 @@ void QMacStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex
+@@ -5570,7 +5647,7 @@ void QMacStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex
              } else {
                  d->stopAnimation(opt->styleObject);
  
@@ -293,7 +313,7 @@ index 403df1f..9065707 100644
                      // Fix min and max positions. (See also getSliderInfo()
                      // for the slider values adjustments.)
                      // HITheme seems to have forgotten how to render
-@@ -5779,11 +5852,11 @@ void QMacStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex
+@@ -5779,11 +5856,11 @@ void QMacStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex
              HIThemeButtonDrawInfo bdi;
              d->initComboboxBdi(combo, &bdi, widget, tds);
              HIRect rect = qt_hirectForQRect(combo->rect);
@@ -307,3 +327,23 @@ index 403df1f..9065707 100644
                  QCocoaWidget cw = cocoaWidgetFromHIThemeButtonKind(bdi.kind);
                  NSView *cb = d->cocoaControl(cw);
                  QRect r = combo->rect.adjusted(3, 0, 0, 0);
+@@ -6321,8 +6398,8 @@ QRect QMacStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
+             switch (sc) {
+             case SC_ComboBoxEditField:{
+                 ret = QMacStylePrivate::comboboxEditBounds(combo->rect, bdi);
+-                // 10.10 and above need a slight shift
+-                ret.setHeight(ret.height() - 1);
++                if (QSysInfo::MacintoshVersion >= QSysInfo::MV_10_10)
++                    ret.setHeight(ret.height() - 1);
+                 break; }
+             case SC_ComboBoxArrow:{
+                 ret = QMacStylePrivate::comboboxEditBounds(combo->rect, bdi);
+@@ -6787,7 +6864,7 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+     case CT_ComboBox: {
+         sz.rwidth() += 50;
+         const QStyleOptionComboBox *cb = qstyleoption_cast<const QStyleOptionComboBox *>(opt);
+-        if (cb && !cb->editable)
++        if (QSysInfo::MacintoshVersion < QSysInfo::MV_10_10 || (cb && !cb->editable))
+             sz.rheight() += 2;
+         break;
+     }
