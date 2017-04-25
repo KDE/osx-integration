@@ -1,7 +1,14 @@
 We were forked off frameworkintegration around the time that plasma-integration was also
 split off that framework.
 This file lists potentially relevant changes from plasma-integration's creation (c0ffbc2d87f7711b660d80a70b2c422a9152392e)
-until 3258d996565bec01c3a2e7d1ab4362bdb747483c (sept. 15)
+until f33d00ef1321b96395ed4007df1d10b451d5ce5f (20170320)
+
+20170425: synced with the following plasma-integration commits (everything related to QDbusMenuBar is irrelevant on Mac):
+Fix warning when no initial directory is set. (7bca66673f9575083181ca1b0a9602ba077c9016)
+[KHintsSettings] Emit QGuiApplication::paletteChanged when run as QApplication (ab3298b3f5f728765d5afa8830aa7793140617c8)
+Do not treat filename in selection as URL (e70f8134a2bc4b3647e245c05f469aeed462a246)
+Use the native dialog if there's no QApplication (c6305f5edbbd15244d79cfc7569352cf6f6ea4d6) (in KdeMacTheme::usePlatformNativeDialog())
+
 
 20170119: synced, among others with the current version of these plasma-integration commits:
 8fefab22498c15643e87ae104ef1d5fbfef8f539 Mon Sep 17 00:00:00 2001
