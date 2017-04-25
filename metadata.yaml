@@ -1,0 +1,10 @@
+description: Theme, style and platform plugins aiming to improve the "KDE experience" on Mac.
+hasrepo: true
+members:
+- displayname: "René J.V. Bertin"
+  username: rjvbb
+name: OSX Integration
+projectpath: playground/base/osx-integration
+repoactive: true
+repopath: osx-integration
+type: project

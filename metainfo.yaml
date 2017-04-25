@@ -1,5 +1,5 @@
 maintainer: rjvbb
-description: Improves KDE integration on OS X notably via the KDE Mac platform theme.
+description: Theme, style and platform plugins aiming to improve the "KDE experience" on Mac.
 tier: 4
 type: integration
 platforms:
