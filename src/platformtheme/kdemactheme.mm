@@ -33,6 +33,7 @@
 #include <QObject>
 #include <QCoreApplication>
 #include <QGuiApplication>
+#include <QApplication>
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QFont>
@@ -512,7 +513,7 @@ bool KdeMacTheme::usePlatformNativeDialog(QPlatformTheme::DialogType type) const
     }
 #endif
 #ifndef KDEMACTHEME_NEVER_NATIVE_DIALOGS
-    return type == QPlatformTheme::FileDialog;
+    return type == QPlatformTheme::FileDialog && qobject_cast<QApplication*>(QCoreApplication::instance());
 #else
     return false;
 #endif
