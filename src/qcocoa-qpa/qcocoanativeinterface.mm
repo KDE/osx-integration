@@ -172,12 +172,26 @@ void *QCocoaNativeInterface::NSPrintInfoForPrintEngine(QPrintEngine *printEngine
 
 QPixmap QCocoaNativeInterface::defaultBackgroundPixmapForQWizard()
 {
+    QCFType<CFURLRef> url109;
+    CFURLRef url = nullptr;
     const int ExpectedImageWidth = 242;
     const int ExpectedImageHeight = 414;
-    QCFType<CFArrayRef> urls = LSCopyApplicationURLsForBundleIdentifier(
-        CFSTR("com.apple.KeyboardSetupAssistant"), nullptr);
-    if (urls && CFArrayGetCount(urls) > 0) {
-        CFURLRef url = (CFURLRef)CFArrayGetValueAtIndex(urls, 0);
+    bool ok = false;
+    if (QSysInfo::MacintoshVersion < QSysInfo::MV_10_10) {
+        if (LSFindApplicationForInfo(kLSUnknownCreator, CFSTR("com.apple.KeyboardSetupAssistant"),
+                                     0, 0, &url109) == noErr) {
+            url = url109;
+            ok = true;
+        }
+    } else {
+        QCFType<CFArrayRef> urls = LSCopyApplicationURLsForBundleIdentifier(
+            CFSTR("com.apple.KeyboardSetupAssistant"), nullptr);
+        if (urls && CFArrayGetCount(urls) > 0) {
+            url = (CFURLRef)CFArrayGetValueAtIndex(urls, 0);
+            ok = true;
+        }
+    }
+    if (ok) {
         QCFType<CFBundleRef> bundle = CFBundleCreate(kCFAllocatorDefault, url);
         if (bundle) {
             url = CFBundleCopyResourceURL(bundle, CFSTR("Background"), CFSTR("png"), 0);

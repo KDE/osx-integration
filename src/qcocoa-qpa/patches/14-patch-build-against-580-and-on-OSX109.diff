@@ -169,6 +169,41 @@ index ecdd20c4dc06e97e4ea8a201adc63d51b4de1935..f41f023198148cf2081a32d9aad0a4a1
  #ifndef QT_NO_OPENGL
      QPlatformOpenGLContext *createPlatformOpenGLContext(QOpenGLContext *context) const Q_DECL_OVERRIDE;
  #endif
+diff --git a/cocoa/qcocoanativeinterface.mm b/cocoa/qcocoanativeinterface.mm
+index ee762f68788a4ffaa140a56a57fdafd37b73945d..77065a555768c959b576bfcb5756d4b3cdde42ba 100644
+--- a/cocoa/qcocoanativeinterface.mm
++++ b/cocoa/qcocoanativeinterface.mm
+@@ -172,12 +172,26 @@ void *QCocoaNativeInterface::NSPrintInfoForPrintEngine(QPrintEngine *printEngine
+ 
+ QPixmap QCocoaNativeInterface::defaultBackgroundPixmapForQWizard()
+ {
++    QCFType<CFURLRef> url109;
++    CFURLRef url = nullptr;
+     const int ExpectedImageWidth = 242;
+     const int ExpectedImageHeight = 414;
+-    QCFType<CFArrayRef> urls = LSCopyApplicationURLsForBundleIdentifier(
+-        CFSTR("com.apple.KeyboardSetupAssistant"), nullptr);
+-    if (urls && CFArrayGetCount(urls) > 0) {
+-        CFURLRef url = (CFURLRef)CFArrayGetValueAtIndex(urls, 0);
++    bool ok = false;
++    if (QSysInfo::MacintoshVersion < QSysInfo::MV_10_10) {
++        if (LSFindApplicationForInfo(kLSUnknownCreator, CFSTR("com.apple.KeyboardSetupAssistant"),
++                                     0, 0, &url109) == noErr) {
++            url = url109;
++            ok = true;
++        }
++    } else {
++        QCFType<CFArrayRef> urls = LSCopyApplicationURLsForBundleIdentifier(
++            CFSTR("com.apple.KeyboardSetupAssistant"), nullptr);
++        if (urls && CFArrayGetCount(urls) > 0) {
++            url = (CFURLRef)CFArrayGetValueAtIndex(urls, 0);
++            ok = true;
++        }
++    }
++    if (ok) {
+         QCFType<CFBundleRef> bundle = CFBundleCreate(kCFAllocatorDefault, url);
+         if (bundle) {
+             url = CFBundleCopyResourceURL(bundle, CFSTR("Background"), CFSTR("png"), 0);
 diff --git a/cocoa/qcocoatheme.h b/cocoa/qcocoatheme.h
 index 27c071a8cd2f82b8f880e3336ea684dd840eb830..f5e065047889aeccf0af0708468531e87ef75391 100644
 --- a/cocoa/qcocoatheme.h
