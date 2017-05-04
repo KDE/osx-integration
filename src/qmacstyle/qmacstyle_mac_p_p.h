@@ -250,6 +250,7 @@ public:
     void *indicatorBranchButtonCell;
     NSView *backingStoreNSView;
     QHash<QCocoaWidget, NSView *> cocoaControls;
+    const bool isCocoa;
 };
 
 QT_END_NAMESPACE

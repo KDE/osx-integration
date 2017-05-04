@@ -1744,6 +1744,7 @@ void QMacStylePrivate::setAutoDefaultButton(QObject *button) const
 
 QMacStylePrivate::QMacStylePrivate()
     : mouseDown(false), backingStoreNSView(nil)
+    , isCocoa(QGuiApplication::platformName() == QLatin1String("cocoa"))
 {
     defaultButtonStart = CFAbsoluteTimeGetCurrent();
     memset(&buttonState, 0, sizeof(ButtonState));
@@ -1963,7 +1964,7 @@ void QMacStylePrivate::drawNSViewInRect(QCocoaWidget widget, NSView *view, const
 
 void QMacStylePrivate::resolveCurrentNSView(QWindow *window)
 {
-    backingStoreNSView = window ? (NSView *)window->winId() : nil;
+    backingStoreNSView = (window && isCocoa) ? (NSView *)window->winId() : nil;
 }
 
 void QMacStylePrivate::drawColorlessButton(const HIRect &macRect, HIThemeButtonDrawInfo *bdi,
@@ -6048,7 +6049,7 @@ void QMacStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
                     else if (opt->styleObject)
                         window = opt->styleObject->property("_q_styleObjectWindow").value<QWindow *>();
 
-                    NSView *view = window ? (NSView *)window->winId() : nil;
+                    NSView *view = (window && d->isCocoa) ? (NSView *)window->winId() : nil;
                     bool isKey = false;
                     if (view)
                         isKey = [view.window isKeyWindow];
