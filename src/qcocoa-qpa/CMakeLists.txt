@@ -22,12 +22,20 @@ if(${QAQPA_standalone})
 endif()
 if(Qt5_FOUND AND (NOT ${Qt5_VERSION} VERSION_LESS ${QT_MIN_VERSION}))
 
+    # Generate a .qmake.cache file that coerce qmake to build more like we're building ourselves
+    # Don't use CMAKE_C?_FLAGS because 1) that would require testing the build type and 2) KF5
+    # likes to add -fno-exceptions which can break the Qt build.
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/qmake/.qmake.cache" "QMAKE_CC=${CMAKE_C_COMPILER}\n")
+    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/qmake/.qmake.cache" "QMAKE_CXX=${CMAKE_CXX_COMPILER}\n")
+    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/qmake/.qmake.cache" "QMAKE_CFLAGS+=$ENV{CFLAGS}\n")
+    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/qmake/.qmake.cache" "QMAKE_CXXFLAGS+=$ENV{CXXFLAGS}\n")
+
     # ExternalProject_Add is tricky to handle the configure (qmake) step
     # and subsequent build steps esp. during incremental builds
     ExternalProject_Add(qaltcocoa_qmake
         DOWNLOAD_COMMAND ""
         SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}
-        CONFIGURE_COMMAND ${QMAKE_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/qcocoa-standalone.pro
+        CONFIGURE_COMMAND ${QMAKE_EXECUTABLE} -r ${CMAKE_CURRENT_LIST_DIR}/qcocoa-standalone.pro
         BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/qmake
     )
     # use add_custom_target to handle (incremental) builds
