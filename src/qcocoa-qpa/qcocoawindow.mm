@@ -60,6 +60,12 @@
 
 #include <vector>
 
+#if QT_MACOS_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_10)
+#   define NSWINPROPERTY(w,property,selector) (w).property
+#else
+#   define NSWINPROPERTY(w,property,selector) [(w) selector]
+#endif
+
 enum {
     defaultWindowWidth = 160,
     defaultWindowHeight = 160
@@ -697,7 +703,7 @@ void QCocoaWindow::show(bool becauseOfAncestor)
     if ([m_nsWindow isVisible])
         return;
 
-    if (m_view.window.parentWindow && !m_view.window.parentWindow.visible) {
+    if (m_view.window.parentWindow && !NSWINPROPERTY(m_view.window.parentWindow,visible,isVisible)) {
         m_hiddenByAncestor = true; // Parent still hidden, don't show now
     } else if ((becauseOfAncestor == m_hiddenByAncestor) // Was NEITHER explicitly hidden
                && !m_hiddenByClipping) { // ... NOR clipped
@@ -1975,11 +1981,11 @@ Qt::WindowState QCocoaWindow::windowState() const
     // FIXME: Support compound states (Qt::WindowStates)
 
     NSWindow *window = m_view.window;
-    if (window.miniaturized)
+    if (NSWINPROPERTY(window, miniaturized, isMiniaturized))
         return Qt::WindowMinimized;
     if (window.qt_fullScreen)
         return Qt::WindowFullScreen;
-    if ((window.zoomed && !isTransitioningToFullScreen())
+    if ((NSWINPROPERTY(window, zoomed, isZoomed) && !isTransitioningToFullScreen())
         || (m_lastReportedWindowState == Qt::WindowMaximized && isTransitioningToFullScreen()))
         return Qt::WindowMaximized;
 

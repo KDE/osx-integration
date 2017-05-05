@@ -184,12 +184,14 @@ QPixmap QCocoaNativeInterface::defaultBackgroundPixmapForQWizard()
             ok = true;
         }
     } else {
+#if QT_OSX_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_10)
         QCFType<CFArrayRef> urls = LSCopyApplicationURLsForBundleIdentifier(
             CFSTR("com.apple.KeyboardSetupAssistant"), nullptr);
         if (urls && CFArrayGetCount(urls) > 0) {
             url = (CFURLRef)CFArrayGetValueAtIndex(urls, 0);
             ok = true;
         }
+#endif
     }
     if (ok) {
         QCFType<CFBundleRef> bundle = CFBundleCreate(kCFAllocatorDefault, url);
