@@ -426,9 +426,9 @@ KdeMacTheme::~KdeMacTheme()
 {
     delete nativeTheme;
     if (m_eventFilter) {
-        m_eventFilter->enabled = false;
         qApp->removeNativeEventFilter(&m_eventFilter->qtNativeFilter);
 #ifdef ADD_MENU_KEY
+        m_eventFilter->enabled = false;
         if (m_eventFilter->m_keyboardMonitor) {
             @autoreleasepool {
                  [NSEvent removeMonitor:m_eventFilter->m_keyboardMonitor];
