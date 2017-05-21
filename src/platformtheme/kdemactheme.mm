@@ -44,6 +44,7 @@
 #include <QDebug>
 
 #include <QEvent>
+#include <QAbstractNativeEventFilter>
 #ifndef QT_NO_GESTURES
 #include <QMouseEvent>
 #include <QGesture>
@@ -71,6 +72,7 @@
 #include <KLocalizedString>
 
 #include <AppKit/AppKit.h>
+#include <IOKit/hidsystem/ev_keymap.h>
 
 // [NSEvent modifierFlags] keycodes:
 // LeftShift=131330
@@ -86,23 +88,23 @@ static QString platformName = QStringLiteral("<unset>");
 // #define TAPANDHOLD_DEBUG
 
 class KdeMacThemeEventFilter : public QObject
-#ifdef ADD_MENU_KEY
-                                , public QAbstractNativeEventFilter
-#endif
 {
     Q_OBJECT
 public:
     KdeMacThemeEventFilter(QObject *parent=nullptr)
         : QObject(parent)
-#ifdef ADD_MENU_KEY
-        , QAbstractNativeEventFilter()
-#endif
     {}
+
+    class QNativeEventFilter : public QAbstractNativeEventFilter
+    {
+        bool nativeEventFilter(const QByteArray &eventType, void *message, long *result) override;
+    };
+
+    QNativeEventFilter qtNativeFilter;
 
 #ifdef ADD_MENU_KEY
     const static int keyboardMonitorMask = NSKeyDownMask | NSKeyUpMask | NSFlagsChangedMask;
 
-    bool nativeEventFilter(const QByteArray &eventType, void *message, long *result) override;
     NSEvent *nativeEventHandler(void *message);
     id m_keyboardMonitor;
     bool enabled;
@@ -214,7 +216,7 @@ public:
                                 QCoreApplication::sendEvent(obj, &me);
                             }
                             qWarning() << "Sending" << &ce << "to" << obj << "because of" << gEvent << "isGrabbed=" << isGrabbed;
-                            int ret = QCoreApplication::sendEvent(obj, &ce);
+                            bool ret = QCoreApplication::sendEvent(obj, &ce);
                             gEvent->accept();
                             qWarning() << "\tsendEvent" << &ce << "returned" << ret;
                             return true;
@@ -242,21 +244,56 @@ public:
 #endif
 };
 
-#ifdef ADD_MENU_KEY
-bool KdeMacThemeEventFilter::nativeEventFilter(const QByteArray &eventType, void *message, long *)
+bool KdeMacThemeEventFilter::QNativeEventFilter::nativeEventFilter(const QByteArray &eventType, void *message, long *)
 {
     NSEvent *event = static_cast<NSEvent *>(message);
-    qWarning() << Q_FUNC_INFO << "eventType=" << eventType;
-    NSLog( @"%s: event=%@", Q_FUNC_INFO, event );
-    // standard event processing
+    switch ([event type]) {
+#if defined(MAC_OS_X_VERSION_10_12) && (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12)
+        case NSEventTypeSystemDefined:
+#else
+        case NSSystemDefined:
+#endif
+        {
+            // borrowed with thanks from QMPlay2
+            const int  keyCode   = ([event data1] & 0xFFFF0000) >> 16;
+            const int  keyFlags  = ([event data1] & 0x0000FFFF);
+            const int  keyState  = (((keyFlags & 0xFF00) >> 8) == 0xA);
+
+            qWarning() << QStringLiteral("NSSystemDefined event keyCode=%1 keyFlags=%2 keyState=%3").arg(keyCode).arg(keyFlags).arg(keyState);
+            if (keyState == 1) {
+                int qtKey = 0;
+                switch (keyCode) {
+                    case NX_KEYTYPE_PLAY:
+                        qtKey = Qt::Key_MediaTogglePlayPause;
+                        break;
+                    case NX_KEYTYPE_NEXT:
+                    case NX_KEYTYPE_FAST:
+                        qtKey = Qt::Key_MediaNext;
+                        break;
+                    case NX_KEYTYPE_PREVIOUS:
+                    case NX_KEYTYPE_REWIND:
+                        qtKey = Qt::Key_MediaPrevious;
+                        break;
+                }
+                if (qtKey) {
+                    QKeyEvent mediaKeyEvent(QEvent::KeyPress, qtKey, Qt::NoModifier);
+                    qWarning() << "Sending mediaKeyEvent" << &mediaKeyEvent;
+                    QCoreApplication::sendEvent(qApp, &mediaKeyEvent);
+                    return false;
+                }
+            }
+            break;
+        }
+    }
     return false;
 }
 
+#ifdef ADD_MENU_KEY
 NSEvent *KdeMacThemeEventFilter::nativeEventHandler(void *message)
 {
     NSEvent *event = static_cast<NSEvent *>(message);
     switch ([event type]) {
-        case NSFlagsChanged:
+        case NSFlagsChanged: {
             switch ([event modifierFlags]) {
                 case 524608:
                 case 1048848:
@@ -289,12 +326,14 @@ NSEvent *KdeMacThemeEventFilter::nativeEventHandler(void *message)
                     break;
             }
             break;
-//         case NSKeyDown:
+        }
+//         case NSKeyDown: {
 //             qWarning() << Q_FUNC_INFO << "event=" << QString::fromNSString([event description])
 //                 << "key=" << [event keyCode] 
 //                 << "modifierFlags=" << [event modifierFlags] << "chars=" << QString::fromNSString([event characters])
 //                 << "charsIgnMods=" << QString::fromNSString([event charactersIgnoringModifiers]);
 //             break;
+//         }
     }
     // standard event processing
     return event;
@@ -375,26 +414,28 @@ KdeMacTheme::KdeMacTheme()
     }
     if (m_eventFilter->m_keyboardMonitor) {
         m_eventFilter->enabled = true;
-        qApp->installNativeEventFilter(m_eventFilter);
     } else {
         qWarning() << Q_FUNC_INFO << "Could not create a global keyboard monitor";
     }
 #endif
+    // for some reason our Qt native event filter is apparently never called.
+    qApp->installNativeEventFilter(&m_eventFilter->qtNativeFilter);
 }
 
 KdeMacTheme::~KdeMacTheme()
 {
     delete nativeTheme;
+    if (m_eventFilter) {
+        m_eventFilter->enabled = false;
+        qApp->removeNativeEventFilter(&m_eventFilter->qtNativeFilter);
 #ifdef ADD_MENU_KEY
-    if (m_eventFilter && m_eventFilter->enabled) {
-        qApp->removeNativeEventFilter(m_eventFilter);
         if (m_eventFilter->m_keyboardMonitor) {
             @autoreleasepool {
                  [NSEvent removeMonitor:m_eventFilter->m_keyboardMonitor];
             }
         }
-    }
 #endif
+    }
     delete m_eventFilter;
     m_eventFilter = 0;
 }
