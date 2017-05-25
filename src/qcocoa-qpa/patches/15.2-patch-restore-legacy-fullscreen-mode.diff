@@ -1,0 +1,39 @@
+diff --git a/src/qcocoa-qpa/qcocoawindow.mm b/src/qcocoa-qpa/qcocoawindow.mm
+index 15a2e0a..071a32d 100644
+--- a/src/qcocoa-qpa/qcocoawindow.mm
++++ b/src/qcocoa-qpa/qcocoawindow.mm
+@@ -1933,12 +1933,8 @@ void QCocoaWindow::toggleFullScreen()
+             // exit from fullscreen mode
+             setWindowFlags(m_normalFlags);
+             setCocoaGeometry(m_normalGeo);
+-            if (menuBarsOnAllScreens || [nsWin screen] == [[NSScreen screens] firstObject]) {
+-                // m_normalPresOpts is relevant only when the window was on the primary screen
+-                // when made fullscreen but that should still be the case as fullscreen windows
+-                // cannot be moved (easily).
+-                [NSApp setPresentationOptions:m_normalPresOpts];
+-            }
++            // restore the presentationOptions unconditionally
++            [NSApp setPresentationOptions:m_normalPresOpts];
+             // restore the window icon from its cached NSImage
+             [[m_nsWindow standardWindowButton:NSWindowDocumentIconButton] setImage:m_windowIcon];
+             fullScreenNotification = [NSNotification notificationWithName:NSWindowDidExitFullScreenNotification
+@@ -1946,10 +1942,17 @@ void QCocoaWindow::toggleFullScreen()
+             qCDebug(lcQpaCocoaWindow) << "Back from fullscreen ; geo=" << m_normalGeo;
+         } else {
+             m_normalGeo = windowGeometry();
++            m_normalPresOpts = [NSApp presentationOptions];
++            // always set the Dock to auto-hide. We do that because there's no known (to me) way to
++            // determine whether the Dock is on our screen (we can just infer if Dock AND Menubar are on our screen
++            // by comparing [NSScreen frame] and [NSScreen visibleFrame]). As a result, the Dock may go into
++            // auto-hiding when we are active fullscreen on another screen (but remains accessible). That's
++            // a lesser issue than when it remains visible in front of us. 
++            NSApplicationPresentationOptions newPresOpts = m_normalPresOpts| NSApplicationPresentationAutoHideDock;
+             if (menuBarsOnAllScreens || [nsWin screen] == [[NSScreen screens] firstObject]) {
+-                m_normalPresOpts = [NSApp presentationOptions];
+-                [NSApp setPresentationOptions:m_normalPresOpts | NSApplicationPresentationAutoHideMenuBar | NSApplicationPresentationAutoHideDock];
++                newPresOpts |= NSApplicationPresentationAutoHideMenuBar;
+             }
++            [NSApp setPresentationOptions:newPresOpts];
+             m_normalFlags = m_windowFlags;
+             // unset WindowFullscreenButtonHint here because it can apparently interfere with the FramelessWindowHint,
+             // unsetting the latter and causing the window frame to be restored. Undesirable esp. since it
