@@ -300,7 +300,6 @@ bool KdeMacThemeEventFilter::QNativeEventFilter::nativeEventFilter(const QByteAr
 NSEvent *KdeMacThemeEventFilter::nativeEventHandler(void *message)
 {
     NSEvent *event = static_cast<NSEvent *>(message);
-    qWarning() << "KeyDown event" << QString::fromNSString([event description]);
     switch ([event type]) {
         case NSFlagsChanged: {
             switch ([event modifierFlags]) {
