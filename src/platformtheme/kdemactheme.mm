@@ -93,14 +93,22 @@ class KdeMacThemeEventFilter : public QObject
 public:
     KdeMacThemeEventFilter(QObject *parent=nullptr)
         : QObject(parent)
-    {}
+    {
+        qtNativeFilter = new QNativeEventFilter;
+    }
+    virtual ~KdeMacThemeEventFilter()
+    {
+        delete qtNativeFilter;
+        qtNativeFilter = nullptr;
+    }
 
     class QNativeEventFilter : public QAbstractNativeEventFilter
     {
-        bool nativeEventFilter(const QByteArray &eventType, void *message, long *result) override;
+    public:
+        virtual bool nativeEventFilter(const QByteArray &eventType, void *message, long *result) override;
     };
 
-    QNativeEventFilter qtNativeFilter;
+    QNativeEventFilter *qtNativeFilter;
 
 #ifdef ADD_MENU_KEY
     const static int keyboardMonitorMask = NSKeyDownMask | NSKeyUpMask | NSFlagsChangedMask;
@@ -259,7 +267,7 @@ bool KdeMacThemeEventFilter::QNativeEventFilter::nativeEventFilter(const QByteAr
             const int  keyFlags  = ([event data1] & 0x0000FFFF);
             const int  keyState  = (((keyFlags & 0xFF00) >> 8) == 0xA);
 
-            qWarning() << QStringLiteral("NSSystemDefined event keyCode=%1 keyFlags=%2 keyState=%3").arg(keyCode).arg(keyFlags).arg(keyState);
+//             qWarning() << QStringLiteral("NSSystemDefined event keyCode=%1 keyFlags=%2 keyState=%3").arg(keyCode).arg(keyFlags).arg(keyState);
             if (keyState == 1) {
                 int qtKey = 0;
                 switch (keyCode) {
@@ -292,6 +300,7 @@ bool KdeMacThemeEventFilter::QNativeEventFilter::nativeEventFilter(const QByteAr
 NSEvent *KdeMacThemeEventFilter::nativeEventHandler(void *message)
 {
     NSEvent *event = static_cast<NSEvent *>(message);
+    qWarning() << "KeyDown event" << QString::fromNSString([event description]);
     switch ([event type]) {
         case NSFlagsChanged: {
             switch ([event modifierFlags]) {
@@ -419,14 +428,14 @@ KdeMacTheme::KdeMacTheme()
     }
 #endif
     // for some reason our Qt native event filter is apparently never called.
-    qApp->installNativeEventFilter(&m_eventFilter->qtNativeFilter);
+    qApp->installNativeEventFilter(m_eventFilter->qtNativeFilter);
 }
 
 KdeMacTheme::~KdeMacTheme()
 {
     delete nativeTheme;
     if (m_eventFilter) {
-        qApp->removeNativeEventFilter(&m_eventFilter->qtNativeFilter);
+        qApp->removeNativeEventFilter(m_eventFilter->qtNativeFilter);
 #ifdef ADD_MENU_KEY
         m_eventFilter->enabled = false;
         if (m_eventFilter->m_keyboardMonitor) {
