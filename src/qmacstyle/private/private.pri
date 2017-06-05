@@ -12,4 +12,6 @@ SOURCES += \
     $$PWD/qcombobox.cpp \
     $$PWD/qcommonstyle.cpp \
     $$PWD/qstyleanimation.cpp \
-    $$PWD/qstylehelper.cpp
+    $$PWD/qstylehelper.cpp \
+    $$PWD/qoperatingsystemversion.cpp \
+    $$PWD/qoperatingsystemversion_darwin.mm
