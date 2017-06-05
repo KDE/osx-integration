@@ -1,7 +1,7 @@
-diff --git a/src/qcocoa-qpa/qcocoawindow.h b/src/qcocoa-qpa/qcocoawindow.h
+diff --git a/cocoa/qcocoawindow.h b/cocoa/qcocoawindow.h
 index 4e8649b..9c0f143 100644
---- a/src/qcocoa-qpa/qcocoawindow.h
-+++ b/src/qcocoa-qpa/qcocoawindow.h
+--- a/cocoa/qcocoawindow.h
++++ b/cocoa/qcocoawindow.h
 @@ -368,6 +368,11 @@ public: // for QNSView
      QHash<quintptr, bool> m_enabledContentBorderAreas; // identifer -> enabled state (true/false)
  

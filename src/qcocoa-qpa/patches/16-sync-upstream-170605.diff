@@ -1,0 +1,878 @@
+diff --git a/cocoa/qcocoaaccessibilityelement.mm b/cocoa/qcocoaaccessibilityelement.mm
+index 6001a84..8e35ab2 100644
+--- a/cocoa/qcocoaaccessibilityelement.mm
++++ b/cocoa/qcocoaaccessibilityelement.mm
+@@ -509,7 +509,7 @@ static void convertLineOffset(QAccessibleTextInterface *text, int *line, int *of
+ // actions
+ 
+ - (NSArray *)accessibilityActionNames {
+-    NSMutableArray * nsActions = [NSMutableArray new];
++    NSMutableArray * nsActions = [[NSMutableArray new] autorelease];
+     QAccessibleInterface *iface = QAccessible::accessibleInterface(axid);
+     if (!iface || !iface->isValid())
+         return nsActions;
+diff --git a/cocoa/qcocoafiledialoghelper.mm b/cocoa/qcocoafiledialoghelper.mm
+index bc1bf07..6e7ab48 100644
+--- a/cocoa/qcocoafiledialoghelper.mm
++++ b/cocoa/qcocoafiledialoghelper.mm
+@@ -105,7 +105,7 @@ typedef QSharedPointer<QFileDialogOptions> SharedPointerFileDialogOptions;
+ }
+ 
+ - (NSString *)strip:(const QString &)label;
+-- (BOOL)panel:(id)sender shouldShowFilename:(NSString *)filename;
++- (BOOL)panel:(id)sender shouldEnableURL:(NSURL *)url;
+ - (void)filterChanged:(id)sender;
+ - (void)showModelessPanel;
+ - (BOOL)runApplicationModalPanel;
+@@ -226,12 +226,12 @@ static QString strippedText(QString s)
+     if (mOpenPanel){
+         QFileInfo info(*mCurrentSelection);
+         NSString *filepath = info.filePath().toNSString();
++        NSURL *url = [NSURL fileURLWithPath:filepath isDirectory:info.isDir()];
+         bool selectable = (mOptions->acceptMode() == QFileDialogOptions::AcceptSave)
+-            || [self panel:nil shouldShowFilename:filepath];
++            || [self panel:nil shouldEnableURL:url];
+ 
+         [self updateProperties];
+         QCocoaMenuBar::redirectKnownMenuItemsToFirstResponder();
+-        [mOpenPanel setAllowedFileTypes:nil];
+         [mSavePanel setNameFieldStringValue:selectable ? info.fileName().toNSString() : @""];
+ 
+         [mOpenPanel beginWithCompletionHandler:^(NSInteger result){
+@@ -246,8 +246,9 @@ static QString strippedText(QString s)
+ {
+     QFileInfo info(*mCurrentSelection);
+     NSString *filepath = info.filePath().toNSString();
++    NSURL *url = [NSURL fileURLWithPath:filepath isDirectory:info.isDir()];
+     bool selectable = (mOptions->acceptMode() == QFileDialogOptions::AcceptSave)
+-        || [self panel:nil shouldShowFilename:filepath];
++        || [self panel:nil shouldEnableURL:url];
+ 
+     [mSavePanel setDirectoryURL: [NSURL fileURLWithPath:mCurrentDir]];
+     [mSavePanel setNameFieldStringValue:selectable ? info.fileName().toNSString() : @""];
+@@ -277,8 +278,9 @@ static QString strippedText(QString s)
+ {
+     QFileInfo info(*mCurrentSelection);
+     NSString *filepath = info.filePath().toNSString();
++    NSURL *url = [NSURL fileURLWithPath:filepath isDirectory:info.isDir()];
+     bool selectable = (mOptions->acceptMode() == QFileDialogOptions::AcceptSave)
+-        || [self panel:nil shouldShowFilename:filepath];
++        || [self panel:nil shouldEnableURL:url];
+ 
+     [self updateProperties];
+     QCocoaMenuBar::redirectKnownMenuItemsToFirstResponder();
+@@ -294,26 +296,24 @@ static QString strippedText(QString s)
+     }];
+ }
+ 
+-- (BOOL)isHiddenFile:(NSString *)filename isDir:(BOOL)isDir
++- (BOOL)isHiddenFileAtURL:(NSURL *)url
+ {
+-    CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)filename, kCFURLPOSIXPathStyle, isDir);
+-    CFBooleanRef isHidden;
+-    Boolean errorOrHidden = false;
+-    if (!CFURLCopyResourcePropertyForKey(url, kCFURLIsHiddenKey, &isHidden, NULL)) {
+-        errorOrHidden = true;
+-    } else {
+-        if (CFBooleanGetValue(isHidden))
+-            errorOrHidden = true;
+-        CFRelease(isHidden);
++    BOOL hidden = NO;
++    if (url) {
++        CFBooleanRef isHiddenProperty;
++        if (CFURLCopyResourcePropertyForKey((__bridge CFURLRef)url, kCFURLIsHiddenKey, &isHiddenProperty, NULL)) {
++            hidden = CFBooleanGetValue(isHiddenProperty);
++            CFRelease(isHiddenProperty);
++        }
+     }
+-    CFRelease(url);
+-    return errorOrHidden;
++    return hidden;
+ }
+ 
+-- (BOOL)panel:(id)sender shouldShowFilename:(NSString *)filename
++- (BOOL)panel:(id)sender shouldEnableURL:(NSURL *)url
+ {
+     Q_UNUSED(sender);
+ 
++    NSString *filename = [url path];
+     if ([filename length] == 0)
+         return NO;
+ 
+@@ -357,7 +357,7 @@ static QString strippedText(QString s)
+             return NO;
+     }
+     if (!(filter & QDir::Hidden)
+-        && (qtFileName.startsWith(QLatin1Char('.')) || [self isHiddenFile:filename isDir:isDir]))
++        && (qtFileName.startsWith(QLatin1Char('.')) || [self isHiddenFileAtURL:url]))
+             return NO;
+ 
+     return YES;
+@@ -450,11 +450,15 @@ static QString strippedText(QString s)
+     [mSavePanel setTitle:mOptions->windowTitle().toNSString()];
+     [mPopUpButton setHidden:chooseDirsOnly];    // TODO hide the whole sunken pane instead?
+ 
+-    QStringList ext = [self acceptableExtensionsForSave];
+-    const QString defaultSuffix = mOptions->defaultSuffix();
+-    if (!ext.isEmpty() && !defaultSuffix.isEmpty())
+-        ext.prepend(defaultSuffix);
+-    [mSavePanel setAllowedFileTypes:ext.isEmpty() ? nil : qt_mac_QStringListToNSMutableArray(ext)];
++    if (mOptions->acceptMode() == QFileDialogOptions::AcceptSave) {
++        QStringList ext = [self acceptableExtensionsForSave];
++        const QString defaultSuffix = mOptions->defaultSuffix();
++        if (!ext.isEmpty() && !defaultSuffix.isEmpty())
++            ext.prepend(defaultSuffix);
++        [mSavePanel setAllowedFileTypes:ext.isEmpty() ? nil : qt_mac_QStringListToNSMutableArray(ext)];
++    } else {
++        [mOpenPanel setAllowedFileTypes:nil]; // delegate panel:shouldEnableURL: does the file filtering for NSOpenPanel
++    }
+ 
+     if ([mSavePanel respondsToSelector:@selector(isVisible)] && [mSavePanel isVisible]) {
+         if ([mSavePanel respondsToSelector:@selector(validateVisibleColumns)])
+diff --git a/cocoa/qcocoaintegration.mm b/cocoa/qcocoaintegration.mm
+index ef40816..a60b5eb 100644
+--- a/cocoa/qcocoaintegration.mm
++++ b/cocoa/qcocoaintegration.mm
+@@ -69,6 +69,9 @@ static void initResources()
+ 
+ QT_BEGIN_NAMESPACE
+ 
++class QCoreTextFontEngine;
++class QFontEngineFT;
++
+ QCocoaScreen::QCocoaScreen(int screenIndex)
+     : QPlatformScreen(), m_screenIndex(screenIndex), m_refreshRate(60.0)
+ {
+@@ -302,7 +305,7 @@ QCocoaIntegration *QCocoaIntegration::mInstance = 0;
+ 
+ QCocoaIntegration::QCocoaIntegration(const QStringList &paramList)
+     : mOptions(parseOptions(paramList))
+-    , mFontDb(new QCoreTextFontDatabase(mOptions.testFlag(UseFreeTypeFontEngine)))
++    , mFontDb(0)
+ #ifndef QT_NO_ACCESSIBILITY
+     , mAccessibility(new QCocoaAccessibility)
+ #endif
+@@ -318,6 +321,17 @@ QCocoaIntegration::QCocoaIntegration(const QStringList &paramList)
+         qWarning("Creating multiple Cocoa platform integrations is not supported");
+     mInstance = this;
+ 
++#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
++#ifndef QT_NO_FREETYPE
++    if (mOptions.testFlag(UseFreeTypeFontEngine))
++        mFontDb.reset(new QCoreTextFontDatabaseEngineFactory<QFontEngineFT>);
++    else
++#endif
++        mFontDb.reset(new QCoreTextFontDatabaseEngineFactory<QCoreTextFontEngine>);
++#else
++    mFontDb.reset(new QCoreTextFontDatabase(mOptions.testFlag(UseFreeTypeFontEngine)));
++#endif
++
+     QString icStr = QPlatformInputContextFactory::requested();
+     icStr.isNull() ? mInputContext.reset(new QCocoaInputContext)
+                    : mInputContext.reset(QPlatformInputContextFactory::create(icStr));
+diff --git a/cocoa/qcocoamenubar.h b/cocoa/qcocoamenubar.h
+index 4870ca4..0725e9d 100644
+--- a/cocoa/qcocoamenubar.h
++++ b/cocoa/qcocoamenubar.h
+@@ -83,7 +83,7 @@ private:
+ 
+     QList<QPointer<QCocoaMenu> > m_menus;
+     NSMenu *m_nativeMenu;
+-    QCocoaWindow *m_window;
++    QPointer<QCocoaWindow> m_window;
+ };
+ 
+ QT_END_NAMESPACE
+diff --git a/cocoa/qcocoamenubar.mm b/cocoa/qcocoamenubar.mm
+index a95ffc2..82c405b 100644
+--- a/cocoa/qcocoamenubar.mm
++++ b/cocoa/qcocoamenubar.mm
+@@ -52,8 +52,7 @@ QT_BEGIN_NAMESPACE
+ 
+ static QList<QCocoaMenuBar*> static_menubars;
+ 
+-QCocoaMenuBar::QCocoaMenuBar() :
+-    m_window(0)
++QCocoaMenuBar::QCocoaMenuBar()
+ {
+     static_menubars.append(this);
+ 
+@@ -79,7 +78,7 @@ QCocoaMenuBar::~QCocoaMenuBar()
+     [m_nativeMenu release];
+     static_menubars.removeOne(this);
+ 
+-    if (m_window && m_window->menubar() == this) {
++    if (!m_window.isNull() && m_window->menubar() == this) {
+         m_window->setMenubar(0);
+ 
+         // Delete the children first so they do not cause
+@@ -92,9 +91,10 @@ QCocoaMenuBar::~QCocoaMenuBar()
+ 
+ bool QCocoaMenuBar::needsImmediateUpdate()
+ {
+-    if (m_window && m_window->window()->isActive()) {
+-        return true;
+-    } else if (!m_window) {
++    if (!m_window.isNull()) {
++        if (m_window->window()->isActive())
++            return true;
++    } else {
+         // Only update if the focus/active window has no
+         // menubar, which means it'll be using this menubar.
+         // This is to avoid a modification in a parentless
+@@ -221,11 +221,11 @@ void QCocoaMenuBar::handleReparent(QWindow *newParentWindow)
+     qDebug() << "QCocoaMenuBar" << this << "handleReparent" << newParentWindow;
+ #endif
+ 
+-    if (m_window)
+-        m_window->setMenubar(NULL);
++    if (!m_window.isNull())
++        m_window->setMenubar(nullptr);
+ 
+-    if (newParentWindow == NULL) {
+-        m_window = NULL;
++    if (newParentWindow == nullptr) {
++        m_window.clear();
+     } else {
+         newParentWindow->create();
+         m_window = static_cast<QCocoaWindow*>(newParentWindow->handle());
+@@ -246,7 +246,7 @@ QCocoaWindow *QCocoaMenuBar::findWindowForMenubar()
+ QCocoaMenuBar *QCocoaMenuBar::findGlobalMenubar()
+ {
+     foreach (QCocoaMenuBar *mb, static_menubars) {
+-        if (mb->m_window == NULL)
++        if (mb->m_window.isNull())
+             return mb;
+     }
+ 
+diff --git a/cocoa/qcocoawindow.h b/cocoa/qcocoawindow.h
+index 9c0f143..fe64347 100644
+--- a/cocoa/qcocoawindow.h
++++ b/cocoa/qcocoawindow.h
+@@ -310,6 +310,7 @@ public: // for QNSView
+     friend class QCocoaBackingStore;
+     friend class QCocoaNativeInterface;
+ 
++    bool alwaysShowToolWindow() const;
+     void removeMonitor();
+ 
+     NSView *m_view;
+diff --git a/cocoa/qcocoawindow.mm b/cocoa/qcocoawindow.mm
+index 071a32d..8f886a0 100644
+--- a/cocoa/qcocoawindow.mm
++++ b/cocoa/qcocoawindow.mm
+@@ -297,6 +297,8 @@ static void qt_closePopups()
+ 
+ - (void)closeAndRelease
+ {
++    qCDebug(lcQpaCocoaWindow) << "closeAndRelease" << self;
++
+     [self close];
+ 
+     if (self.helper.grabbingMouse) {
+@@ -321,6 +323,77 @@ static void qt_closePopups()
+ 
+ @synthesize helper = _helper;
+ 
+++ (void)applicationActivationChanged:(NSNotification*)notification
++{
++    const id sender = self;
++#if QT_MACOS_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_10)
++    // ObjC generics were introduced with Xcode 7 (= OS X 10.10) but only allow the compiler
++    // to generate errors when storing a deviant type.
++    NSEnumerator<NSWindow*> *windowEnumerator = nullptr;
++#else
++    NSEnumerator *windowEnumerator = nullptr;
++#endif
++    NSApplication *application = [NSApplication sharedApplication];
++
++#if QT_MACOS_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_12)
++    if (QOperatingSystemVersion::current() >= QOperatingSystemVersion::MacOSSierra) {
++        // Unfortunately there's no NSWindowListOrderedBackToFront,
++        // so we have to manually reverse the order using an array.
++        NSMutableArray *windows = [[[NSMutableArray alloc] init] autorelease];
++        [application enumerateWindowsWithOptions:NSWindowListOrderedFrontToBack
++            usingBlock:^(NSWindow *window, BOOL *) {
++                // For some reason AppKit will give us nil-windows, skip those
++                if (!window)
++                    return;
++
++                [(NSMutableArray*)windows addObject:window];
++            }
++        ];
++
++        windowEnumerator = windows.reverseObjectEnumerator;
++    } else
++#endif
++    {
++        // No way to get ordered list of windows, so fall back to unordered,
++        // list, which typically corresponds to window creation order.
++        windowEnumerator = application.windows.objectEnumerator;
++    }
++
++    for (NSWindow *window in windowEnumerator) {
++        // We're meddling with normal and floating windows, so leave others alone
++        if (!(window.level == NSNormalWindowLevel || window.level == NSFloatingWindowLevel))
++            continue;
++
++        // Windows that hide automatically will keep their NSFloatingWindowLevel,
++        // and hence be on top of the window stack. We don't want to affect these
++        // windows, as otherwise we might end up with key windows being ordered
++        // behind these auto-hidden windows when activating the application by
++        // clicking on a new tool window.
++        if (window.hidesOnDeactivate)
++            continue;
++
++        if ([window conformsToProtocol:@protocol(QNSWindowProtocol)]) {
++            QCocoaWindow *cocoaWindow = static_cast<id<QNSWindowProtocol>>(window).helper.platformWindow;
++            window.level = notification.name == NSApplicationWillResignActiveNotification ?
++                NSNormalWindowLevel : cocoaWindow->windowLevel(cocoaWindow->window()->flags());
++        }
++
++        // The documentation says that "when a window enters a new level, it’s ordered
++        // in front of all its peers in that level", but that doesn't seem to be the
++        // case in practice. To keep the order correct after meddling with the window
++        // levels, we explicitly order each window to the front. Since we are iterating
++        // the windows in back-to-front order, this is okey. The call also triggers AppKit
++        // to re-evaluate the level in relation to windows from other applications,
++        // working around an issue where our tool windows would stay on top of other
++        // application windows if activation was transferred to another application by
++        // clicking on it instead of via the application switcher or Dock. Finally, we
++        // do this re-ordering for all windows (except auto-hiding ones), otherwise we would
++        // end up triggering a bug in AppKit where the tool windows would disappear behind
++        // the application window.
++        [window orderFront:sender];
++    }
++}
++
+ - (id)initWithContentRect:(NSRect)contentRect
+       screen:(NSScreen*)screen
+       styleMask:(NSUInteger)windowStyle
+@@ -334,6 +407,17 @@ static void qt_closePopups()
+ 
+     if (self) {
+         _helper = [[QNSWindowHelper alloc] initWithNSWindow:self platformWindow:qpw];
++
++        if (qpw->alwaysShowToolWindow()) {
++            static dispatch_once_t onceToken;
++            dispatch_once(&onceToken, ^{
++                NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
++                [center addObserver:[self class] selector:@selector(applicationActivationChanged:)
++                    name:NSApplicationWillResignActiveNotification object:nil];
++                [center addObserver:[self class] selector:@selector(applicationActivationChanged:)
++                    name:NSApplicationWillBecomeActiveNotification object:nil];
++            });
++        }
+     }
+     return self;
+ }
+@@ -367,6 +451,8 @@ static void qt_closePopups()
+ 
+ - (void)closeAndRelease
+ {
++    qCDebug(lcQpaCocoaWindow) << "closeAndRelease" << self;
++
+     [self.helper detachFromPlatformWindow];
+     [self close];
+     [self release];
+@@ -499,7 +585,9 @@ QCocoaWindow::QCocoaWindow(QWindow *tlw, WId nativeHandle)
+                                                      "QT_MAC_WANTS_LAYER");
+         [m_view setWantsLayer:enable];
+     }
+-    setGeometry(tlw->geometry());
++
++    setGeometry(initialGeometry(window(), windowGeometry(), defaultWindowWidth, defaultWindowHeight));
++
+     recreateWindowIfNeeded();
+     tlw->setGeometry(geometry());
+     if (tlw->isTopLevel())
+@@ -1564,6 +1652,8 @@ void QCocoaWindow::foreachChildNSWindow(void (^block)(QCocoaWindow *))
+ */
+ void QCocoaWindow::recreateWindowIfNeeded()
+ {
++    QMacAutoReleasePool pool;
++
+     QPlatformWindow *parentWindow = QPlatformWindow::parent();
+     qCDebug(lcQpaCocoaWindow) << "QCocoaWindow::recreateWindowIfNeeded" << window()
+                               << "parent" << (parentWindow ? parentWindow->window() : 0);
+@@ -1590,7 +1680,7 @@ void QCocoaWindow::recreateWindowIfNeeded()
+     if (isChildNSWindow() != shouldBeChildNSWindow)
+         recreateReason |= ChildNSWindowChanged;
+ 
+-    const bool shouldBeContentView = !parentWindow || shouldBeChildNSWindow;
++    const bool shouldBeContentView = (!parentWindow && !m_viewIsEmbedded) || shouldBeChildNSWindow;
+     if (isContentView() != shouldBeContentView)
+         recreateReason |= ContentViewChanged;
+ 
+@@ -1607,7 +1697,7 @@ void QCocoaWindow::recreateWindowIfNeeded()
+         return;
+     }
+ 
+-    qCDebug(lcQpaCocoaWindow) << "Recreating NSWindow due to" << recreateReason;
++    qCDebug(lcQpaCocoaWindow) << "Reconfiguring NSWindow due to" << recreateReason;
+ 
+     QCocoaWindow *parentCocoaWindow = static_cast<QCocoaWindow *>(parentWindow);
+ 
+@@ -1622,6 +1712,7 @@ void QCocoaWindow::recreateWindowIfNeeded()
+ 
+     // Remove current window (if any)
+     if ((isContentView() && !shouldBeContentView) || (recreateReason & PanelChanged)) {
++        qCDebug(lcQpaCocoaWindow) << "Getting rid of existing window" << m_nsWindow;
+         [m_nsWindow closeAndRelease];
+         if (isChildNSWindow())
+             [m_view.window.parentWindow removeChildWindow:m_view.window];
+@@ -1648,6 +1739,7 @@ void QCocoaWindow::recreateWindowIfNeeded()
+ 
+         // Move view to new NSWindow if needed
+         if (m_nsWindow.contentView != m_view) {
++            qCDebug(lcQpaCocoaWindow) << "Ensuring that view is content view for" << m_nsWindow;
+             [m_view setPostsFrameChangedNotifications:NO];
+             [m_view retain];
+             if (m_view.superview) // m_view comes from another NSWindow
+@@ -1729,9 +1821,11 @@ void QCocoaWindow::requestActivateWindow()
+ 
+ QCocoaNSWindow *QCocoaWindow::createNSWindow(bool shouldBeChildNSWindow, bool shouldBePanel)
+ {
++    qCDebug(lcQpaCocoaWindow) << "createNSWindow" << shouldBeChildNSWindow << shouldBePanel;
++
+     QMacAutoReleasePool pool;
+ 
+-    QRect rect = initialGeometry(window(), windowGeometry(), defaultWindowWidth, defaultWindowHeight);
++    QRect rect = geometry();
+ 
+     QScreen *targetScreen = nullptr;
+     for (QScreen *screen : QGuiApplication::screens()) {
+@@ -1776,8 +1870,7 @@ QCocoaNSWindow *QCocoaWindow::createNSWindow(bool shouldBeChildNSWindow, bool sh
+ 
+     if (shouldBePanel) {
+         // Qt::Tool windows hide on app deactivation, unless Qt::WA_MacAlwaysShowToolWindow is set
+-        window.hidesOnDeactivate = ((type & Qt::Tool) == Qt::Tool) &&
+-            !qt_mac_resolveOption(false, QPlatformWindow::window(), "_q_macAlwaysShowToolWindow", "");
++        window.hidesOnDeactivate = ((type & Qt::Tool) == Qt::Tool) && !alwaysShowToolWindow();
+ 
+         // Make popup windows show on the same desktop as the parent full-screen window
+         window.collectionBehavior = NSWindowCollectionBehaviorFullScreenAuxiliary;
+@@ -1803,6 +1896,11 @@ QCocoaNSWindow *QCocoaWindow::createNSWindow(bool shouldBeChildNSWindow, bool sh
+     return window;
+ }
+ 
++bool QCocoaWindow::alwaysShowToolWindow() const
++{
++    return qt_mac_resolveOption(false, window(), "_q_macAlwaysShowToolWindow", "");
++}
++
+ void QCocoaWindow::removeMonitor()
+ {
+     if (!monitor)
+diff --git a/cocoa/qnsview.h b/cocoa/qnsview.h
+index 75a5083..a78151e 100644
+--- a/cocoa/qnsview.h
++++ b/cocoa/qnsview.h
+@@ -116,9 +116,9 @@ Q_FORWARD_DECLARE_OBJC_CLASS(QT_MANGLE_NAMESPACE(QNSViewMouseMoveHelper));
+ - (void)resetMouseButtons;
+ 
+ - (void)handleMouseEvent:(NSEvent *)theEvent;
+-- (bool)handleMouseDownEvent:(NSEvent *)theEvent;
+-- (bool)handleMouseDraggedEvent:(NSEvent *)theEvent;
+-- (bool)handleMouseUpEvent:(NSEvent *)theEvent;
++- (bool)handleMouseDownEvent:(NSEvent *)theEvent withButton:(int)buttonNumber;
++- (bool)handleMouseDraggedEvent:(NSEvent *)theEvent withButton:(int)buttonNumber;
++- (bool)handleMouseUpEvent:(NSEvent *)theEvent withButton:(int)buttonNumber;
+ - (void)mouseDown:(NSEvent *)theEvent;
+ - (void)mouseDragged:(NSEvent *)theEvent;
+ - (void)mouseUp:(NSEvent *)theEvent;
+diff --git a/cocoa/qnsview.mm b/cocoa/qnsview.mm
+index e81773d..9edb6c7 100644
+--- a/cocoa/qnsview.mm
++++ b/cocoa/qnsview.mm
+@@ -241,7 +241,7 @@ static bool _q_dontOverrideCtrlLMB = false;
+ 
+ - (void)viewDidMoveToSuperview
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     if (!(m_platformWindow->m_viewIsToBeEmbedded))
+@@ -264,7 +264,7 @@ static bool _q_dontOverrideCtrlLMB = false;
+ 
+ - (QWindow *)topLevelWindow
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return nullptr;
+ 
+     QWindow *focusWindow = m_platformWindow->window();
+@@ -282,7 +282,7 @@ static bool _q_dontOverrideCtrlLMB = false;
+ 
+ - (void)updateGeometry
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     QRect geometry;
+@@ -441,8 +441,11 @@ static bool _q_dontOverrideCtrlLMB = false;
+     }
+ }
+ 
+-- (void) drawRect:(NSRect)dirtyRect
++- (void)drawRect:(NSRect)dirtyRect
+ {
++    if (!m_platformWindow)
++        return;
++
+     qCDebug(lcQpaCocoaWindow) << "[QNSView drawRect:]" << m_platformWindow->window() << QRectF::fromCGRect(NSRectToCGRect(dirtyRect));
+ 
+ #ifndef QT_NO_OPENGL
+@@ -631,7 +634,7 @@ static bool _q_dontOverrideCtrlLMB = false;
+ 
+ - (void)handleMouseEvent:(NSEvent *)theEvent
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     // Tablet events may come in via the mouse event handlers,
+@@ -648,7 +651,7 @@ static bool _q_dontOverrideCtrlLMB = false;
+         else
+             m_platformWindow->m_forwardWindow.clear();
+     }
+-    if (targetView->m_platformWindow.isNull())
++    if (!targetView.platformWindow)
+         return;
+ 
+     // Popups implicitly grap mouse events; forward to the active popup if there is one
+@@ -674,7 +677,7 @@ static bool _q_dontOverrideCtrlLMB = false;
+ 
+ - (void)handleFrameStrutMouseEvent:(NSEvent *)theEvent
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     // get m_buttons in sync
+@@ -728,12 +731,12 @@ static bool _q_dontOverrideCtrlLMB = false;
+     QWindowSystemInterface::handleFrameStrutMouseEvent(m_platformWindow->window(), timestamp, qtWindowPoint, qtScreenPoint, m_frameStrutButtons);
+ }
+ 
+-- (bool)handleMouseDownEvent:(NSEvent *)theEvent
++- (bool)handleMouseDownEvent:(NSEvent *)theEvent withButton:(int)buttonNumber
+ {
+     if ([self isTransparentForUserInput])
+         return false;
+ 
+-    Qt::MouseButton button = cocoaButton2QtButton([theEvent buttonNumber]);
++    Qt::MouseButton button = cocoaButton2QtButton(buttonNumber);
+ 
+     QPointF qtWindowPoint;
+     QPointF qtScreenPoint;
+@@ -757,12 +760,12 @@ static bool _q_dontOverrideCtrlLMB = false;
+     return true;
+ }
+ 
+-- (bool)handleMouseDraggedEvent:(NSEvent *)theEvent
++- (bool)handleMouseDraggedEvent:(NSEvent *)theEvent withButton:(int)buttonNumber
+ {
+     if ([self isTransparentForUserInput])
+         return false;
+ 
+-    Qt::MouseButton button = cocoaButton2QtButton([theEvent buttonNumber]);
++    Qt::MouseButton button = cocoaButton2QtButton(buttonNumber);
+ 
+     // Forward the event to the next responder if Qt did not accept the
+     // corresponding mouse down for this button
+@@ -773,12 +776,12 @@ static bool _q_dontOverrideCtrlLMB = false;
+     return true;
+ }
+ 
+-- (bool)handleMouseUpEvent:(NSEvent *)theEvent
++- (bool)handleMouseUpEvent:(NSEvent *)theEvent withButton:(int)buttonNumber
+ {
+     if ([self isTransparentForUserInput])
+         return false;
+ 
+-    Qt::MouseButton button = cocoaButton2QtButton([theEvent buttonNumber]);
++    Qt::MouseButton button = cocoaButton2QtButton(buttonNumber);
+ 
+     // Forward the event to the next responder if Qt did not accept the
+     // corresponding mouse down for this button
+@@ -868,56 +871,59 @@ static bool _q_dontOverrideCtrlLMB = false;
+ 
+ - (void)mouseDragged:(NSEvent *)theEvent
+ {
+-    const bool accepted = [self handleMouseDraggedEvent:theEvent];
++    const bool accepted = [self handleMouseDraggedEvent:theEvent withButton:[theEvent buttonNumber]];
+     if (!accepted)
+         [super mouseDragged:theEvent];
+ }
+ 
+ - (void)mouseUp:(NSEvent *)theEvent
+ {
+-    const bool accepted = [self handleMouseUpEvent:theEvent];
++    const bool accepted = [self handleMouseUpEvent:theEvent withButton:[theEvent buttonNumber]];
+     if (!accepted)
+         [super mouseUp:theEvent];
+ }
+ 
+ - (void)rightMouseDown:(NSEvent *)theEvent
+ {
+-    const bool accepted = [self handleMouseDownEvent:theEvent];
++    // Wacom tablet might not return the correct button number for NSEvent buttonNumber
++    // on right clicks. Decide here that the button is the "right" button and forward
++    // the button number to the mouse (and tablet) handler.
++    const bool accepted = [self handleMouseDownEvent:theEvent withButton:1];
+     if (!accepted)
+         [super rightMouseDown:theEvent];
+ }
+ 
+ - (void)rightMouseDragged:(NSEvent *)theEvent
+ {
+-    const bool accepted = [self handleMouseDraggedEvent:theEvent];
++    const bool accepted = [self handleMouseDraggedEvent:theEvent withButton:1];
+     if (!accepted)
+         [super rightMouseDragged:theEvent];
+ }
+ 
+ - (void)rightMouseUp:(NSEvent *)theEvent
+ {
+-    const bool accepted = [self handleMouseUpEvent:theEvent];
++    const bool accepted = [self handleMouseUpEvent:theEvent withButton:1];
+     if (!accepted)
+         [super rightMouseUp:theEvent];
+ }
+ 
+ - (void)otherMouseDown:(NSEvent *)theEvent
+ {
+-    const bool accepted = [self handleMouseDownEvent:theEvent];
++    const bool accepted = [self handleMouseDownEvent:theEvent withButton:[theEvent buttonNumber]];
+     if (!accepted)
+         [super otherMouseDown:theEvent];
+ }
+ 
+ - (void)otherMouseDragged:(NSEvent *)theEvent
+ {
+-    const bool accepted = [self handleMouseDraggedEvent:theEvent];
++    const bool accepted = [self handleMouseDraggedEvent:theEvent withButton:[theEvent buttonNumber]];
+     if (!accepted)
+         [super otherMouseDragged:theEvent];
+ }
+ 
+ - (void)otherMouseUp:(NSEvent *)theEvent
+ {
+-    const bool accepted = [self handleMouseUpEvent:theEvent];
++    const bool accepted = [self handleMouseUpEvent:theEvent withButton:[theEvent buttonNumber]];
+     if (!accepted)
+         [super otherMouseUp:theEvent];
+ }
+@@ -956,7 +962,7 @@ static bool _q_dontOverrideCtrlLMB = false;
+ 
+ - (void)mouseMovedImpl:(NSEvent *)theEvent
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     if ([self isTransparentForUserInput])
+@@ -990,7 +996,7 @@ static bool _q_dontOverrideCtrlLMB = false;
+ - (void)mouseEnteredImpl:(NSEvent *)theEvent
+ {
+     Q_UNUSED(theEvent)
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     m_platformWindow->m_windowUnderMouse = true;
+@@ -1012,7 +1018,7 @@ static bool _q_dontOverrideCtrlLMB = false;
+ - (void)mouseExitedImpl:(NSEvent *)theEvent
+ {
+     Q_UNUSED(theEvent);
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     m_platformWindow->m_windowUnderMouse = false;
+@@ -1041,7 +1047,7 @@ Q_GLOBAL_STATIC(QCocoaTabletDeviceDataHash, tabletDeviceDataHash)
+ 
+ - (bool)handleTabletEvent: (NSEvent *)theEvent
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return false;
+ 
+     NSEventType eventType = [theEvent type];
+@@ -1075,7 +1081,6 @@ Q_GLOBAL_STATIC(QCocoaTabletDeviceDataHash, tabletDeviceDataHash)
+     NSPoint tilt = [theEvent tilt];
+     int xTilt = qRound(tilt.x * 60.0);
+     int yTilt = qRound(tilt.y * -60.0);
+-    Qt::MouseButtons buttons = static_cast<Qt::MouseButtons>(static_cast<uint>([theEvent buttonMask]));
+     qreal tangentialPressure = 0;
+     qreal rotation = 0;
+     int z = 0;
+@@ -1094,10 +1099,10 @@ Q_GLOBAL_STATIC(QCocoaTabletDeviceDataHash, tabletDeviceDataHash)
+     qCDebug(lcQpaTablet, "event on tablet %d with tool %d type %d unique ID %lld pos %6.1f, %6.1f root pos %6.1f, %6.1f buttons 0x%x pressure %4.2lf tilt %d, %d rotation %6.2lf",
+         deviceId, deviceData.device, deviceData.pointerType, deviceData.uid,
+         windowPoint.x(), windowPoint.y(), screenPoint.x(), screenPoint.y(),
+-        static_cast<uint>(buttons), pressure, xTilt, yTilt, rotation);
++        static_cast<uint>(m_buttons), pressure, xTilt, yTilt, rotation);
+ 
+     QWindowSystemInterface::handleTabletEvent(m_platformWindow->window(), timestamp, windowPoint, screenPoint,
+-                                              deviceData.device, deviceData.pointerType, buttons, pressure, xTilt, yTilt,
++                                              deviceData.device, deviceData.pointerType, m_buttons, pressure, xTilt, yTilt,
+                                               tangentialPressure, rotation, z, deviceData.uid,
+                                               keyboardModifiers);
+     return true;
+@@ -1202,7 +1207,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ 
+ - (bool)shouldSendSingleTouch
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return true;
+ 
+     // QtWidgets expects single-point touch events, QtDeclarative does not.
+@@ -1212,7 +1217,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ 
+ - (void)touchesBeganWithEvent:(NSEvent *)event
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     const NSTimeInterval timestamp = [event timestamp];
+@@ -1223,7 +1228,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ 
+ - (void)touchesMovedWithEvent:(NSEvent *)event
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     const NSTimeInterval timestamp = [event timestamp];
+@@ -1234,7 +1239,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ 
+ - (void)touchesEndedWithEvent:(NSEvent *)event
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     const NSTimeInterval timestamp = [event timestamp];
+@@ -1245,7 +1250,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ 
+ - (void)touchesCancelledWithEvent:(NSEvent *)event
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     const NSTimeInterval timestamp = [event timestamp];
+@@ -1275,7 +1280,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ }
+ - (void)magnifyWithEvent:(NSEvent *)event
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     if ([self handleGestureAsBeginEnd:event])
+@@ -1292,7 +1297,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ 
+ - (void)smartMagnifyWithEvent:(NSEvent *)event
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     static bool zoomIn = true;
+@@ -1308,7 +1313,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ 
+ - (void)rotateWithEvent:(NSEvent *)event
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     if ([self handleGestureAsBeginEnd:event])
+@@ -1324,7 +1329,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ 
+ - (void)swipeWithEvent:(NSEvent *)event
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     qCDebug(lcQpaGestures) << "swipeWithEvent" << [event deltaX] << [event deltaY];
+@@ -1349,7 +1354,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ 
+ - (void)beginGestureWithEvent:(NSEvent *)event
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     const NSTimeInterval timestamp = [event timestamp];
+@@ -1363,7 +1368,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ 
+ - (void)endGestureWithEvent:(NSEvent *)event
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     qCDebug(lcQpaGestures) << "endGestureWithEvent";
+@@ -1379,7 +1384,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ #ifndef QT_NO_WHEELEVENT
+ - (void)scrollWheel:(NSEvent *)theEvent
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     if ([self isTransparentForUserInput])
+@@ -1896,6 +1901,9 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ 
+ - (NSArray*)validAttributesForMarkedText
+ {
++    if (!m_platformWindow)
++        return nil;
++
+     if (m_platformWindow->window() != QGuiApplication::focusWindow())
+         return nil;
+ 
+@@ -2067,7 +2075,7 @@ static QPoint mapWindowCoordinates(QWindow *source, QWindow *target, QPoint poin
+ // Sends drag update to Qt, return the action
+ - (NSDragOperation)handleDrag:(id <NSDraggingInfo>)sender
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return NSDragOperationNone;
+ 
+     NSPoint windowPoint = [self convertPoint: [sender draggingLocation] fromView: nil];
+@@ -2097,7 +2105,7 @@ static QPoint mapWindowCoordinates(QWindow *source, QWindow *target, QPoint poin
+ 
+ - (void)draggingExited:(id <NSDraggingInfo>)sender
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     QWindow *target = findEventTargetWindow(m_platformWindow->window());
+@@ -2114,7 +2122,7 @@ static QPoint mapWindowCoordinates(QWindow *source, QWindow *target, QPoint poin
+ // called on drop, send the drop to Qt and return if it was accepted.
+ - (BOOL)performDragOperation:(id <NSDraggingInfo>)sender
+ {
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return false;
+ 
+     QWindow *target = findEventTargetWindow(m_platformWindow->window());
+@@ -2148,7 +2156,7 @@ static QPoint mapWindowCoordinates(QWindow *source, QWindow *target, QPoint poin
+     Q_UNUSED(session);
+     Q_UNUSED(operation);
+ 
+-    if (m_platformWindow.isNull())
++    if (!m_platformWindow)
+         return;
+ 
+     QWindow *target = findEventTargetWindow(m_platformWindow->window());

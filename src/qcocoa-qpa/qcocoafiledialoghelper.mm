@@ -105,7 +105,7 @@ typedef QSharedPointer<QFileDialogOptions> SharedPointerFileDialogOptions;
 }
 
 - (NSString *)strip:(const QString &)label;
-- (BOOL)panel:(id)sender shouldShowFilename:(NSString *)filename;
+- (BOOL)panel:(id)sender shouldEnableURL:(NSURL *)url;
 - (void)filterChanged:(id)sender;
 - (void)showModelessPanel;
 - (BOOL)runApplicationModalPanel;
@@ -226,12 +226,12 @@ static QString strippedText(QString s)
     if (mOpenPanel){
         QFileInfo info(*mCurrentSelection);
         NSString *filepath = info.filePath().toNSString();
+        NSURL *url = [NSURL fileURLWithPath:filepath isDirectory:info.isDir()];
         bool selectable = (mOptions->acceptMode() == QFileDialogOptions::AcceptSave)
-            || [self panel:nil shouldShowFilename:filepath];
+            || [self panel:nil shouldEnableURL:url];
 
         [self updateProperties];
         QCocoaMenuBar::redirectKnownMenuItemsToFirstResponder();
-        [mOpenPanel setAllowedFileTypes:nil];
         [mSavePanel setNameFieldStringValue:selectable ? info.fileName().toNSString() : @""];
 
         [mOpenPanel beginWithCompletionHandler:^(NSInteger result){
@@ -246,8 +246,9 @@ static QString strippedText(QString s)
 {
     QFileInfo info(*mCurrentSelection);
     NSString *filepath = info.filePath().toNSString();
+    NSURL *url = [NSURL fileURLWithPath:filepath isDirectory:info.isDir()];
     bool selectable = (mOptions->acceptMode() == QFileDialogOptions::AcceptSave)
-        || [self panel:nil shouldShowFilename:filepath];
+        || [self panel:nil shouldEnableURL:url];
 
     [mSavePanel setDirectoryURL: [NSURL fileURLWithPath:mCurrentDir]];
     [mSavePanel setNameFieldStringValue:selectable ? info.fileName().toNSString() : @""];
@@ -277,8 +278,9 @@ static QString strippedText(QString s)
 {
     QFileInfo info(*mCurrentSelection);
     NSString *filepath = info.filePath().toNSString();
+    NSURL *url = [NSURL fileURLWithPath:filepath isDirectory:info.isDir()];
     bool selectable = (mOptions->acceptMode() == QFileDialogOptions::AcceptSave)
-        || [self panel:nil shouldShowFilename:filepath];
+        || [self panel:nil shouldEnableURL:url];
 
     [self updateProperties];
     QCocoaMenuBar::redirectKnownMenuItemsToFirstResponder();
@@ -294,26 +296,24 @@ static QString strippedText(QString s)
     }];
 }
 
-- (BOOL)isHiddenFile:(NSString *)filename isDir:(BOOL)isDir
+- (BOOL)isHiddenFileAtURL:(NSURL *)url
 {
-    CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)filename, kCFURLPOSIXPathStyle, isDir);
-    CFBooleanRef isHidden;
-    Boolean errorOrHidden = false;
-    if (!CFURLCopyResourcePropertyForKey(url, kCFURLIsHiddenKey, &isHidden, NULL)) {
-        errorOrHidden = true;
-    } else {
-        if (CFBooleanGetValue(isHidden))
-            errorOrHidden = true;
-        CFRelease(isHidden);
+    BOOL hidden = NO;
+    if (url) {
+        CFBooleanRef isHiddenProperty;
+        if (CFURLCopyResourcePropertyForKey((__bridge CFURLRef)url, kCFURLIsHiddenKey, &isHiddenProperty, NULL)) {
+            hidden = CFBooleanGetValue(isHiddenProperty);
+            CFRelease(isHiddenProperty);
+        }
     }
-    CFRelease(url);
-    return errorOrHidden;
+    return hidden;
 }
 
-- (BOOL)panel:(id)sender shouldShowFilename:(NSString *)filename
+- (BOOL)panel:(id)sender shouldEnableURL:(NSURL *)url
 {
     Q_UNUSED(sender);
 
+    NSString *filename = [url path];
     if ([filename length] == 0)
         return NO;
 
@@ -357,7 +357,7 @@ static QString strippedText(QString s)
             return NO;
     }
     if (!(filter & QDir::Hidden)
-        && (qtFileName.startsWith(QLatin1Char('.')) || [self isHiddenFile:filename isDir:isDir]))
+        && (qtFileName.startsWith(QLatin1Char('.')) || [self isHiddenFileAtURL:url]))
             return NO;
 
     return YES;
@@ -450,11 +450,15 @@ static QString strippedText(QString s)
     [mSavePanel setTitle:mOptions->windowTitle().toNSString()];
     [mPopUpButton setHidden:chooseDirsOnly];    // TODO hide the whole sunken pane instead?
 
-    QStringList ext = [self acceptableExtensionsForSave];
-    const QString defaultSuffix = mOptions->defaultSuffix();
-    if (!ext.isEmpty() && !defaultSuffix.isEmpty())
-        ext.prepend(defaultSuffix);
-    [mSavePanel setAllowedFileTypes:ext.isEmpty() ? nil : qt_mac_QStringListToNSMutableArray(ext)];
+    if (mOptions->acceptMode() == QFileDialogOptions::AcceptSave) {
+        QStringList ext = [self acceptableExtensionsForSave];
+        const QString defaultSuffix = mOptions->defaultSuffix();
+        if (!ext.isEmpty() && !defaultSuffix.isEmpty())
+            ext.prepend(defaultSuffix);
+        [mSavePanel setAllowedFileTypes:ext.isEmpty() ? nil : qt_mac_QStringListToNSMutableArray(ext)];
+    } else {
+        [mOpenPanel setAllowedFileTypes:nil]; // delegate panel:shouldEnableURL: does the file filtering for NSOpenPanel
+    }
 
     if ([mSavePanel respondsToSelector:@selector(isVisible)] && [mSavePanel isVisible]) {
         if ([mSavePanel respondsToSelector:@selector(validateVisibleColumns)])
