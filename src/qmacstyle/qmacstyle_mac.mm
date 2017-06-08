@@ -3864,22 +3864,16 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
         QCommonStyle::drawControl(ce, opt, p, w);
         break;
     case CE_PushButton:
-        // adapted from QCommonStyle::drawControl()
+        // cache the QStyleOptionButton and replace its icon with an empty one
+        // unless the button has no text.
         if (const QStyleOptionButton *btn = qstyleoption_cast<const QStyleOptionButton *>(opt)) {
-            drawControl(CE_PushButtonBevel, btn, p, w);
             QStyleOptionButton subopt = *btn;
             if (!btn->icon.isNull() && !btn->text.isEmpty()) {
                 // remove the icon from our local QStyleOptionButton copy
                 subopt.icon = QIcon();
             }
-            subopt.rect = subElementRect(SE_PushButtonContents, btn, w);
-            drawControl(CE_PushButtonLabel, &subopt, p, w);
-            if (btn->state & State_HasFocus) {
-                QStyleOptionFocusRect fropt;
-                fropt.QStyleOption::operator=(*btn);
-                fropt.rect = subElementRect(SE_PushButtonFocusRect, btn, w);
-                drawPrimitive(PE_FrameFocusRect, &fropt, p, w);
-            }
+            // hand back over to QCommonStyle::drawControl()
+            QCommonStyle::drawControl(ce, &subopt, p, w);
         }
         break;
     case CE_PushButtonBevel:
