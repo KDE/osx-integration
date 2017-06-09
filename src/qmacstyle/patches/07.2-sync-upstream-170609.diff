@@ -1,0 +1,31 @@
+diff --git a/src/qmacstyle/private/qoperatingsystemversion.cpp b/src/qmacstyle/private/qoperatingsystemversion.cpp
+index bed08f0..244f294 100644
+--- a/src/qmacstyle/private/qoperatingsystemversion.cpp
++++ b/src/qmacstyle/private/qoperatingsystemversion.cpp
+@@ -413,6 +413,14 @@ const QOperatingSystemVersion QOperatingSystemVersion::MacOSSierra =
+     QOperatingSystemVersion(QOperatingSystemVersion::MacOS, 10, 12);
+ 
+ /*!
++    \variable QOperatingSystemVersion::MacOSHighSierra
++    \brief a version corresponding to macOS High Sierra (version 10.13).
++    \since 5.9.1
++ */
++const QOperatingSystemVersion QOperatingSystemVersion::MacOSHighSierra =
++    QOperatingSystemVersion(QOperatingSystemVersion::MacOS, 10, 13);
++
++/*!
+     \variable QOperatingSystemVersion::AndroidJellyBean
+     \brief a version corresponding to Android Jelly Bean (version 4.1, API level 16).
+     \since 5.9
+diff --git a/src/qmacstyle/private/qoperatingsystemversion.h b/src/qmacstyle/private/qoperatingsystemversion.h
+index cc14d70..295365a 100644
+--- a/src/qmacstyle/private/qoperatingsystemversion.h
++++ b/src/qmacstyle/private/qoperatingsystemversion.h
+@@ -69,6 +69,7 @@ public:
+     static const QOperatingSystemVersion OSXYosemite;
+     static const QOperatingSystemVersion OSXElCapitan;
+     static const QOperatingSystemVersion MacOSSierra;
++    static const QOperatingSystemVersion MacOSHighSierra;
+ 
+     static const QOperatingSystemVersion AndroidJellyBean;
+     static const QOperatingSystemVersion AndroidJellyBean_MR1;
