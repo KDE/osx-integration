@@ -608,7 +608,7 @@ static int qt_mac_aqua_get_metric(ThemeMetric met)
 }
 
 static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg, QSize szHint,
-                                    QAquaWidgetSize sz)
+                                    QAquaWidgetSize sz, const QStyle *proxy=NULL)
 {
     QSize ret(-1, -1);
     if (sz != QAquaSizeSmall && sz != QAquaSizeLarge && sz != QAquaSizeMini) {
@@ -684,7 +684,8 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
             else if (sz == QAquaSizeMini)
                 ret = QSize(-1, qt_mac_aqua_get_metric(kThemeMetricMiniPushButtonHeight));
 
-            if (!psh->icon().isNull() && psh->text().isEmpty()){
+            bool showIcon = psh->text().isEmpty() && (proxy ? proxy->styleHint(QCommonStyle::SH_DialogButtonBox_ButtonsHaveIcons) : false);
+            if (!psh->icon().isNull() && showIcon){
                 // If the button got an icon, and the icon is larger than the
                 // button, we can't decide on a default size
                 ret.setWidth(-1);
@@ -1146,9 +1147,9 @@ QAquaWidgetSize QMacStylePrivate::aquaSizeConstrain(const QStyleOption *option, 
     }
 
     Q_Q(const QMacStyle);
-    QSize large = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeLarge),
-          small = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeSmall),
-          mini  = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeMini);
+    QSize large = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeLarge, q->proxy()),
+          small = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeSmall, q->proxy()),
+          mini  = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeMini, q->proxy());
     bool guess_size = false;
     QAquaWidgetSize ret = QAquaSizeUnknown;
     QMacStyle::WidgetSizePolicy wsp = q->widgetSizePolicy(widg);
@@ -3863,19 +3864,6 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
     case CE_ToolBoxTabShape:
         QCommonStyle::drawControl(ce, opt, p, w);
         break;
-    case CE_PushButton:
-        // cache the QStyleOptionButton and replace its icon with an empty one
-        // unless the button has no text.
-        if (const QStyleOptionButton *btn = qstyleoption_cast<const QStyleOptionButton *>(opt)) {
-            QStyleOptionButton subopt = *btn;
-            if (!btn->icon.isNull() && !btn->text.isEmpty()) {
-                // remove the icon from our local QStyleOptionButton copy
-                subopt.icon = QIcon();
-            }
-            // hand back over to QCommonStyle::drawControl()
-            QCommonStyle::drawControl(ce, &subopt, p, w);
-        }
-        break;
     case CE_PushButtonBevel:
         if (const QStyleOptionButton *btn = qstyleoption_cast<const QStyleOptionButton *>(opt)) {
             if (!(btn->state & (State_Raised | State_Sunken | State_On)))
@@ -4062,9 +4050,10 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
             // tab. So, cheat a little here. However, if it *is* only an icon
             // the windows style works great, so just use that implementation.
             bool hasMenu = btn.features & QStyleOptionButton::HasMenu;
+            // do we have icon AND should it show?
+            bool hasIcon = !btn.icon.isNull();
             bool hasText = !btn.text.isEmpty();
-            // do we have icon AND should it show (->empty text label since "ButtonsHaveIcons" is false on Mac)?
-            bool hasIcon = !btn.icon.isNull() && !hasText;
+            bool showIcon = proxy()->styleHint(SH_DialogButtonBox_ButtonsHaveIcons) || !hasText;
 
             if (!hasMenu && usingYosemiteOrLater) {
                 if (tds == kThemeStatePressed
@@ -4122,7 +4111,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                     p->restore();
                 }
             } else {
-                if (hasIcon && !hasText) {
+                if (hasIcon && showIcon && !hasText) {
                     QCommonStyle::drawControl(ce, &btn, p, w);
                 } else {
                     QRect freeContentRect = btn.rect;
@@ -4132,7 +4121,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                         textRect.moveTo(w ? 15 : 11, textRect.top()); // Supports Qt Quick Controls
                     }
                     // Draw the icon:
-                    if (hasIcon) {
+                    if (hasIcon && showIcon) {
                         int contentW = textRect.width();
                         if (hasMenu)
                             contentW += proxy()->pixelMetric(PM_MenuButtonIndicator) + 4;

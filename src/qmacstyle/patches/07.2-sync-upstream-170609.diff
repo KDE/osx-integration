@@ -1,7 +1,7 @@
-diff --git a/src/qmacstyle/private/qoperatingsystemversion.cpp b/src/qmacstyle/private/qoperatingsystemversion.cpp
+diff --git a/private/qoperatingsystemversion.cpp b/private/qoperatingsystemversion.cpp
 index bed08f0..244f294 100644
---- a/src/qmacstyle/private/qoperatingsystemversion.cpp
-+++ b/src/qmacstyle/private/qoperatingsystemversion.cpp
+--- a/private/qoperatingsystemversion.cpp
++++ b/private/qoperatingsystemversion.cpp
 @@ -413,6 +413,14 @@ const QOperatingSystemVersion QOperatingSystemVersion::MacOSSierra =
      QOperatingSystemVersion(QOperatingSystemVersion::MacOS, 10, 12);
  
@@ -17,10 +17,10 @@ index bed08f0..244f294 100644
      \variable QOperatingSystemVersion::AndroidJellyBean
      \brief a version corresponding to Android Jelly Bean (version 4.1, API level 16).
      \since 5.9
-diff --git a/src/qmacstyle/private/qoperatingsystemversion.h b/src/qmacstyle/private/qoperatingsystemversion.h
+diff --git a/private/qoperatingsystemversion.h b/private/qoperatingsystemversion.h
 index cc14d70..295365a 100644
---- a/src/qmacstyle/private/qoperatingsystemversion.h
-+++ b/src/qmacstyle/private/qoperatingsystemversion.h
+--- a/private/qoperatingsystemversion.h
++++ b/private/qoperatingsystemversion.h
 @@ -69,6 +69,7 @@ public:
      static const QOperatingSystemVersion OSXYosemite;
      static const QOperatingSystemVersion OSXElCapitan;
