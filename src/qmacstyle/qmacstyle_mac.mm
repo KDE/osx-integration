@@ -608,7 +608,7 @@ static int qt_mac_aqua_get_metric(ThemeMetric met)
 }
 
 static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg, QSize szHint,
-                                    QAquaWidgetSize sz, const QStyle *proxy=NULL)
+                                    QAquaWidgetSize sz)
 {
     QSize ret(-1, -1);
     if (sz != QAquaSizeSmall && sz != QAquaSizeLarge && sz != QAquaSizeMini) {
@@ -684,7 +684,7 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
             else if (sz == QAquaSizeMini)
                 ret = QSize(-1, qt_mac_aqua_get_metric(kThemeMetricMiniPushButtonHeight));
 
-            bool showIcon = psh->text().isEmpty() && (proxy ? proxy->styleHint(QCommonStyle::SH_DialogButtonBox_ButtonsHaveIcons) : false);
+            bool showIcon = psh->text().isEmpty() && widg->style()->proxy()->styleHint(QCommonStyle::SH_DialogButtonBox_ButtonsHaveIcons);
             if (!psh->icon().isNull() && showIcon){
                 // If the button got an icon, and the icon is larger than the
                 // button, we can't decide on a default size
@@ -1147,9 +1147,9 @@ QAquaWidgetSize QMacStylePrivate::aquaSizeConstrain(const QStyleOption *option, 
     }
 
     Q_Q(const QMacStyle);
-    QSize large = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeLarge, q->proxy()),
-          small = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeSmall, q->proxy()),
-          mini  = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeMini, q->proxy());
+    QSize large = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeLarge),
+          small = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeSmall),
+          mini  = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeMini);
     bool guess_size = false;
     QAquaWidgetSize ret = QAquaSizeUnknown;
     QMacStyle::WidgetSizePolicy wsp = q->widgetSizePolicy(widg);

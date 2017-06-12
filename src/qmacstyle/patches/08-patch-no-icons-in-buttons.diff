@@ -1,39 +1,17 @@
 diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
-index b35317c..42e026e 100644
+index b35317c..06835ab 100644
 --- a/qmacstyle_mac.mm
 +++ b/qmacstyle_mac.mm
-@@ -608,7 +608,7 @@ static int qt_mac_aqua_get_metric(ThemeMetric met)
- }
- 
- static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg, QSize szHint,
--                                    QAquaWidgetSize sz)
-+                                    QAquaWidgetSize sz, const QStyle *proxy=NULL)
- {
-     QSize ret(-1, -1);
-     if (sz != QAquaSizeSmall && sz != QAquaSizeLarge && sz != QAquaSizeMini) {
 @@ -684,7 +684,8 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
              else if (sz == QAquaSizeMini)
                  ret = QSize(-1, qt_mac_aqua_get_metric(kThemeMetricMiniPushButtonHeight));
  
 -            if (!psh->icon().isNull()){
-+            bool showIcon = psh->text().isEmpty() && (proxy ? proxy->styleHint(QCommonStyle::SH_DialogButtonBox_ButtonsHaveIcons) : false);
++            bool showIcon = psh->text().isEmpty() && widg->style()->proxy()->styleHint(QCommonStyle::SH_DialogButtonBox_ButtonsHaveIcons);
 +            if (!psh->icon().isNull() && showIcon){
                  // If the button got an icon, and the icon is larger than the
                  // button, we can't decide on a default size
                  ret.setWidth(-1);
-@@ -1146,9 +1147,9 @@ QAquaWidgetSize QMacStylePrivate::aquaSizeConstrain(const QStyleOption *option,
-     }
- 
-     Q_Q(const QMacStyle);
--    QSize large = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeLarge),
--          small = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeSmall),
--          mini  = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeMini);
-+    QSize large = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeLarge, q->proxy()),
-+          small = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeSmall, q->proxy()),
-+          mini  = qt_aqua_get_known_size(ct, widg, szHint, QAquaSizeMini, q->proxy());
-     bool guess_size = false;
-     QAquaWidgetSize ret = QAquaSizeUnknown;
-     QMacStyle::WidgetSizePolicy wsp = q->widgetSizePolicy(widg);
 @@ -4049,8 +4050,10 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
              // tab. So, cheat a little here. However, if it *is* only an icon
              // the windows style works great, so just use that implementation.
