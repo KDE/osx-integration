@@ -684,8 +684,8 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
             else if (sz == QAquaSizeMini)
                 ret = QSize(-1, qt_mac_aqua_get_metric(kThemeMetricMiniPushButtonHeight));
 
-            bool showIcon = psh->text().isEmpty() && widg->style()->proxy()->styleHint(QCommonStyle::SH_DialogButtonBox_ButtonsHaveIcons);
-            if (!psh->icon().isNull() && showIcon){
+            bool showIcon = !psh->text().isEmpty() || widg->style()->proxy()->styleHint(QCommonStyle::SH_DialogButtonBox_ButtonsHaveIcons);
+            if (showIcon && !psh->icon().isNull()) {
                 // If the button got an icon, and the icon is larger than the
                 // button, we can't decide on a default size
                 ret.setWidth(-1);
@@ -4053,7 +4053,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
             // do we have icon AND should it show?
             bool hasIcon = !btn.icon.isNull();
             bool hasText = !btn.text.isEmpty();
-            bool showIcon = proxy()->styleHint(SH_DialogButtonBox_ButtonsHaveIcons) || !hasText;
+            bool showIcon = hasIcon && (!hasText || proxy()->styleHint(SH_DialogButtonBox_ButtonsHaveIcons));
 
             if (!hasMenu && usingYosemiteOrLater) {
                 if (tds == kThemeStatePressed
