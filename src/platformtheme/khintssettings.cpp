@@ -91,14 +91,13 @@ KHintsSettings::KHintsSettings() : QObject(0)
 
     m_hints[QPlatformTheme::ItemViewActivateItemOnSingleClick] = cg.readEntry("SingleClick", true);
 
-    m_hints[QPlatformTheme::SystemIconThemeName] = readConfigValue(QStringLiteral("Icons"), QStringLiteral("Theme"), QStringLiteral("breeze"));
+    m_hints[QPlatformTheme::SystemIconThemeName] = readConfigValue(QStringLiteral("Icons"), QStringLiteral("Theme"), QStringLiteral("oxygen"));
 
     m_hints[QPlatformTheme::SystemIconFallbackThemeName] = QStringLiteral("hicolor");
     m_hints[QPlatformTheme::IconThemeSearchPaths] = xdgIconThemePaths();
 
     QStringList styleNames;
-    styleNames << QStringLiteral(BREEZE_STYLE_NAME)
-               << QStringLiteral("oxygen")
+    styleNames << QStringLiteral("oxygen")
                << QStringLiteral("fusion")
                << QStringLiteral("windows");
     const QString configuredStyle = cg.readEntry("widgetStyle", QString());
@@ -284,7 +283,6 @@ void KHintsSettings::slotNotifyChange(int type, int arg)
 
         QStringList styleNames;
         styleNames << cg.readEntry("widgetStyle", QString())
-                << QStringLiteral(BREEZE_STYLE_NAME)
                 << QStringLiteral("oxygen")
                 << QStringLiteral("fusion")
                 << QStringLiteral("windows");
@@ -307,7 +305,7 @@ void KHintsSettings::iconChanged(int group)
 {
     KIconLoader::Group iconGroup = (KIconLoader::Group) group;
     if (iconGroup != KIconLoader::MainToolbar) {
-        m_hints[QPlatformTheme::SystemIconThemeName] = readConfigValue(QStringLiteral("Icons"), QStringLiteral("Theme"), QStringLiteral("breeze"));
+        m_hints[QPlatformTheme::SystemIconThemeName] = readConfigValue(QStringLiteral("Icons"), QStringLiteral("Theme"), QStringLiteral("oxygen"));
 
         return;
     }
@@ -388,7 +386,7 @@ void KHintsSettings::loadPalettes()
             return;
         }
 
-        const QString scheme = readConfigValue(QStringLiteral("General"), QStringLiteral("ColorScheme"), QStringLiteral("Breeze")).toString();
+        const QString scheme = readConfigValue(QStringLiteral("General"), QStringLiteral("ColorScheme"), QStringLiteral("Oxygen")).toString();
         path = QStandardPaths::locate(QStandardPaths::GenericDataLocation, QStringLiteral("color-schemes/") + scheme + QStringLiteral(".colors"));
 
         if (!path.isEmpty()) {
