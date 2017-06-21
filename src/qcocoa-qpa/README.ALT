@@ -1,3 +1,15 @@
+commit e6ccc8e56fdaf402602130176064ffb1a0ce29bf
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Wed Jun 21 18:16:04 2017 +0200
+
+    sync with upstream Cocoa QPA changes in the 5.9 branch (qtbase v5.9.0-208-gb2cb83e)
+
+commit 12e9ff4bed9513fe8ed390a1f421d8f73c45960a
+Author: R.J.V. Bertin <rjvbertin@gmail.com>
+Date:   Mon Jun 5 17:40:51 2017 +0200
+
+    sync with upstream Cocoa QPA changes in the 5.9 branch (qtbase v5.9.0-119-g934235e)
+
 commit 0ecceaf6d7871b
 fc42141909af210f6bb408ac61
 Author: R.J.V. Bertin <rjvbertin@gmail.com>

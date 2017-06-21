@@ -1,0 +1,16 @@
+diff --git a/src/qcocoa-qpa/qnsview.mm b/src/qcocoa-qpa/qnsview.mm
+index 9edb6c7..9da4952 100644
+--- a/src/qcocoa-qpa/qnsview.mm
++++ b/src/qcocoa-qpa/qnsview.mm
+@@ -181,7 +181,10 @@ static bool _q_dontOverrideCtrlLMB = false;
+ - (void)dealloc
+ {
+     CGImageRelease(m_maskImage);
+-    [m_trackingArea release];
++    if (m_trackingArea) {
++        [self removeTrackingArea:m_trackingArea];
++        [m_trackingArea release];
++    }
+     m_maskImage = 0;
+     [m_inputSource release];
+     [[NSNotificationCenter defaultCenter] removeObserver:self];
