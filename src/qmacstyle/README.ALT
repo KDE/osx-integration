@@ -6,3 +6,11 @@ Date:   Tue Apr 4 18:52:48 2017 +0200
     - assume QComboBox menu items always use a custom font
     - support named menu sections (texted separators) in context menus
     - allow building as a standalone module
+
+20170605 : last merge with upstream commit #934235e967b4e3c96fa3ebf0338497cc0604e270
+in commit #b2bd0e87d69efe48b809e564a6b229363988be52
+
+20170621 : current upstream head: b2cb83ecbb1eec29268852d1b230f37e4c8592e9 (5.9 branch)
+files touched and updated in commit #ba0a81bc50e50edc7334697ce3a774bc7c52f8ac:
+src/qmacstyle/private/qcommonstyle.cpp (src/widgets/styles/qcommonstyle.cpp)
+src/qmacstyle/private/qtcore-config.h

@@ -58,3 +58,7 @@
 #ifndef QT_FEATURE_formlayout
 #define QT_FEATURE_formlayout 1
 #endif
+
+#ifndef QT_FEATURE_columnview
+#define QT_FEATURE_columnview 1
+#endif

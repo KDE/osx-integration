@@ -1,0 +1,34 @@
+diff --git a/src/qmacstyle/private/qcommonstyle.cpp b/src/qmacstyle/private/qcommonstyle.cpp
+index 8b569c3..1dd6820 100644
+--- a/src/qmacstyle/private/qcommonstyle.cpp
++++ b/src/qmacstyle/private/qcommonstyle.cpp
+@@ -609,7 +609,7 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
+         }
+         break;
+ #endif // QT_NO_LINEEDIT
+-#ifndef QT_NO_COLUMNVIEW
++#if QT_CONFIG(columnview)
+     case PE_IndicatorColumnViewArrow: {
+     if (const QStyleOptionViewItem *viewOpt = qstyleoption_cast<const QStyleOptionViewItem *>(opt)) {
+         bool reverse = (viewOpt->direction == Qt::RightToLeft);
+@@ -661,7 +661,7 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
+         p->restore();
+     }
+     break; }
+-#endif //QT_NO_COLUMNVIEW
++#endif //QT_CONFIG(columnview)
+     case PE_IndicatorItemViewItemDrop: {
+         QRect rect = opt->rect;
+         if (opt->rect.height() == 0)
+diff --git a/src/qmacstyle/private/qtcore-config.h b/src/qmacstyle/private/qtcore-config.h
+index d4afd9e..99943eb 100644
+--- a/src/qmacstyle/private/qtcore-config.h
++++ b/src/qmacstyle/private/qtcore-config.h
+@@ -58,3 +58,7 @@
+ #ifndef QT_FEATURE_formlayout
+ #define QT_FEATURE_formlayout 1
+ #endif
++
++#ifndef QT_FEATURE_columnview
++#define QT_FEATURE_columnview 1
++#endif
