@@ -23,41 +23,56 @@ if(${QAMS_standalone})
 endif()
 if(Qt5_FOUND AND (NOT ${Qt5_VERSION} VERSION_LESS ${QT_MIN_VERSION}))
 
-#     set(qaltmacstyle_SRCS
-#         qmacstyle_mac.mm
-#         main.mm
-#         private/qcombobox.cpp
-#         private/qcommonstyle.cpp
-#         private/qstyleanimation.cpp
-#         private/qstylehelper.cpp
+    include_directories(
+        ${CMAKE_CURRENT_SOURCE_DIR}/private
+        ${Qt5Core_PRIVATE_INCLUDE_DIRS}
+        ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
+    )
+    remove_definitions(-DQT_NO_SIGNALS_SLOTS_KEYWORDS)
+    set(qaltmacstyle_SRCS
+        qmacstyle_mac.mm
+        main.mm
+        private/qcombobox.cpp
+        private/qcommonstyle.cpp
+        private/qoperatingsystemversion.cpp
+        private/qoperatingsystemversion_darwin.mm
+        private/qstyleanimation.cpp
+        private/qstylehelper.cpp
+    )
+    add_library(qaltmacstyle SHARED ${qaltmacstyle_SRCS})
+    target_link_libraries(qaltmacstyle PRIVATE
+        Qt5::Core
+        Qt5::Gui
+        Qt5::Widgets
+        "-framework AppKit -framework Carbon")
+    install(TARGETS qaltmacstyle DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/styles)
+
+#     # Generate a .qmake.cache file that coerce qmake to build more like we're building ourselves
+#     # Don't use CMAKE_C?_FLAGS because 1) that would require testing the build type and 2) KF5
+#     # likes to add -fno-exceptions which can break the Qt build.
+#     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/qmake/.qmake.cache" "QMAKE_CC=${CMAKE_C_COMPILER}\n")
+#     file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/qmake/.qmake.cache" "QMAKE_CXX=${CMAKE_CXX_COMPILER}\n")
+#     file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/qmake/.qmake.cache" "QMAKE_CFLAGS+=$ENV{CFLAGS}\n")
+#     file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/qmake/.qmake.cache" "QMAKE_CXXFLAGS+=$ENV{CXXFLAGS}\n")
+#     file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/qmake/.qmake.cache" "QMAKE_MAC_SDK=macosx${CMAKE_OSX_DEPLOYMENT_TARGET}\n")
+# 
+#     # ExternalProject_Add is tricky to handle the configure (qmake) step
+#     # and subsequent build steps esp. during incremental builds
+#     ExternalProject_Add(qaltmacstyle_qmake
+#         DOWNLOAD_COMMAND ""
+#         SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}
+#         CONFIGURE_COMMAND ${QMAKE_EXECUTABLE} -r ${CMAKE_CURRENT_LIST_DIR}/macstyle.pro
+#         BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/qmake
 #     )
-
-    # Generate a .qmake.cache file that coerce qmake to build more like we're building ourselves
-    # Don't use CMAKE_C?_FLAGS because 1) that would require testing the build type and 2) KF5
-    # likes to add -fno-exceptions which can break the Qt build.
-    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/qmake/.qmake.cache" "QMAKE_CC=${CMAKE_C_COMPILER}\n")
-    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/qmake/.qmake.cache" "QMAKE_CXX=${CMAKE_CXX_COMPILER}\n")
-    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/qmake/.qmake.cache" "QMAKE_CFLAGS+=$ENV{CFLAGS}\n")
-    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/qmake/.qmake.cache" "QMAKE_CXXFLAGS+=$ENV{CXXFLAGS}\n")
-    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/qmake/.qmake.cache" "QMAKE_MAC_SDK=macosx${CMAKE_OSX_DEPLOYMENT_TARGET}\n")
-
-    # ExternalProject_Add is tricky to handle the configure (qmake) step
-    # and subsequent build steps esp. during incremental builds
-    ExternalProject_Add(qaltmacstyle_qmake
-        DOWNLOAD_COMMAND ""
-        SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}
-        CONFIGURE_COMMAND ${QMAKE_EXECUTABLE} -r ${CMAKE_CURRENT_LIST_DIR}/macstyle.pro
-        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/qmake
-    )
-    # use add_custom_target to handle (incremental) builds
-    add_custom_target(qaltmacstyle ALL
-        DEPENDS qaltmacstyle_qmake
-        COMMAND ${CMAKE_MAKE_PROGRAM}
-        BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/qmake/libqaltmacstyle.dylib
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/qmake
-    )
-
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/qmake/libqaltmacstyle.dylib DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/styles)
+#     # use add_custom_target to handle (incremental) builds
+#     add_custom_target(qaltmacstyle ALL
+#         DEPENDS qaltmacstyle_qmake
+#         COMMAND ${CMAKE_MAKE_PROGRAM}
+#         BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/qmake/libqaltmacstyle.dylib
+#         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/qmake
+#     )
+# 
+#     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/qmake/libqaltmacstyle.dylib DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/styles)
 else()
     # we should only end up here if we're being built as an optional component
     message(STATUS "QAltMacStyle needs a more recent Qt5 version - skipping")
