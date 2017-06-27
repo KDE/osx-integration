@@ -23,12 +23,8 @@ if(${QAMS_standalone})
 endif()
 if(Qt5_FOUND AND (NOT ${Qt5_VERSION} VERSION_LESS ${QT_MIN_VERSION}))
 
-    include_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}/private
-        ${Qt5Core_PRIVATE_INCLUDE_DIRS}
-        ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
-    )
     remove_definitions(-DQT_NO_SIGNALS_SLOTS_KEYWORDS)
+    add_definitions(-DQT_PLUGIN)
     set(qaltmacstyle_SRCS
         qmacstyle_mac.mm
         main.mm
@@ -40,6 +36,11 @@ if(Qt5_FOUND AND (NOT ${Qt5_VERSION} VERSION_LESS ${QT_MIN_VERSION}))
         private/qstylehelper.cpp
     )
     add_library(qaltmacstyle SHARED ${qaltmacstyle_SRCS})
+    target_include_directories(qaltmacstyle PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/private
+        ${Qt5Core_PRIVATE_INCLUDE_DIRS}
+        ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
+    )
     target_link_libraries(qaltmacstyle PRIVATE
         Qt5::Core
         Qt5::Gui
