@@ -4586,9 +4586,16 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                         HIThemeDrawMenuSeparator(&hiLr, &hiLr, &mdi,
                                              cg, kHIThemeOrientationNormal);
                     }
-                    // draw the text left-aligned w.r.t. the icon location
-                    p->drawText(contentRect.x() + macItemHMargin, yPos, contentRect.width(),
+                    if (opt->direction == Qt::LeftToRight) {
+                        // draw the text left-aligned w.r.t. the icon location
+                        p->drawText(contentRect.x() + macItemHMargin, yPos, contentRect.width(),
                                 contentRect.height(), text_flags | Qt::AlignLeft, s);
+                    } else {
+                        // a bit silly to respect R2L mode when the rest of the style doesn't ... yet
+                        // but somebody's gotta make a start!
+                        p->drawText(contentRect.x() - macItemHMargin, yPos, contentRect.width(),
+                                contentRect.height(), text_flags | Qt::AlignRight, s);
+                    }
                 } else {
                     p->setFont(myFont);
                     p->drawText(xpos, yPos, contentRect.width() - xm - tabwidth + 1,
