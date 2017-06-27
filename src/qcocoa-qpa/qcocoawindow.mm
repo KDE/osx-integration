@@ -326,9 +326,10 @@ static void qt_closePopups()
 + (void)applicationActivationChanged:(NSNotification*)notification
 {
     const id sender = self;
-#if QT_MACOS_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_10)
+#if QT_MACOS_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_11)
     // ObjC generics were introduced with Xcode 7 (= OS X 10.10) but only allow the compiler
-    // to generate errors when storing a deviant type.
+    // to generate errors when storing a deviant type. The 10.10SDK on 10.9 doesn't yet
+    // know about them, so we only support them from 10.11 onwards.
     NSEnumerator<NSWindow*> *windowEnumerator = nullptr;
 #else
     NSEnumerator *windowEnumerator = nullptr;
