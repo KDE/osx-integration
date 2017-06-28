@@ -93,14 +93,14 @@ if(Qt5_FOUND AND (NOT ${Qt5_VERSION} VERSION_LESS ${QT_MIN_VERSION}))
             Qt5::Gui
             Qt5::Widgets
             Qt5::PrintSupport
-           ${QT_FRAMEWORKS_DIR}/libQt5CglSupport.a
-           ${QT_FRAMEWORKS_DIR}/libQt5ClipboardSupport.a
-           ${QT_FRAMEWORKS_DIR}/libQt5FontDatabaseSupport.a
-           ${QT_FRAMEWORKS_DIR}/libQt5GraphicsSupport.a
-           ${QT_FRAMEWORKS_DIR}/libQt5ThemeSupport.a
-           ${QT_FRAMEWORKS_DIR}/libQt5AccessibilitySupport.a
-           -lfontconfig -lfreetype
-           "-framework OpenGL -framework AGL"
+            ${QT_FRAMEWORKS_DIR}/libQt5CglSupport.a
+            ${QT_FRAMEWORKS_DIR}/libQt5ClipboardSupport.a
+            ${QT_FRAMEWORKS_DIR}/libQt5FontDatabaseSupport.a
+            ${QT_FRAMEWORKS_DIR}/libQt5GraphicsSupport.a
+            ${QT_FRAMEWORKS_DIR}/libQt5ThemeSupport.a
+            ${QT_FRAMEWORKS_DIR}/libQt5AccessibilitySupport.a
+            -lfontconfig -lfreetype
+            "-framework OpenGL -framework AGL"
             "-framework AppKit -framework Carbon -framework IOKit -lcups")
         install(TARGETS qaltcocoa DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/platforms)
     else()
