@@ -1,0 +1,30 @@
+diff --git a/src/qmacstyle/qmacstyle_mac.mm b/src/qmacstyle/qmacstyle_mac.mm
+index 47bdacd..5e2449e 100644
+--- a/src/qmacstyle/qmacstyle_mac.mm
++++ b/src/qmacstyle/qmacstyle_mac.mm
+@@ -157,6 +157,10 @@ const int QMacStylePrivate::PushButtonContentPadding = 6;
+ 
+ QVector<QPointer<QObject> > QMacStylePrivate::scrollBars;
+ 
++// force QPainter to display text in LTR mode (copied from Konsole)
++// more information can be found in: http://unicode.org/reports/tr9/
++static const QChar LTR_OVERRIDE_CHAR(0x202D);
++
+ Q_GLOBAL_STATIC(FontHash, app_fonts)
+ FontHash *qt_app_fonts_hash()
+ {
+@@ -4555,8 +4559,13 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+                     p->setFont(qt_app_fonts_hash()->value("QMenuItem", p->font()));
+                     int xp = contentRect.right() - tabwidth - macRightBorder
+                              - macItemHMargin - macItemFrame + 1;
+-                    p->drawText(xp, yPos, tabwidth, contentRect.height(), text_flags | Qt::AlignRight,
++                    if (opt->direction == Qt::LeftToRight) {
++                        p->drawText(xp, yPos, tabwidth, contentRect.height(), text_flags | Qt::AlignRight,
+                                 s.mid(t + 1));
++                    } else {
++                        p->drawText(xp, yPos, tabwidth, contentRect.height(), text_flags | Qt::AlignRight,
++                                LTR_OVERRIDE_CHAR + s.mid(t + 1));
++                    }
+                     s = s.left(t);
+                 }
+ 
