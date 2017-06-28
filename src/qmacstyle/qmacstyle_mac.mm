@@ -4450,6 +4450,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
             int maxpmw = mi->maxIconWidth;
             bool active = mi->state & State_Selected;
             bool enabled = mi->state & State_Enabled;
+            bool leftToRight = mi->direction == Qt::LeftToRight;
             HIRect menuRect = qt_hirectForQRect(mi->menuRect);
             HIRect itemRect = qt_hirectForQRect(mi->rect);
             HIThemeMenuItemDrawInfo mdi;
@@ -4461,6 +4462,9 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                 mdi.itemType |= kThemeMenuItemHierarchical | kThemeMenuItemHierBackground;
             else
                 mdi.itemType |= kThemeMenuItemPopUpBackground;
+            if (!leftToRight) {
+                mdi.itemType |= kThemeMenuItemAlignRight;
+            }
             if (mi->menuItemType == QStyleOptionMenuItem::Separator) {
                 enabled = active = false;
             }
@@ -4491,7 +4495,8 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                     break;
                 contentRect = qt_qrectForHIRect(cr);
             }
-            int xpos = contentRect.x() + 18;
+            int xpos = leftToRight? contentRect.x() + 18 :
+                contentRect.x() - 18 + macItemFrame;
             int checkcol = maxpmw;
             if (!enabled)
                 p->setPen(mi->palette.text().color());
@@ -4507,7 +4512,8 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
 
                     const int mw = checkcol + macItemFrame;
                     const int mh = contentRect.height() + macItemFrame;
-                    const int xp = contentRect.x() + macItemFrame;
+                    const int xp = leftToRight ? contentRect.x() + macItemFrame :
+                        contentRect.right() - macItemFrame - checkmarkOpt.fontMetrics.width(QChar(0x2713));
                     checkmarkOpt.rect = QRect(xp, contentRect.y() - checkmarkOpt.fontMetrics.descent(), mw, mh);
 
                     checkmarkOpt.state |= State_On; // Always on. Never rendered when off.
@@ -4538,11 +4544,15 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                     QPixmap pixmap = mi->icon.pixmap(window, iconSize, mode);
                     int pixw = pixmap.width() / pixmap.devicePixelRatio();
                     int pixh = pixmap.height() / pixmap.devicePixelRatio();
-                    QRect cr(xpos, contentRect.y(), checkcol, contentRect.height());
+                    int xp = leftToRight? xpos : contentRect.right() - 18 - pixw;
+                    QRect cr(xp, contentRect.y(), checkcol, contentRect.height());
                     QRect pmr(0, 0, pixw, pixh);
                     pmr.moveCenter(cr.center());
                     p->drawPixmap(pmr.topLeft(), pixmap);
-                    xpos += pixw + 6;
+                    // FIXME: position adjustment for R2L
+                    if (leftToRight) {
+                        xpos += pixw + 6;
+                    }
                 }
             }
 
@@ -4608,7 +4618,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                 } else {
                     p->setFont(myFont);
                     p->drawText(xpos, yPos, contentRect.width() - xm - tabwidth + 1,
-                                contentRect.height(), text_flags | Qt::AlignLeft, s);
+                                contentRect.height(), text_flags | (leftToRight ? Qt::AlignLeft : Qt::AlignRight), s);
                 }
                 p->restore();
             }
