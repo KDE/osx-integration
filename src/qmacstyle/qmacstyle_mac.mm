@@ -4567,13 +4567,13 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                 p->save();
                 if (t >= 0) {
                     p->setFont(qt_app_fonts_hash()->value("QMenuItem", p->font()));
-                    int xp = contentRect.right() - tabwidth - macRightBorder
-                             - macItemHMargin - macItemFrame + 1;
                     if (opt->direction == Qt::LeftToRight) {
+                        int xp = contentRect.right() - tabwidth - macRightBorder
+                                 - macItemHMargin - macItemFrame + 1;
                         p->drawText(xp, yPos, tabwidth, contentRect.height(), text_flags | Qt::AlignRight,
                                 s.mid(t + 1));
                     } else {
-                        p->drawText(xp, yPos, tabwidth, contentRect.height(), text_flags | Qt::AlignRight,
+                        p->drawText(contentRect.x() + 18, yPos, tabwidth, contentRect.height(), text_flags | Qt::AlignLeft,
                                 LTR_OVERRIDE_CHAR + s.mid(t + 1));
                     }
                     s = s.left(t);
