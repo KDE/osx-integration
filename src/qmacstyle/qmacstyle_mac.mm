@@ -4496,8 +4496,11 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                 contentRect = qt_qrectForHIRect(cr);
             }
             int xpos = leftToRight? contentRect.x() + 18 :
-                contentRect.x() - 18 + macItemFrame;
+                contentRect.right() - 6;
             int checkcol = maxpmw;
+            QStyleOption checkmarkOpt;
+            checkmarkOpt.initFrom(w);
+            int checkmarkWidth = checkmarkOpt.fontMetrics.width(QChar(0x2713));
             if (!enabled)
                 p->setPen(mi->palette.text().color());
             else if (active)
@@ -4507,13 +4510,11 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
 
             if (mi->menuItemType != QStyleOptionMenuItem::Separator) {
                 if (mi->checked) {
-                    QStyleOption checkmarkOpt;
-                    checkmarkOpt.initFrom(w);
 
                     const int mw = checkcol + macItemFrame;
                     const int mh = contentRect.height() + macItemFrame;
                     const int xp = leftToRight ? contentRect.x() + macItemFrame :
-                        contentRect.right() - macItemFrame - checkmarkOpt.fontMetrics.width(QChar(0x2713));
+                        contentRect.right() - macItemFrame - checkmarkWidth;
                     checkmarkOpt.rect = QRect(xp, contentRect.y() - checkmarkOpt.fontMetrics.descent(), mw, mh);
 
                     checkmarkOpt.state |= State_On; // Always on. Never rendered when off.
@@ -4544,14 +4545,15 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                     QPixmap pixmap = mi->icon.pixmap(window, iconSize, mode);
                     int pixw = pixmap.width() / pixmap.devicePixelRatio();
                     int pixh = pixmap.height() / pixmap.devicePixelRatio();
-                    int xp = leftToRight? xpos : contentRect.right() - 18 - pixw;
+                    int xp = leftToRight? xpos : xpos - pixw - macItemFrame - checkmarkWidth;
                     QRect cr(xp, contentRect.y(), checkcol, contentRect.height());
                     QRect pmr(0, 0, pixw, pixh);
                     pmr.moveCenter(cr.center());
                     p->drawPixmap(pmr.topLeft(), pixmap);
-                    // FIXME: position adjustment for R2L
                     if (leftToRight) {
                         xpos += pixw + 6;
+                    } else {
+                        xpos -= pixw + 6;
                     }
                 }
             }
@@ -4617,8 +4619,13 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                     }
                 } else {
                     p->setFont(myFont);
-                    p->drawText(xpos, yPos, contentRect.width() - xm - tabwidth + 1,
-                                contentRect.height(), text_flags | (leftToRight ? Qt::AlignLeft : Qt::AlignRight), s);
+                    if (leftToRight) {
+                        p->drawText(xpos, yPos, contentRect.width() - xm - tabwidth + 1,
+                                contentRect.height(), text_flags | Qt::AlignLeft, s);
+                    } else {
+                        p->drawText(xpos - p->fontMetrics().width(s), yPos, contentRect.width() - xm - tabwidth + 1,
+                                contentRect.height(), text_flags | Qt::AlignLeft, s);
+                    }
                 }
                 p->restore();
             }
