@@ -41,13 +41,13 @@
 static const char GeneralId[] =      "General";
 // NOTE: the default system font changed with OS X 10.11, from Lucida Grande to
 // San Francisco. With luck this will be caught by QFontDatabase::GeneralFont
-static const char DefaultFont[] =    "Lucida Grande";
+const char DefaultFont[] =    "Lucida Grande";
 static const char DefaultFixedFont[] = "Monaco";
 static const char *LocalDefaultFont = NULL;
 
 // See README.fonts.txt for information and thoughts about native/default fonts
 
-static KFontData DefaultFontData[KFontSettingsDataMac::FontTypesCount] = {
+KFontData DefaultFontData[KFontSettingsDataMac::FontTypesCount] = {
     { GeneralId, "font",                 DefaultFont,       12, -1, QFont::SansSerif },
     { GeneralId, "fixed",                DefaultFixedFont,  10, -1, QFont::Monospace },
     { GeneralId, "toolBarFont",          DefaultFont,       10, -1, QFont::SansSerif },
@@ -64,14 +64,19 @@ static KFontData DefaultFontData[KFontSettingsDataMac::FontTypesCount] = {
 static const char *fontNameFor(QFontDatabase::SystemFont role)
 {
     QFont qf = QFontDatabase::systemFont(role);
-    const char *fn = qf.defaultFamily().toLocal8Bit().constData();
-    if (fn && *fn) {
+    if (!qf.defaultFamily().isEmpty()) {
+        char *fn;
         if (role == QFontDatabase::FixedFont && !qf.fixedPitch()) {
-            fn = "Monaco";
-        } else if (strcmp(fn, ".Lucida Grande UI") == 0) {
-            fn = "Lucida Grande";
+            fn = strdup("Monaco");
+        } else if (qf.defaultFamily() == QStringLiteral(".Lucida Grande UI")) {
+            fn = strdup("Lucida Grande");
+        } else {
+            fn = strdup(qf.defaultFamily().toLocal8Bit().data());
         }
-        return strdup(fn);
+        if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
+            qWarning() << "fontNameFor" << role << "font:" << qf << "name:" << fn;
+        }
+        return fn;
     } else {
         return NULL;
     }
@@ -106,6 +111,9 @@ void initDefaultFonts()
             default:
                 fn = LocalDefaultFont;
                 break;
+        }
+        if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
+            qWarning() << "Default font for type" << i << ":" << fn << "; currently:" << DefaultFontData[i].FontName;
         }
         if (fn) {
             if (DefaultFontData[i].FontName != DefaultFont
@@ -199,14 +207,18 @@ QFont *KFontSettingsDataMac::font(FontTypes fontType)
 
         cachedFont = new QFont(QLatin1String(fontData.FontName), fontData.Size, forceBold? QFont::Bold : fontData.Weight);
         cachedFont->setStyleHint(fontData.StyleHint);
-//         qWarning() << "Requested font type" << fontType << "name=" << fontData.FontName << "forceBold=" << forceBold << "styleHint=" << fontData.StyleHint;
-//         qWarning() << "\t->" << *cachedFont;
+//         if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
+//             qWarning() << "Requested font type" << fontType << "name=" << fontData.FontName << "forceBold=" << forceBold << "styleHint=" << fontData.StyleHint;
+//             qWarning() << "\t->" << *cachedFont;
+//         }
 
         fontInfo = configGroup.readEntry(fontData.ConfigKey, QString());
 
         if (!fontInfo.isEmpty()) {
             cachedFont->fromString(fontInfo);
-//             qWarning() << "\tfontInfo=" << fontInfo << "->" << *cachedFont;
+//             if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
+//                 qWarning() << "\tfontInfo=" << fontInfo << "->" << *cachedFont;
+//             }
         }
 
         mFonts[fontType] = cachedFont;

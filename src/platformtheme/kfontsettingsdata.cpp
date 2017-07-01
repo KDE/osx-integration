@@ -53,11 +53,11 @@ KFontSettingsData::~KFontSettingsData()
 
 // NOTE: keep in sync with plasma-desktop/kcms/fonts/fonts.cpp
 static const char GeneralId[] =      "General";
-static const char DefaultFont[] =    "Noto Sans";
+static const char DefaultFont[] =    "Lucida Grande";
 
 static const KFontData DefaultFontData[KFontSettingsData::FontTypesCount] = {
     { GeneralId, "font",                 DefaultFont,  10, -1, QFont::SansSerif },
-    { GeneralId, "fixed",                "Oxygen Mono",  9, -1, QFont::Monospace },
+    { GeneralId, "fixed",                "Monaco",  9, -1, QFont::Monospace },
     { GeneralId, "toolBarFont",          DefaultFont,  9, -1, QFont::SansSerif },
     { GeneralId, "menuFont",             DefaultFont,  10, -1, QFont::SansSerif },
     { "WM",      "activeFont",           DefaultFont,  10, -1, QFont::SansSerif },
