@@ -4623,7 +4623,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                         p->drawText(xpos, yPos, contentRect.width() - xm - tabwidth + 1,
                                 contentRect.height(), text_flags | Qt::AlignLeft, s);
                     } else {
-                        p->drawText(xpos - p->fontMetrics().width(s), yPos, contentRect.width() - xm - tabwidth + 1,
+                        p->drawText(xpos - QFontMetrics(myFont).width(s), yPos, contentRect.width() - xm - tabwidth + 1,
                                 contentRect.height(), text_flags | Qt::AlignLeft, s);
                     }
                 }
