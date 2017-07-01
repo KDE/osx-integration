@@ -20,6 +20,8 @@
  *  Boston, MA 02110-1301, USA.
  */
 
+#undef QT_NO_CAST_FROM_ASCII
+
 #include "khintssettings.h"
 
 #include <QDebug>
@@ -60,7 +62,11 @@ static const QString defaultLookAndFeelPackage = QStringLiteral("org.kde.breeze.
 KSharedConfigPtr &KHintsSettings::kdeGlobals()
 {
     if (!mKdeGlobals) {
-        mKdeGlobals = KSharedConfig::openConfig(QStringLiteral("kdeglobals"), KConfig::NoGlobals);
+        if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_CONFIG_FILE")) {
+            mKdeGlobals = KSharedConfig::openConfig(qgetenv("QT_QPA_PLATFORMTHEME_CONFIG_FILE"), KConfig::NoGlobals);
+        } else {
+            mKdeGlobals = KSharedConfig::openConfig(QStringLiteral("kdeglobals"), KConfig::NoGlobals);
+        }
     }
     return mKdeGlobals;
 }
