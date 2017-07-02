@@ -4494,13 +4494,13 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                 if (ce == CE_MenuEmptyArea)
                     break;
                 contentRect = qt_qrectForHIRect(cr);
+                if (!leftToRight && mi->menuItemType == QStyleOptionMenuItem::SubMenu) {
+                    // give us the same contentRect as other menuitems get
+                    contentRect.adjust(-39, 0, 39, 0);
+                }
             }
-            int xpos = leftToRight? contentRect.x() + 18 :
-                contentRect.right() - 6;
+            int xpos = contentRect.x() + 18;
             int checkcol = maxpmw;
-            QStyleOption checkmarkOpt;
-            checkmarkOpt.initFrom(w);
-            int checkmarkWidth = checkmarkOpt.fontMetrics.width(QChar(0x2713));
             if (!enabled)
                 p->setPen(mi->palette.text().color());
             else if (active)
@@ -4509,8 +4509,10 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                 p->setPen(mi->palette.buttonText().color());
 
             if (mi->menuItemType != QStyleOptionMenuItem::Separator) {
+                QStyleOption checkmarkOpt;
+                checkmarkOpt.initFrom(w);
+                int checkmarkWidth = checkmarkOpt.fontMetrics.width(QChar(0x2713));
                 if (mi->checked) {
-
                     const int mw = checkcol + macItemFrame;
                     const int mh = contentRect.height() + macItemFrame;
                     const int xp = leftToRight ? contentRect.x() + macItemFrame :
@@ -4545,16 +4547,18 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                     QPixmap pixmap = mi->icon.pixmap(window, iconSize, mode);
                     int pixw = pixmap.width() / pixmap.devicePixelRatio();
                     int pixh = pixmap.height() / pixmap.devicePixelRatio();
-                    int xp = leftToRight? xpos : xpos - pixw - macItemFrame - checkmarkWidth;
+                    int xp;
+                    if (leftToRight) {
+                        xp = xpos;
+                        xpos += pixw + 6;
+                    } else {
+                        xp = contentRect.right() - 6 - pixw - macItemFrame - checkmarkWidth;
+                        xpos += pixw + 3;
+                    }
                     QRect cr(xp, contentRect.y(), checkcol, contentRect.height());
                     QRect pmr(0, 0, pixw, pixh);
                     pmr.moveCenter(cr.center());
                     p->drawPixmap(pmr.topLeft(), pixmap);
-                    if (leftToRight) {
-                        xpos += pixw + 6;
-                    } else {
-                        xpos -= pixw + 6;
-                    }
                 }
             }
 
@@ -4569,12 +4573,13 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                 p->save();
                 if (t >= 0) {
                     p->setFont(qt_app_fonts_hash()->value("QMenuItem", p->font()));
-                    if (opt->direction == Qt::LeftToRight) {
+                    if (leftToRight) {
                         int xp = contentRect.right() - tabwidth - macRightBorder
                                  - macItemHMargin - macItemFrame + 1;
                         p->drawText(xp, yPos, tabwidth, contentRect.height(), text_flags | Qt::AlignRight,
                                 s.mid(t + 1));
                     } else {
+                        // recalculate, don't reuse xpos here
                         p->drawText(contentRect.x() + 18, yPos, tabwidth, contentRect.height(), text_flags | Qt::AlignLeft,
                                 LTR_OVERRIDE_CHAR + s.mid(t + 1));
                     }
@@ -4607,24 +4612,22 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                         HIThemeDrawMenuSeparator(&hiLr, &hiLr, &mdi,
                                              cg, kHIThemeOrientationNormal);
                     }
-                    if (opt->direction == Qt::LeftToRight) {
+                    if (leftToRight) {
                         // draw the text left-aligned w.r.t. the icon location
                         p->drawText(contentRect.x() + macItemHMargin, yPos, contentRect.width(),
                                 contentRect.height(), text_flags | Qt::AlignLeft, s);
                     } else {
-                        // a bit silly to respect R2L mode when the rest of the style doesn't ... yet
-                        // but somebody's gotta make a start!
                         p->drawText(contentRect.x() - macItemHMargin, yPos, contentRect.width(),
                                 contentRect.height(), text_flags | Qt::AlignRight, s);
                     }
                 } else {
                     p->setFont(myFont);
+                    QRect textRect(xpos, yPos, contentRect.width() - xm - tabwidth + 1, contentRect.height());
                     if (leftToRight) {
-                        p->drawText(xpos, yPos, contentRect.width() - xm - tabwidth + 1,
-                                contentRect.height(), text_flags | Qt::AlignLeft, s);
+                        p->drawText(textRect, text_flags | Qt::AlignLeft, s);
                     } else {
-                        p->drawText(xpos - QFontMetrics(myFont).width(s), yPos, contentRect.width() - xm - tabwidth + 1,
-                                contentRect.height(), text_flags | Qt::AlignLeft, s);
+                        QRect vTextRect = visualRect(opt->direction, mi->rect, textRect);
+                        p->drawText(vTextRect, text_flags | Qt::AlignRight, s);
                     }
                 }
                 p->restore();
