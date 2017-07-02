@@ -18,6 +18,8 @@
    Boston, MA 02110-1301, USA.
 */
 
+#undef QT_NO_CAST_FROM_ASCII
+
 #include "kfontsettingsdata.h"
 #include <QCoreApplication>
 #include <QString>
@@ -68,7 +70,11 @@ static const KFontData DefaultFontData[KFontSettingsData::FontTypesCount] = {
 KSharedConfigPtr &KFontSettingsData::kdeGlobals()
 {
     if (!mKdeGlobals) {
-        mKdeGlobals = KSharedConfig::openConfig(QStringLiteral("kdeglobals"), KConfig::NoGlobals);
+        if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_CONFIG_FILE")) {
+            mKdeGlobals = KSharedConfig::openConfig(qgetenv("QT_QPA_PLATFORMTHEME_CONFIG_FILE"), KConfig::NoGlobals);
+        } else {
+            mKdeGlobals = KSharedConfig::openConfig(QStringLiteral("kdeglobals"), KConfig::NoGlobals);
+        }
     }
     return mKdeGlobals;
 }
