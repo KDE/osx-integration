@@ -411,6 +411,7 @@ QT_END_NAMESPACE
     self.panelContents.needsDisplay = YES;
 
     self.needsDisplay = YES;
+    [super layout];
 }
 
 @end

@@ -146,6 +146,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSFontPanelDelegate);
         mPanelButtons = [[QNSPanelContentsWrapper alloc] initWithPanelDelegate:self];
         [mPanelButtons addSubview:mStolenContentView];
         mPanelButtons.panelContentsMargins = NSEdgeInsetsMake(0, 0, 7, 0);
+        [mPanelButtons setFrameSize:[mPanelButtons fittingSize]];
         mFontPanel.contentView = mPanelButtons;
         mFontPanel.defaultButtonCell = mPanelButtons.okButton.cell;
     }

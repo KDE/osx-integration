@@ -1,0 +1,36 @@
+diff --git a/src/qcocoa-qpa/qcocoacolordialoghelper.mm b/src/qcocoa-qpa/qcocoacolordialoghelper.mm
+index a8974c4..0d64fb2 100644
+--- a/src/qcocoa-qpa/qcocoacolordialoghelper.mm
++++ b/src/qcocoa-qpa/qcocoacolordialoghelper.mm
+@@ -125,6 +125,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSColorPanelDelegate);
+         // create a new content view and add the stolen one as a subview
+         mPanelButtons = [[QNSPanelContentsWrapper alloc] initWithPanelDelegate:self];
+         [mPanelButtons addSubview:mStolenContentView];
++        [mPanelButtons setFrameSize:[mPanelButtons fittingSize]];
+         mColorPanel.contentView = mPanelButtons;
+         mColorPanel.defaultButtonCell = mPanelButtons.okButton.cell;
+     }
+diff --git a/src/qcocoa-qpa/qcocoafontdialoghelper.mm b/src/qcocoa-qpa/qcocoafontdialoghelper.mm
+index f3dc39d..b045a1e 100644
+--- a/src/qcocoa-qpa/qcocoafontdialoghelper.mm
++++ b/src/qcocoa-qpa/qcocoafontdialoghelper.mm
+@@ -146,6 +146,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSFontPanelDelegate);
+         mPanelButtons = [[QNSPanelContentsWrapper alloc] initWithPanelDelegate:self];
+         [mPanelButtons addSubview:mStolenContentView];
+         mPanelButtons.panelContentsMargins = NSEdgeInsetsMake(0, 0, 7, 0);
++        [mPanelButtons setFrameSize:[mPanelButtons fittingSize]];
+         mFontPanel.contentView = mPanelButtons;
+         mFontPanel.defaultButtonCell = mPanelButtons.okButton.cell;
+     }
+diff --git a/src/qcocoa-qpa/qcocoahelpers.mm b/src/qcocoa-qpa/qcocoahelpers.mm
+index 20c6133..eb5d19a 100644
+--- a/src/qcocoa-qpa/qcocoahelpers.mm
++++ b/src/qcocoa-qpa/qcocoahelpers.mm
+@@ -407,6 +407,7 @@ QT_END_NAMESPACE
+     self.panelContents.needsDisplay = YES;
+ 
+     self.needsDisplay = YES;
++    [super layout];
+ }
+ 
+ @end
