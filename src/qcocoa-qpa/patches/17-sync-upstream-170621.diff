@@ -1,7 +1,7 @@
-diff --git a/src/qcocoa-qpa/qnsview.mm b/src/qcocoa-qpa/qnsview.mm
+diff --git a/cocoa/qnsview.mm b/cocoa/qnsview.mm
 index 9edb6c7..9da4952 100644
---- a/src/qcocoa-qpa/qnsview.mm
-+++ b/src/qcocoa-qpa/qnsview.mm
+--- a/cocoa/qnsview.mm
++++ b/cocoa/qnsview.mm
 @@ -181,7 +181,10 @@ static bool _q_dontOverrideCtrlLMB = false;
  - (void)dealloc
  {

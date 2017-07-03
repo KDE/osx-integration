@@ -125,6 +125,7 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSColorPanelDelegate);
         // create a new content view and add the stolen one as a subview
         mPanelButtons = [[QNSPanelContentsWrapper alloc] initWithPanelDelegate:self];
         [mPanelButtons addSubview:mStolenContentView];
+        [mPanelButtons setFrameSize:[mPanelButtons fittingSize]];
         mColorPanel.contentView = mPanelButtons;
         mColorPanel.defaultButtonCell = mPanelButtons.okButton.cell;
     }

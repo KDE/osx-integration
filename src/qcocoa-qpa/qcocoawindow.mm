@@ -58,6 +58,10 @@
 
 #include <QDebug>
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 9, 0)
+#include <qaltoperatingsystemversion.h>
+#endif
+
 #include <vector>
 
 #if QT_MACOS_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_10)
