@@ -40,25 +40,52 @@
 #include <QtCore/qtcore-config.h>
 
 #ifndef QT_FEATURE_style_mac
-#define QT_FEATURE_style_mac 1
+#   define QT_FEATURE_style_mac 1
 #endif
 
 #ifndef QT_FEATURE_checkbox
-#define QT_FEATURE_checkbox 1
+#   define QT_FEATURE_checkbox 1
 #endif
 
 #ifndef QT_FEATURE_dialogbuttonbox
-#define QT_FEATURE_dialogbuttonbox 1
+#   define QT_FEATURE_dialogbuttonbox 1
 #endif
 
 #ifndef QT_FEATURE_pushbutton
-#define QT_FEATURE_pushbutton 1
+#   define QT_FEATURE_pushbutton 1
 #endif
 
 #ifndef QT_FEATURE_formlayout
-#define QT_FEATURE_formlayout 1
+#   define QT_FEATURE_formlayout 1
 #endif
 
+/*
+ * These QT_[REQUIRE_]CONFIG features already exist as QT_NO_foo in 5.8 and earlier:
+ */
+
 #ifndef QT_FEATURE_columnview
-#define QT_FEATURE_columnview 1
+#   ifdef QT_NO_QCOLUMNVIEW
+#       warning "No support for QColumnView"
+#       define QT_FEATURE_columnview -1
+#   else
+#       define QT_FEATURE_columnview 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_wheelevent
+#   ifdef QT_NO_WHEELEVENT
+#       warning "No support for wheel events"
+#       define QT_FEATURE_wheelevent -1
+#   else
+#       define QT_FEATURE_wheelevent 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_wizard
+#   ifdef QT_NO_WIZARD
+#       warning "No support for QWizard"
+#       define QT_FEATURE_wizard -1
+#   else
+#       define QT_FEATURE_wizard 1
+#   endif
 #endif

@@ -1,0 +1,233 @@
+diff --git a/private/qcombobox.cpp b/private/qcombobox.cpp
+index 2bb1d30..aa9e701 100644
+--- a/private/qcombobox.cpp
++++ b/private/qcombobox.cpp
+@@ -3287,7 +3287,7 @@ void QComboBox::keyReleaseEvent(QKeyEvent *e)
+ /*!
+     \reimp
+ */
+-#ifndef QT_NO_WHEELEVENT
++#if QT_CONFIG(wheelevent)
+ void QComboBox::wheelEvent(QWheelEvent *e)
+ {
+ #ifdef Q_OS_DARWIN
+diff --git a/private/qcombobox.h b/private/qcombobox.h
+index 2da1ceb..8f99594 100644
+--- a/private/qcombobox.h
++++ b/private/qcombobox.h
+@@ -234,7 +234,7 @@ protected:
+     void mouseReleaseEvent(QMouseEvent *e) Q_DECL_OVERRIDE;
+     void keyPressEvent(QKeyEvent *e) Q_DECL_OVERRIDE;
+     void keyReleaseEvent(QKeyEvent *e) Q_DECL_OVERRIDE;
+-#ifndef QT_NO_WHEELEVENT
++#if QT_CONFIG(wheelevent)
+     void wheelEvent(QWheelEvent *e) Q_DECL_OVERRIDE;
+ #endif
+ #ifndef QT_NO_CONTEXTMENU
+diff --git a/private/qcommonstyle.cpp b/private/qcommonstyle.cpp
+index 1dd6820..af229eb 100644
+--- a/private/qcommonstyle.cpp
++++ b/private/qcommonstyle.cpp
+@@ -75,7 +75,9 @@
+ #include <private/qmath_p.h>
+ #include <qdebug.h>
+ #include <qtextformat.h>
++#if QT_CONFIG(wizard)
+ #include <qwizard.h>
++#endif
+ #include <qfileinfo.h>
+ #include <qdir.h>
+ #include <qsettings.h>
+@@ -5188,7 +5190,7 @@ int QCommonStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget
+             vret->variant = fmt;
+         }
+         break;
+-#ifndef QT_NO_WIZARD
++#if QT_CONFIG(wizard)
+     case SH_WizardStyle:
+         ret = QWizard::ClassicStyle;
+         break;
+diff --git a/private/qoperatingsystemversion.cpp b/private/qoperatingsystemversion.cpp
+index 244f294..83ba6e6 100644
+--- a/private/qoperatingsystemversion.cpp
++++ b/private/qoperatingsystemversion.cpp
+@@ -175,7 +175,10 @@ QOperatingSystemVersion QOperatingSystemVersion::current()
+     version.m_major = -1;
+     version.m_minor = -1;
+ 
+-    static const int versions[][2] = {
++    static const struct {
++        uint major : 4;
++        uint minor : 4;
++    } versions[] = {
+         { 1, 0 }, // API level 1
+         { 1, 1 }, // API level 2
+         { 1, 5 }, // API level 3
+@@ -207,8 +210,8 @@ QOperatingSystemVersion QOperatingSystemVersion::current()
+     const size_t versionIdx = size_t(QJNIObjectPrivate::getStaticField<jint>(
+         "android/os/Build$VERSION", "SDK_INT")) - 1;
+     if (versionIdx < sizeof(versions) / sizeof(versions[0])) {
+-        version.m_major = versions[versionIdx][0];
+-        version.m_minor = versions[versionIdx][1];
++        version.m_major = versions[versionIdx].major;
++        version.m_minor = versions[versionIdx].minor;
+     }
+ 
+     // API level 6 was exactly version 2.0.1
+@@ -333,6 +336,7 @@ QString QOperatingSystemVersion::name() const
+     }
+ }
+ 
++#ifdef Q_COMPILER_INITIALIZER_LISTS
+ /*!
+     \fn bool QOperatingSystemVersion::isAnyOfType(std::initializer_list<OSType> types) const
+ 
+@@ -347,6 +351,7 @@ bool QOperatingSystemVersion::isAnyOfType(std::initializer_list<OSType> types) c
+     }
+     return false;
+ }
++#endif
+ 
+ /*!
+     \variable QOperatingSystemVersion::Windows7
+diff --git a/private/qoperatingsystemversion.h b/private/qoperatingsystemversion.h
+index 295365a..2e319e6 100644
+--- a/private/qoperatingsystemversion.h
++++ b/private/qoperatingsystemversion.h
+@@ -81,7 +81,6 @@ public:
+     static const QOperatingSystemVersion AndroidNougat;
+     static const QOperatingSystemVersion AndroidNougat_MR1;
+ 
+-    QOperatingSystemVersion(const QOperatingSystemVersion &other) = default;
+     Q_DECL_CONSTEXPR QOperatingSystemVersion(OSType osType,
+                                              int vmajor, int vminor = -1, int vmicro = -1)
+         : m_os(osType),
+@@ -99,7 +98,9 @@ public:
+     Q_DECL_CONSTEXPR int segmentCount() const
+     { return m_micro >= 0 ? 3 : m_minor >= 0 ? 2 : m_major >= 0 ? 1 : 0; }
+ 
++#ifdef Q_COMPILER_INITIALIZER_LISTS
+     bool isAnyOfType(std::initializer_list<OSType> types) const;
++#endif
+     Q_DECL_CONSTEXPR OSType type() const { return m_os; }
+     QString name() const;
+ 
+@@ -124,6 +125,7 @@ private:
+ 
+     static int compare(const QOperatingSystemVersion &v1, const QOperatingSystemVersion &v2);
+ };
++Q_DECLARE_TYPEINFO(QOperatingSystemVersion, QT_VERSION < QT_VERSION_CHECK(6, 0, 0) ? Q_RELOCATABLE_TYPE : Q_PRIMITIVE_TYPE);
+ 
+ QT_END_NAMESPACE
+ 
+diff --git a/private/qtcore-config.h b/private/qtcore-config.h
+index 99943eb..9020561 100644
+--- a/private/qtcore-config.h
++++ b/private/qtcore-config.h
+@@ -40,25 +40,52 @@
+ #include <QtCore/qtcore-config.h>
+ 
+ #ifndef QT_FEATURE_style_mac
+-#define QT_FEATURE_style_mac 1
++#   define QT_FEATURE_style_mac 1
+ #endif
+ 
+ #ifndef QT_FEATURE_checkbox
+-#define QT_FEATURE_checkbox 1
++#   define QT_FEATURE_checkbox 1
+ #endif
+ 
+ #ifndef QT_FEATURE_dialogbuttonbox
+-#define QT_FEATURE_dialogbuttonbox 1
++#   define QT_FEATURE_dialogbuttonbox 1
+ #endif
+ 
+ #ifndef QT_FEATURE_pushbutton
+-#define QT_FEATURE_pushbutton 1
++#   define QT_FEATURE_pushbutton 1
+ #endif
+ 
+ #ifndef QT_FEATURE_formlayout
+-#define QT_FEATURE_formlayout 1
++#   define QT_FEATURE_formlayout 1
+ #endif
+ 
++/*
++ * These QT_[REQUIRE_]CONFIG features already exist as QT_NO_foo in 5.8 and earlier:
++ */
++
+ #ifndef QT_FEATURE_columnview
+-#define QT_FEATURE_columnview 1
++#   ifdef QT_NO_QCOLUMNVIEW
++#       warning "No support for QColumnView"
++#       define QT_FEATURE_columnview -1
++#   else
++#       define QT_FEATURE_columnview 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_wheelevent
++#   ifdef QT_NO_WHEELEVENT
++#       warning "No support for wheel events"
++#       define QT_FEATURE_wheelevent -1
++#   else
++#       define QT_FEATURE_wheelevent 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_wizard
++#   ifdef QT_NO_WIZARD
++#       warning "No support for QWizard"
++#       define QT_FEATURE_wizard -1
++#   else
++#       define QT_FEATURE_wizard 1
++#   endif
+ #endif
+diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
+index 5e2449e..97fcddb 100644
+--- a/qmacstyle_mac.mm
++++ b/qmacstyle_mac.mm
+@@ -90,7 +90,9 @@
+ #include <qtreeview.h>
+ #include <qtableview.h>
+ #include <qoperatingsystemversion.h>
++#if QT_CONFIG(wizard)
+ #include <qwizard.h>
++#endif
+ #include <qdebug.h>
+ #include <qlibrary.h>
+ #include <qdatetimeedit.h>
+@@ -3036,7 +3038,7 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
+     case SH_FocusFrame_AboveWidget:
+         ret = true;
+         break;
+-#ifndef QT_NO_WIZARD
++#if QT_CONFIG(wizard)
+     case SH_WizardStyle:
+         ret = QWizard::MacStyle;
+         break;
+@@ -4308,6 +4310,12 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+             // We support non-native themes in this patched Qt version, so we cannot rely on the result
+             // of the test above. It's best to presume it always returns true.
+             bool nonDefaultFont = true;
++
++            if (!myTab.documentMode && (myTab.state & State_Selected) && (myTab.state & State_Active))
++                if (const auto *tabBar = qobject_cast<const QTabBar *>(w))
++                    if (!tabBar->tabTextColor(tabBar->currentIndex()).isValid())
++                        myTab.palette.setColor(QPalette::WindowText, Qt::white);
++
+             if (verticalTabs || nonDefaultFont || !tab->icon.isNull()
+                 || !myTab.leftButtonSize.isEmpty() || !myTab.rightButtonSize.isEmpty()) {
+                 int heightOffset = 0;
+diff --git a/qmacstyle_mac_p_p.h b/qmacstyle_mac_p_p.h
+index 12247f3..97e17b5 100644
+--- a/qmacstyle_mac_p_p.h
++++ b/qmacstyle_mac_p_p.h
+@@ -93,7 +93,6 @@
+ #include <qtoolbutton.h>
+ #include <qtreeview.h>
+ #include <qtableview.h>
+-#include <qwizard.h>
+ #include <qdebug.h>
+ #include <qdatetimeedit.h>
+ #include <qmath.h>
