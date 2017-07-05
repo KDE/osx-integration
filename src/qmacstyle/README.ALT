@@ -1,3 +1,26 @@
+20170705: upstream head (5.9 branch): 03b4838cb51513bd5d2edf76dccc4bc4a1181681
+touched:
+ src/corelib/global/qoperatingsystemversion.cpp                                     |  11 ++-
+ src/corelib/global/qoperatingsystemversion.h                                       |   4 +-
+ src/widgets/widgets/qcombobox.cpp                                                  |   2 +-
+ src/widgets/widgets/qcombobox.h                                                    |   2 +-
+ src/widgets/styles/qcommonstyle.cpp                                                |   4 +-
+ src/widgets/styles/qmacstyle_mac.mm                                                |  10 ++-
+ src/widgets/styles/qmacstyle_mac_p_p.h                                             |   1 -
+> patch: patches/11-sync-upstream-170705.diff
+Main change from `git log b2cb83ecbb1eec29268852d1b230f37e4c8592e9..HEAD src/widgets/styles/qmacstyle_mac.mm src/widgets/styles/qmacstyle_mac_p_p.h src/corelib/global/qoperatingsystemversion.cpp src/corelib/global/qoperatingsystemversion.h src/widgets/widgets/qcombobox.cpp src/widgets/widgets/qcombobox.h src/widgets/styles/qcommonstyle.cpp`:
+commit d138a239d27b3f2d3b654b4768f8000bb2a555a1
+Author: Gabriel de Dietrich <gabriel.dedietrich@qt.io>
+Date:   Fri Jun 23 10:47:23 2017 -0700
+    Fix current tab text color on Mac when a proxy style is installed
+    We move the code forcing white text on the current tab to
+    QMacStyle. This removes the small encapsulation violation
+    even though we need to check for the tab text color in the
+    style and modify the palette.
+    Amends 2fbc1432025dd478cf9e940e3c2a1952b218c6dc.
+
+
+
 commit cc89ffe9e192ca014a4d75895df956ccee085b7d
 Author: R.J.V. Bertin <rjvbertin@gmail.com>
 Date:   Tue Jun 27 19:20:01 2017 +0200

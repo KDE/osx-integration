@@ -1,7 +1,7 @@
-diff --git a/src/qmacstyle/qmacstyle_mac.mm b/src/qmacstyle/qmacstyle_mac.mm
+diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
 index 47bdacd..5e2449e 100644
---- a/src/qmacstyle/qmacstyle_mac.mm
-+++ b/src/qmacstyle/qmacstyle_mac.mm
+--- a/qmacstyle_mac.mm
++++ b/qmacstyle_mac.mm
 @@ -157,6 +157,10 @@ const int QMacStylePrivate::PushButtonContentPadding = 6;
  
  QVector<QPointer<QObject> > QMacStylePrivate::scrollBars;

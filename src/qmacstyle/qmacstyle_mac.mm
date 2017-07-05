@@ -90,7 +90,9 @@
 #include <qtreeview.h>
 #include <qtableview.h>
 #include <qoperatingsystemversion.h>
+#if QT_CONFIG(wizard)
 #include <qwizard.h>
+#endif
 #include <qdebug.h>
 #include <qlibrary.h>
 #include <qdatetimeedit.h>
@@ -3036,7 +3038,7 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
     case SH_FocusFrame_AboveWidget:
         ret = true;
         break;
-#ifndef QT_NO_WIZARD
+#if QT_CONFIG(wizard)
     case SH_WizardStyle:
         ret = QWizard::MacStyle;
         break;
@@ -4308,6 +4310,12 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
             // We support non-native themes in this patched Qt version, so we cannot rely on the result
             // of the test above. It's best to presume it always returns true.
             bool nonDefaultFont = true;
+
+            if (!myTab.documentMode && (myTab.state & State_Selected) && (myTab.state & State_Active))
+                if (const auto *tabBar = qobject_cast<const QTabBar *>(w))
+                    if (!tabBar->tabTextColor(tabBar->currentIndex()).isValid())
+                        myTab.palette.setColor(QPalette::WindowText, Qt::white);
+
             if (verticalTabs || nonDefaultFont || !tab->icon.isNull()
                 || !myTab.leftButtonSize.isEmpty() || !myTab.rightButtonSize.isEmpty()) {
                 int heightOffset = 0;
