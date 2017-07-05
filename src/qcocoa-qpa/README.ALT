@@ -1,3 +1,45 @@
+20170705: upstream head (5.9 branch): 03b4838cb51513bd5d2edf76dccc4bc4a1181681
+touched:
+ src/plugins/platforms/cocoa/cocoa.pro                                              |  16 +++--
+ src/plugins/platforms/cocoa/qcocoacolordialoghelper.h                              |   4 ++
+ src/plugins/platforms/cocoa/qcocoacolordialoghelper.mm                             |   4 --
+ src/plugins/platforms/cocoa/qcocoafiledialoghelper.h                               |   3 +
+ src/plugins/platforms/cocoa/qcocoafiledialoghelper.mm                              |   4 --
+ src/plugins/platforms/cocoa/qcocoaintegration.mm                                   |   8 ++-
+ src/plugins/platforms/cocoa/qcocoamenubar.mm                                       |  18 ++++-
+ src/plugins/platforms/cocoa/qcocoatheme.mm                                         |  14 ++--
+ src/plugins/platforms/cocoa/qnsview.mm                                             |  33 +++++----
+> patch: patches/19-sync-upstream-170705.diff
+Main changes from `cd src/plugins/platforms/cocoa && git log b2cb83ecbb1eec29268852d1b230f37e4c8592e9..HEAD cocoa.pro qcocoacolordialoghelper.h qcocoacolordialoghelper.mm qcocoafiledialoghelper.h qcocoafiledialoghelper.mm qcocoaintegration.mm qcocoamenubar.mm qcocoatheme.mm qnsview.mm `
+commit 3e8ebea95b634c7ded9ee0b884768155e9e7f686
+Author: Andy Shaw <andy.shaw@qt.io>
+Date:   Fri Jun 23 09:08:19 2017 +0200
+    Cocoa: Reset the target + action for a menuitem after showing a dialog
+    To make it more reliable and efficient we now do the reverse of what we
+    are doing when redirecting the items. This will ensure that the actions
+    are correctly reset to the original target and action. The original
+    approach of updateMenubarImmediately() was not always doing this and it
+    also does other unnecessary things as a result when all we need is to
+    just reset the things we changed.
+commit 198b67d14bf3ca76d6bdf8901348da0838cf3b8d
+Author: Tor Arne Vestb#c3#b8 <tor.arne.vestbo@qt.io>
+Date:   Mon Jun 12 17:58:41 2017 +0200
+    macOS: Send text input and key events to focus object of window, not app
+    The key events and input method callbacks coming from Cocoa are targeted
+    at our specific NSView, so we should deliver them to the focus object of
+    the corresponding QWindow, not the global application focus object.
+    This means that we'll deliver key events to windows also when they are
+    not key (active), but this is intentional, as we would otherwise fail
+    to deliver input method events coming from e.g. the emoji/symbol picker,
+    which steals the key window when active.
+    Task-number: QTBUG-61359
+commit 3851a8ff20c6aed0807bfdc4588ae108a2b108ec
+Author: Tor Arne Vestb#c3#b8 <tor.arne.vestbo@qt.io>
+Date:   Fri Jun 23 13:32:25 2017 +0200
+    macOS: Work around buildup of NSDisplayCycle objects during rapid painting
+    Task-number: QTBUG-60012
+
+
 commit e6ccc8e56fdaf402602130176064ffb1a0ce29bf
 Author: R.J.V. Bertin <rjvbertin@gmail.com>
 Date:   Wed Jun 21 18:16:04 2017 +0200
