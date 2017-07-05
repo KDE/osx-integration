@@ -1,0 +1,345 @@
+diff --git a/cocoa/cocoa.pro b/cocoa/cocoa.pro
+index 6293521..23a049b 100644
+--- a/cocoa/cocoa.pro
++++ b/cocoa/cocoa.pro
+@@ -20,8 +20,6 @@ OBJECTIVE_SOURCES += main.mm \
+     qmultitouch_mac.mm \
+     qcocoaaccessibilityelement.mm \
+     qcocoaaccessibility.mm \
+-    qcocoacolordialoghelper.mm \
+-    qcocoafiledialoghelper.mm \
+     qcocoafontdialoghelper.mm \
+     qcocoacursor.mm \
+     qcocoaclipboard.mm \
+@@ -55,8 +53,6 @@ HEADERS += qcocoaintegration.h \
+     qmultitouch_mac_p.h \
+     qcocoaaccessibilityelement.h \
+     qcocoaaccessibility.h \
+-    qcocoacolordialoghelper.h \
+-    qcocoafiledialoghelper.h \
+     qcocoafontdialoghelper.h \
+     qcocoacursor.h \
+     qcocoaclipboard.h \
+@@ -89,6 +85,8 @@ QT += \
+ CONFIG += no_app_extension_api_only
+ 
+ qtHaveModule(widgets) {
++    QT_FOR_CONFIG += widgets
++
+     OBJECTIVE_SOURCES += \
+         qpaintengine_mac.mm \
+         qprintengine_mac.mm \
+@@ -101,6 +99,16 @@ qtHaveModule(widgets) {
+         qcocoaprintersupport.h \
+         qcocoaprintdevice.h \
+ 
++    qtConfig(colordialog) {
++        SOURCES += qcocoacolordialoghelper.mm
++        HEADERS += qcocoacolordialoghelper.h
++    }
++
++    qtConfig(filedialog) {
++        SOURCES += qcocoafiledialoghelper.mm
++        HEADERS += qcocoafiledialoghelper.h
++    }
++
+     QT += widgets-private printsupport-private
+ }
+ 
+diff --git a/cocoa/qcocoacolordialoghelper.h b/cocoa/qcocoacolordialoghelper.h
+index 5501766..133efd6 100644
+--- a/cocoa/qcocoacolordialoghelper.h
++++ b/cocoa/qcocoacolordialoghelper.h
+@@ -40,9 +40,13 @@
+ #ifndef QCOCOACOLORDIALOGHELPER_H
+ #define QCOCOACOLORDIALOGHELPER_H
+ 
++#include <QtWidgets/qtwidgetsglobal.h>
++
+ #include <QObject>
+ #include <qpa/qplatformdialoghelper.h>
+ 
++QT_REQUIRE_CONFIG(colordialog);
++
+ QT_BEGIN_NAMESPACE
+ 
+ class QCocoaColorDialogHelper : public QPlatformColorDialogHelper
+diff --git a/cocoa/qcocoacolordialoghelper.mm b/cocoa/qcocoacolordialoghelper.mm
+index 0d64fb2..f1eca59 100644
+--- a/cocoa/qcocoacolordialoghelper.mm
++++ b/cocoa/qcocoacolordialoghelper.mm
+@@ -37,8 +37,6 @@
+ **
+ ****************************************************************************/
+ 
+-#ifndef QT_NO_COLORDIALOG
+-
+ #include <QtCore/qdebug.h>
+ #include <QtCore/qtimer.h>
+ #include <qpa/qplatformtheme.h>
+@@ -425,5 +423,3 @@ QColor QCocoaColorDialogHelper::currentColor() const
+ }
+ 
+ QT_END_NAMESPACE
+-
+-#endif // QT_NO_COLORDIALOG
+diff --git a/cocoa/qcocoafiledialoghelper.h b/cocoa/qcocoafiledialoghelper.h
+index 1cff6f9..f5ba1dc 100644
+--- a/cocoa/qcocoafiledialoghelper.h
++++ b/cocoa/qcocoafiledialoghelper.h
+@@ -41,8 +41,11 @@
+ #define QCOCOAFILEDIALOGHELPER_H
+ 
+ #include <QObject>
++#include <QtWidgets/qtwidgetsglobal.h>
+ #include <qpa/qplatformdialoghelper.h>
+ 
++QT_REQUIRE_CONFIG(filedialog);
++
+ Q_FORWARD_DECLARE_OBJC_CLASS(QT_MANGLE_NAMESPACE(QNSOpenSavePanelDelegate));
+ 
+ QT_BEGIN_NAMESPACE
+diff --git a/cocoa/qcocoafiledialoghelper.mm b/cocoa/qcocoafiledialoghelper.mm
+index 6e7ab48..bb1a9c3 100644
+--- a/cocoa/qcocoafiledialoghelper.mm
++++ b/cocoa/qcocoafiledialoghelper.mm
+@@ -41,8 +41,6 @@
+ 
+ #include "qcocoafiledialoghelper.h"
+ 
+-#ifndef QT_NO_FILEDIALOG
+-
+ /*****************************************************************************
+   QFileDialog debug facilities
+  *****************************************************************************/
+@@ -779,5 +777,3 @@ bool QCocoaFileDialogHelper::defaultNameFilterDisables() const
+ }
+ 
+ QT_END_NAMESPACE
+-
+-#endif // QT_NO_FILEDIALOG
+diff --git a/cocoa/qcocoaintegration.mm b/cocoa/qcocoaintegration.mm
+index a60b5eb..6aa02ec 100644
+--- a/cocoa/qcocoaintegration.mm
++++ b/cocoa/qcocoaintegration.mm
+@@ -47,7 +47,6 @@
+ #include "qcocoahelpers.h"
+ #include "qcocoaapplication.h"
+ #include "qcocoaapplicationdelegate.h"
+-#include "qcocoafiledialoghelper.h"
+ #include "qcocoatheme.h"
+ #include "qcocoainputcontext.h"
+ #include "qcocoamimetypes.h"
+@@ -60,6 +59,13 @@
+ 
+ #include <QtGui/private/qcoregraphics_p.h>
+ 
++#ifdef QT_WIDGETS_LIB
++#include <QtWidgets/qtwidgetsglobal.h>
++#if QT_CONFIG(filedialog)
++#include "qcocoafiledialoghelper.h"
++#endif
++#endif
++
+ #include <IOKit/graphics/IOGraphicsLib.h>
+ 
+ static void initResources()
+diff --git a/cocoa/qcocoamenubar.mm b/cocoa/qcocoamenubar.mm
+index 82c405b..4cdf004 100644
+--- a/cocoa/qcocoamenubar.mm
++++ b/cocoa/qcocoamenubar.mm
+@@ -303,7 +303,23 @@ void QCocoaMenuBar::resetKnownMenuItemsToQt()
+     // Undo the effect of redirectKnownMenuItemsToFirstResponder():
+     // set the menu items' actions to itemFired and their targets to
+     // the QCocoaMenuDelegate.
+-    updateMenuBarImmediately();
++    foreach (QCocoaMenuBar *mb, static_menubars) {
++        foreach (QCocoaMenu *m, mb->m_menus) {
++            foreach (QCocoaMenuItem *i, m->items()) {
++                switch (i->effectiveRole()) {
++                case QPlatformMenuItem::CutRole:
++                case QPlatformMenuItem::CopyRole:
++                case QPlatformMenuItem::PasteRole:
++                case QPlatformMenuItem::SelectAllRole:
++                   [i->nsItem() setTarget:m->nsMenu().delegate];
++                   [i->nsItem() setAction:@selector(itemFired:)];
++                   break;
++                default:
++                   break;
++                }
++            }
++        }
++    }
+ }
+ 
+ void QCocoaMenuBar::updateMenuBarImmediately()
+diff --git a/cocoa/qcocoatheme.mm b/cocoa/qcocoatheme.mm
+index 18dc1db..13af8fb 100644
+--- a/cocoa/qcocoatheme.mm
++++ b/cocoa/qcocoatheme.mm
+@@ -45,7 +45,6 @@
+ #include <QtCore/QVariant>
+ 
+ #include "qcocoacolordialoghelper.h"
+-#include "qcocoafiledialoghelper.h"
+ #include "qcocoafontdialoghelper.h"
+ #include "qcocoasystemsettings.h"
+ #include "qcocoasystemtrayicon.h"
+@@ -63,6 +62,13 @@
+ #include <qpa/qplatformintegration.h>
+ #include <qpa/qplatformnativeinterface.h>
+ 
++#ifdef QT_WIDGETS_LIB
++#include <QtWidgets/qtwidgetsglobal.h>
++#if QT_CONFIG(filedialog)
++#include "qcocoafiledialoghelper.h"
++#endif
++#endif
++
+ #include <Carbon/Carbon.h>
+ 
+ @interface QT_MANGLE_NAMESPACE(QCocoaThemeNotificationReceiver) : NSObject {
+@@ -124,7 +130,7 @@ bool QCocoaTheme::usePlatformNativeDialog(DialogType dialogType) const
+ {
+     if (dialogType == QPlatformTheme::FileDialog)
+         return true;
+-#ifndef QT_NO_COLORDIALOG
++#if QT_CONFIG(colordialog)
+     if (dialogType == QPlatformTheme::ColorDialog)
+         return true;
+ #endif
+@@ -138,11 +144,11 @@ bool QCocoaTheme::usePlatformNativeDialog(DialogType dialogType) const
+ QPlatformDialogHelper * QCocoaTheme::createPlatformDialogHelper(DialogType dialogType) const
+ {
+     switch (dialogType) {
+-#ifndef QT_NO_FILEDIALOG
++#if defined(QT_WIDGETS_LIB) && QT_CONFIG(filedialog)
+     case QPlatformTheme::FileDialog:
+         return new QCocoaFileDialogHelper();
+ #endif
+-#ifndef QT_NO_COLORDIALOG
++#if QT_CONFIG(colordialog)
+     case QPlatformTheme::ColorDialog:
+         return new QCocoaColorDialogHelper();
+ #endif
+diff --git a/cocoa/qnsview.mm b/cocoa/qnsview.mm
+index 9da4952..9f33ad0 100644
+--- a/cocoa/qnsview.mm
++++ b/cocoa/qnsview.mm
+@@ -37,7 +37,7 @@
+ **
+ ****************************************************************************/
+ 
+-#include <QtCore/qglobal.h>
++#include <QtGui/qtguiglobal.h>
+ 
+ #include "qnsview.h"
+ #include "qcocoawindow.h"
+@@ -385,6 +385,14 @@ static bool _q_dontOverrideCtrlLMB = false;
+ 
+     m_backingStore = backingStore;
+     m_backingStoreOffset = offset * m_backingStore->paintDevice()->devicePixelRatio();
++
++    // Prevent buildup of NSDisplayCycle objects during setNeedsDisplayInRect, which
++    // would normally be released as part of the root runloop's autorelease pool, but
++    // can be kept alive during repeated painting which starve the root runloop.
++    // FIXME: Move this to the event dispatcher, to cover more cases of starvation.
++    // FIXME: Figure out if there's a way to detect and/or prevent runloop starvation.
++    QMacAutoReleasePool pool;
++
+     for (const QRect &rect : region)
+         [self setNeedsDisplayInRect:NSMakeRect(rect.x(), rect.y(), rect.width(), rect.height())];
+ }
+@@ -1384,7 +1392,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ }
+ #endif // QT_NO_GESTURES
+ 
+-#ifndef QT_NO_WHEELEVENT
++#if QT_CONFIG(wheelevent)
+ - (void)scrollWheel:(NSEvent *)theEvent
+ {
+     if (!m_platformWindow)
+@@ -1465,7 +1473,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ 
+     QWindowSystemInterface::handleWheelEvent(m_platformWindow->window(), qt_timestamp, qt_windowPoint, qt_screenPoint, pixelDelta, angleDelta, currentWheelModifiers, ph, source, isInverted);
+ }
+-#endif //QT_NO_WHEELEVENT
++#endif // QT_CONFIG(wheelevent)
+ 
+ - (int) convertKeyCode : (QChar)keyChar
+ {
+@@ -1554,7 +1562,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+                 modifiers, nativeScanCode, nativeVirtualKey, nativeModifiers, text, [nsevent isARepeat], 1);
+         }
+ 
+-        QObject *fo = QGuiApplication::focusObject();
++        QObject *fo = m_platformWindow->window()->focusObject();
+         if (m_sendKeyEvent && fo) {
+             QInputMethodQueryEvent queryEvent(Qt::ImEnabled | Qt::ImHints);
+             if (QCoreApplication::sendEvent(fo, &queryEvent)) {
+@@ -1705,8 +1713,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+             commitString = QString::fromCFString(reinterpret_cast<CFStringRef>(aString));
+         };
+     }
+-    QObject *fo = QGuiApplication::focusObject();
+-    if (fo) {
++    if (QObject *fo = m_platformWindow->window()->focusObject()) {
+         QInputMethodQueryEvent queryEvent(Qt::ImEnabled);
+         if (QCoreApplication::sendEvent(fo, &queryEvent)) {
+             if (queryEvent.value(Qt::ImEnabled).toBool()) {
+@@ -1773,8 +1780,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ 
+     m_composingText = preeditString;
+ 
+-    QObject *fo = QGuiApplication::focusObject();
+-    if (fo) {
++    if (QObject *fo = m_platformWindow->window()->focusObject()) {
+         QInputMethodQueryEvent queryEvent(Qt::ImEnabled);
+         if (QCoreApplication::sendEvent(fo, &queryEvent)) {
+             if (queryEvent.value(Qt::ImEnabled).toBool()) {
+@@ -1790,8 +1796,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ - (void) unmarkText
+ {
+     if (!m_composingText.isEmpty()) {
+-        QObject *fo = QGuiApplication::focusObject();
+-        if (fo) {
++        if (QObject *fo = m_platformWindow->window()->focusObject()) {
+             QInputMethodQueryEvent queryEvent(Qt::ImEnabled);
+             if (QCoreApplication::sendEvent(fo, &queryEvent)) {
+                 if (queryEvent.value(Qt::ImEnabled).toBool()) {
+@@ -1813,7 +1818,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ - (NSAttributedString *) attributedSubstringForProposedRange:(NSRange)aRange actualRange:(NSRangePointer)actualRange
+ {
+     Q_UNUSED(actualRange)
+-    QObject *fo = QGuiApplication::focusObject();
++    QObject *fo = m_platformWindow->window()->focusObject();
+     if (!fo)
+         return nil;
+     QInputMethodQueryEvent queryEvent(Qt::ImEnabled | Qt::ImCurrentSelection);
+@@ -1848,7 +1853,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ {
+     NSRange selectedRange = {0, 0};
+ 
+-    QObject *fo = QGuiApplication::focusObject();
++    QObject *fo = m_platformWindow->window()->focusObject();
+     if (!fo)
+         return selectedRange;
+     QInputMethodQueryEvent queryEvent(Qt::ImEnabled | Qt::ImCurrentSelection);
+@@ -1870,7 +1875,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+ {
+     Q_UNUSED(aRange)
+     Q_UNUSED(actualRange)
+-    QObject *fo = QGuiApplication::focusObject();
++    QObject *fo = m_platformWindow->window()->focusObject();
+     if (!fo)
+         return NSZeroRect;
+ 
+@@ -1910,7 +1915,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+     if (m_platformWindow->window() != QGuiApplication::focusWindow())
+         return nil;
+ 
+-    QObject *fo = QGuiApplication::focusObject();
++    QObject *fo = m_platformWindow->window()->focusObject();
+     if (!fo)
+         return nil;
+ 

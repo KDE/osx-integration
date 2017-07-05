@@ -37,8 +37,6 @@
 **
 ****************************************************************************/
 
-#ifndef QT_NO_COLORDIALOG
-
 #include <QtCore/qdebug.h>
 #include <QtCore/qtimer.h>
 #include <qpa/qplatformtheme.h>
@@ -425,5 +423,3 @@ QColor QCocoaColorDialogHelper::currentColor() const
 }
 
 QT_END_NAMESPACE
-
-#endif // QT_NO_COLORDIALOG
