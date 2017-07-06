@@ -541,18 +541,21 @@ QRegion qt_mac_fromHIShapeRef(HIShapeRef shape)
 
 bool qt_macWindowIsTextured(const QWidget *window)
 {
-    if (QWindow *w = window->windowHandle())
-        if (w->handle())
-            if (NSWindow *nswindow = static_cast<NSWindow*>(QGuiApplication::platformNativeInterface()->nativeResourceForWindow(QByteArrayLiteral("NSWindow"), w)))
+    if (QWindow *w = window->windowHandle()) {
+        auto iFace = QGuiApplication::platformNativeInterface();
+        if (iFace && w->handle())
+            if (NSWindow *nswindow = static_cast<NSWindow*>(iFace->nativeResourceForWindow(QByteArrayLiteral("nswindow"), w)))
                 return ([nswindow styleMask] & NSTexturedBackgroundWindowMask) ? true : false;
+    }
     return false;
 }
 
 static bool qt_macWindowMainWindow(const QWidget *window)
 {
     if (QWindow *w = window->windowHandle()) {
-        if (w->handle()) {
-            if (NSWindow *nswindow = static_cast<NSWindow*>(QGuiApplication::platformNativeInterface()->nativeResourceForWindow(QByteArrayLiteral("nswindow"), w))) {
+        auto iFace = QGuiApplication::platformNativeInterface();
+        if (iFace && w->handle()) {
+            if (NSWindow *nswindow = static_cast<NSWindow*>(iFace->nativeResourceForWindow(QByteArrayLiteral("nswindow"), w))) {
                 return [nswindow isMainWindow];
             }
         }
