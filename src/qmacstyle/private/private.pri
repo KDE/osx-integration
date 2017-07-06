@@ -14,4 +14,5 @@ SOURCES += \
     $$PWD/qstyleanimation.cpp \
     $$PWD/qstylehelper.cpp \
     $$PWD/qoperatingsystemversion.cpp \
-    $$PWD/qoperatingsystemversion_darwin.mm
+    $$PWD/qoperatingsystemversion_darwin.mm \
+    $$PWD/qtabbar.cpp

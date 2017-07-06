@@ -1,0 +1,90 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 10e16d6..a909b17 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -34,6 +34,7 @@ if(Qt5_FOUND AND (NOT ${Qt5_VERSION} VERSION_LESS ${QT_MIN_VERSION}))
+         private/qoperatingsystemversion_darwin.mm
+         private/qstyleanimation.cpp
+         private/qstylehelper.cpp
++        private/qtabbar.cpp
+     )
+     add_library(qaltmacstyle SHARED ${qaltmacstyle_SRCS})
+     target_include_directories(qaltmacstyle PRIVATE
+diff --git a/private/private.pri b/private/private.pri
+index e91f618..c5fbec2 100644
+--- a/private/private.pri
++++ b/private/private.pri
+@@ -14,4 +14,5 @@ SOURCES += \
+     $$PWD/qstyleanimation.cpp \
+     $$PWD/qstylehelper.cpp \
+     $$PWD/qoperatingsystemversion.cpp \
+-    $$PWD/qoperatingsystemversion_darwin.mm
++    $$PWD/qoperatingsystemversion_darwin.mm \
++    $$PWD/qtabbar.cpp
+diff --git a/private/qtabbar.cpp b/private/qtabbar.cpp
+new file mode 100644
+index 0000000..183d8b3
+--- /dev/null
++++ b/private/qtabbar.cpp
+@@ -0,0 +1,61 @@
++/****************************************************************************
++**
++** Copyright (C) 2016 The Qt Company Ltd.
++** Contact: https://www.qt.io/licensing/
++**
++** This file is part of the QtWidgets module of the Qt Toolkit.
++**
++** $QT_BEGIN_LICENSE:LGPL$
++** Commercial License Usage
++** Licensees holding valid commercial Qt licenses may use this file in
++** accordance with the commercial license agreement provided with the
++** Software or, alternatively, in accordance with the terms contained in
++** a written agreement between you and The Qt Company. For licensing terms
++** and conditions see https://www.qt.io/terms-conditions. For further
++** information use the contact form at https://www.qt.io/contact-us.
++**
++** GNU Lesser General Public License Usage
++** Alternatively, this file may be used under the terms of the GNU Lesser
++** General Public License version 3 as published by the Free Software
++** Foundation and appearing in the file LICENSE.LGPL3 included in the
++** packaging of this file. Please review the following information to
++** ensure the GNU Lesser General Public License version 3 requirements
++** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
++**
++** GNU General Public License Usage
++** Alternatively, this file may be used under the terms of the GNU
++** General Public License version 2.0 or (at your option) the GNU General
++** Public license version 3 or any later version approved by the KDE Free
++** Qt Foundation. The licenses are as published by the Free Software
++** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
++** included in the packaging of this file. Please review the following
++** information to ensure the GNU General Public License requirements will
++** be met: https://www.gnu.org/licenses/gpl-2.0.html and
++** https://www.gnu.org/licenses/gpl-3.0.html.
++**
++** $QT_END_LICENSE$
++**
++****************************************************************************/
++
++/* minimal implementation file for private methods that are not exported properly */
++
++#include <private/qtabbar_p.h>
++
++#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
++#ifndef QT_NO_TABBAR
++
++QT_BEGIN_NAMESPACE
++
++int QTabBarPrivate::hoveredTabIndex() const
++{
++    if (dragInProgress)
++        return currentIndex;
++    if (hoverIndex >= 0)
++        return hoverIndex;
++    return -1;
++}
++
++QT_END_NAMESPACE
++
++#endif // QT_NO_TABBAR
++#endif // QT_VERSION

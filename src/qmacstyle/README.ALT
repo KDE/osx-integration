@@ -1,3 +1,7 @@
+20170706:
+> patch: patches/12-patch-provide-hoveredtabindex.diff
+provides QTabBarPrivate::hoveredTabIndex() which isn't exported properly
+
 20170705: upstream head (5.9 branch): 03b4838cb51513bd5d2edf76dccc4bc4a1181681
 touched:
  src/corelib/global/qoperatingsystemversion.cpp                                     |  11 ++-
