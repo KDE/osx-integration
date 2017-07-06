@@ -16,12 +16,13 @@ include(FeatureSummary)
 include(ExternalProject)
 
 # find the required Qt packages if that hasn't been done yet
+set(QT_REAL_MIN_VERSION 5.8.0)
 if(${QAMS_standalone})
-    set(QT_MIN_VERSION 5.7.0)
+    set(QT_MIN_VERSION ${QT_REAL_MIN_VERSION})
     set(REQUIRED_QT_VERSION ${QT_MIN_VERSION})
     find_package(Qt5 ${REQUIRED_QT_VERSION} OPTIONAL_COMPONENTS Core Widgets Gui)
 endif()
-if(Qt5_FOUND AND (NOT ${Qt5_VERSION} VERSION_LESS ${QT_MIN_VERSION}))
+if(Qt5_FOUND AND (NOT ${Qt5_VERSION} VERSION_LESS ${QT_REAL_MIN_VERSION}))
 
     remove_definitions(-DQT_NO_SIGNALS_SLOTS_KEYWORDS)
     add_definitions(-DQT_PLUGIN)
