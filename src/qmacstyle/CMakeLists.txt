@@ -35,7 +35,6 @@ if(Qt5_FOUND AND (NOT ${Qt5_VERSION} VERSION_LESS ${QT_REAL_MIN_VERSION}))
         private/qoperatingsystemversion_darwin.mm
         private/qstyleanimation.cpp
         private/qstylehelper.cpp
-        private/qtabbar.cpp
     )
     add_library(qaltmacstyle SHARED ${qaltmacstyle_SRCS})
     target_include_directories(qaltmacstyle PRIVATE
