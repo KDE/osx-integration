@@ -1,3 +1,17 @@
+20170707: upstream head (5.9): 9d3cd2268ce3beafcf6fa886bb70d8463260d602
+touched:
+ src/widgets/styles/qmacstyle_mac.mm
+> patch: patches/11.2-sync-upstream-170707.diff
+Changes:
+commit e4c39d5e1e7ee8c2bba273e6d613ec519b7fa9c2
+Author: Gabriel de Dietrich <gabriel.dedietrich@qt.io>
+Date:   Fri Jun 30 11:28:23 2017 -0700
+    QMacStyle: Bring back always visible close button in non-document QTabBar
+commit eaa54a8f9884652513c7c3ab489f31ff1e5d712c
+Author: Gabriel de Dietrich <gabriel.dedietrich@qt.io>
+Date:   Tue Jun 27 14:36:01 2017 -0700
+    QMacStyle: Properly polish and unpolish QTabBar
+
 20170706:
 > patch: patches/12-patch-provide-hoveredtabindex.diff
 provides QTabBarPrivate::hoveredTabIndex() which isn't exported properly

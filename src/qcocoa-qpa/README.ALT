@@ -1,3 +1,19 @@
+20170707: upstream head (5.9): 9d3cd2268ce3beafcf6fa886bb70d8463260d602
+touched:
+ src/plugins/platforms/cocoa/qcocoatheme.mm
+ src/plugins/platforms/cocoa/qnswindowdelegate.mm
+> patch: patches/19.2-sync-upstream-170707.diff
+Changes: from git log 03b4838cb51513bd5d2edf76dccc4bc4a1181681..HEAD src/plugins/platforms/cocoa/{qcocoatheme.mm,qnswindowdelegate.mm}
+commit 9d3cd2268ce3beafcf6fa886bb70d8463260d602
+Author: Tor Arne Vestb#c3#b8 <tor.arne.vestbo@qt.io>
+Date:   Thu Jul 6 17:03:41 2017 +0200
+    macOS: Account for fullscreen geometry bug in AppKit on OS X 10.10
+commit 6a1046e17691c6e35c7384590ba241edb4082707
+Author: Stephan Binner <stephan.binner@basyskom.com>
+Date:   Tue Jul 4 19:08:55 2017 +0200
+    Fix macOS build for -no-widgets
+
+
 20170705: upstream head (5.9 branch): 03b4838cb51513bd5d2edf76dccc4bc4a1181681
 touched:
  src/plugins/platforms/cocoa/cocoa.pro                                              |  16 +++--
