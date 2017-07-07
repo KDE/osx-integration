@@ -545,28 +545,24 @@ QRegion qt_mac_fromHIShapeRef(HIShapeRef shape)
     return returnRegion;
 }
 
-bool qt_macWindowIsTextured(const QWidget *window)
+NSWindow *qt_mac_toNSWindow(const QWidget *window)
 {
     if (QWindow *w = window->windowHandle()) {
-        auto iFace = QGuiApplication::platformNativeInterface();
-        if (iFace && w->handle())
-            if (NSWindow *nswindow = static_cast<NSWindow*>(iFace->nativeResourceForWindow(QByteArrayLiteral("nswindow"), w)))
-                return ([nswindow styleMask] & NSTexturedBackgroundWindowMask) ? true : false;
+        auto *iFace = QGuiApplication::platformNativeInterface();
+        if (Q_LIKELY(iFace) && w->handle())
+            return static_cast<NSWindow*>(iFace->nativeResourceForWindow(QByteArrayLiteral("nswindow"), w));
     }
-    return false;
+    return nil;
+}
+
+bool qt_macWindowIsTextured(const QWidget *window)
+{
+    return ([qt_mac_toNSWindow(window) styleMask] & NSTexturedBackgroundWindowMask) ? true : false;
 }
 
 static bool qt_macWindowMainWindow(const QWidget *window)
 {
-    if (QWindow *w = window->windowHandle()) {
-        auto iFace = QGuiApplication::platformNativeInterface();
-        if (iFace && w->handle()) {
-            if (NSWindow *nswindow = static_cast<NSWindow*>(iFace->nativeResourceForWindow(QByteArrayLiteral("nswindow"), w))) {
-                return [nswindow isMainWindow];
-            }
-        }
-    }
-    return false;
+    return [qt_mac_toNSWindow(window) isMainWindow];
 }
 
 /*****************************************************************************
