@@ -1,3 +1,29 @@
+20180801: upstream head (5.9): 0a5f71c6062d575602ff041fb1b88ec2d8ad92bc
+touched:
+ src/widgets/widgets/qcombobox*
+ src/widgets/styles/qcommonstyle.cpp
+ src/widgets/styles/qcommonstyle_p.h
+ src/widgets/styles/qmacstyle_mac.mm
+ src/widgets/styles/qmacstyle_mac_p_p.h
+> patch: patches/14-sync-upstream-170801.diff
+Changes:
+    Convert features.tabbar to QT_[REQUIRE_]CONFIG
+    Convert features.dockwidget to QT_[REQUIRE_]CONFIG
+    Convert features.tabwidget to QT_[REQUIRE_]CONFIG
+    Convert features.itemviews to QT_[REQUIRE_]CONFIG
+     The QT_NO_ITEMVIEWS queries in corelib/ seem to had no effect at all.
+    Convert features.combobox to QT_[REQUIRE_]CONFIG
+    Convert features.listview to QT_[REQUIRE_]CONFIG
+    Fix 32-bit build on macOS
+    Convert features.treeview to QT_[REQUIRE_]CONFIG
+    QMacStyle: Remove unused variable warning
+    Convert features.tableview to QT_[REQUIRE_]CONFIG
+    Convert features.datetimeedit to QT_[REQUIRE_]CONFIG
+    Convert features.rubberband to QT_[REQUIRE_]CONFIG
+    QMacStyle: Add back icon logic in tab layout
+    Fix modernize-use-bool-literals issues
+
+
 20170707: upstream head (5.9): 9d3cd2268ce3beafcf6fa886bb70d8463260d602
 touched:
  src/widgets/styles/qmacstyle_mac.mm

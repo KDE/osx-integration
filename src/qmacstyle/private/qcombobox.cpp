@@ -39,7 +39,6 @@
 
 #include "qcombobox.h"
 
-#ifndef QT_NO_COMBOBOX
 #include <qstylepainter.h>
 #include <qpa/qplatformtheme.h>
 #include <qpa/qplatformmenu.h>
@@ -47,14 +46,18 @@
 #include <qapplication.h>
 #include <qdesktopwidget.h>
 #include <qlistview.h>
+#if QT_CONFIG(tableview)
 #include <qtableview.h>
+#endif
 #include <qitemdelegate.h>
 #include <qmap.h>
 #include <qmenu.h>
 #include <qevent.h>
 #include <qlayout.h>
 #include <qscrollbar.h>
+#if QT_CONFIG(treeview)
 #include <qtreeview.h>
+#endif
 #include <qheaderview.h>
 #include <qmath.h>
 #include <qmetaobject.h>
@@ -598,7 +601,7 @@ int QComboBoxPrivateContainer::topMargin() const
 {
     if (const QListView *lview = qobject_cast<const QListView*>(view))
         return lview->spacing();
-#ifndef QT_NO_TABLEVIEW
+#if QT_CONFIG(tableview)
     if (const QTableView *tview = qobject_cast<const QTableView*>(view))
         return tview->showGrid() ? 1 : 0;
 #endif
@@ -613,7 +616,7 @@ int QComboBoxPrivateContainer::spacing() const
     QListView *lview = qobject_cast<QListView*>(view);
     if (lview)
         return 2 * lview->spacing(); // QListView::spacing is the padding around the item.
-#ifndef QT_NO_TABLEVIEW
+#if QT_CONFIG(tableview)
     QTableView *tview = qobject_cast<QTableView*>(view);
     if (tview)
         return tview->showGrid() ? 1 : 0;
@@ -2602,7 +2605,7 @@ void QComboBox::showPopup()
         int count = 0;
         QStack<QModelIndex> toCheck;
         toCheck.push(view()->rootIndex());
-#ifndef QT_NO_TREEVIEW
+#if QT_CONFIG(treeview)
         QTreeView *treeView = qobject_cast<QTreeView*>(view());
         if (treeView && treeView->header() && !treeView->header()->isHidden())
             listHeight += treeView->header()->height();
@@ -2614,7 +2617,7 @@ void QComboBox::showPopup()
                 if (!idx.isValid())
                     continue;
                 listHeight += view()->visualRect(idx).height();
-#ifndef QT_NO_TREEVIEW
+#if QT_CONFIG(treeview)
                 if (d->model->hasChildren(idx) && treeView && treeView->isExpanded(idx))
                     toCheck.push(idx);
 #endif
@@ -3484,5 +3487,3 @@ QT_END_NAMESPACE
 
 #include "moc_qcombobox.cpp"
 #include "moc_qcombobox_p.cpp"
-
-#endif // QT_NO_COMBOBOX
