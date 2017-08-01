@@ -37,8 +37,6 @@
 **
 ****************************************************************************/
 
-#ifndef QT_NO_FONTDIALOG
-
 #include <QtCore/qtimer.h>
 #include <QtGui/qfontdatabase.h>
 #include <qpa/qplatformtheme.h>
@@ -452,5 +450,3 @@ QFont QCocoaFontDialogHelper::currentFont() const
 }
 
 QT_END_NAMESPACE
-
-#endif // QT_NO_FONTDIALOG

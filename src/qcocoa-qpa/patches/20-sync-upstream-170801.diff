@@ -1,0 +1,216 @@
+diff --git a/cocoa/cocoa.pro b/cocoa/cocoa.pro
+index 23a049b..13e5990 100644
+--- a/cocoa/cocoa.pro
++++ b/cocoa/cocoa.pro
+@@ -20,7 +20,6 @@ OBJECTIVE_SOURCES += main.mm \
+     qmultitouch_mac.mm \
+     qcocoaaccessibilityelement.mm \
+     qcocoaaccessibility.mm \
+-    qcocoafontdialoghelper.mm \
+     qcocoacursor.mm \
+     qcocoaclipboard.mm \
+     qcocoadrag.mm \
+@@ -53,7 +52,6 @@ HEADERS += qcocoaintegration.h \
+     qmultitouch_mac_p.h \
+     qcocoaaccessibilityelement.h \
+     qcocoaaccessibility.h \
+-    qcocoafontdialoghelper.h \
+     qcocoacursor.h \
+     qcocoaclipboard.h \
+     qcocoadrag.h \
+@@ -109,6 +107,11 @@ qtHaveModule(widgets) {
+         HEADERS += qcocoafiledialoghelper.h
+     }
+ 
++    qtConfig(fontdialog) {
++        SOURCES += qcocoafontdialoghelper.mm
++        HEADERS += qcocoafontdialoghelper.h
++    }
++
+     QT += widgets-private printsupport-private
+ }
+ 
+diff --git a/cocoa/qcocoa-standalone.pro b/cocoa/qcocoa-standalone.pro
+index 445a447..eb3bd30 100644
+--- a/cocoa/qcocoa-standalone.pro
++++ b/cocoa/qcocoa-standalone.pro
+@@ -32,7 +32,6 @@ OBJECTIVE_SOURCES += main.mm \
+     qcocoaaccessibility.mm \
+     qcocoacolordialoghelper.mm \
+     qcocoafiledialoghelper.mm \
+-    qcocoafontdialoghelper.mm \
+     qcocoacursor.mm \
+     qcocoaclipboard.mm \
+     qcocoadrag.mm \
+@@ -67,7 +66,6 @@ HEADERS += qcocoaintegration.h \
+     qcocoaaccessibility.h \
+     qcocoacolordialoghelper.h \
+     qcocoafiledialoghelper.h \
+-    qcocoafontdialoghelper.h \
+     qcocoacursor.h \
+     qcocoaclipboard.h \
+     qcocoadrag.h \
+@@ -112,6 +110,11 @@ CONFIG += no_app_extension_api_only
+         qcocoaprintersupport.h \
+         qcocoaprintdevice.h \
+ 
++#     qtConfig(fontdialog) {
++        SOURCES += qcocoafontdialoghelper.mm
++        HEADERS += qcocoafontdialoghelper.h
++#     }
++
+     QT += widgets-private printsupport-private
+ # }
+ 
+diff --git a/cocoa/qcocoafontdialoghelper.h b/cocoa/qcocoafontdialoghelper.h
+index 8b05cb7..c3fad7c 100644
+--- a/cocoa/qcocoafontdialoghelper.h
++++ b/cocoa/qcocoafontdialoghelper.h
+@@ -41,8 +41,11 @@
+ #define QCOCOAFONTDIALOGHELPER_H
+ 
+ #include <QObject>
++#include <QtWidgets/qtwidgetsglobal.h>
+ #include <qpa/qplatformdialoghelper.h>
+ 
++QT_REQUIRE_CONFIG(fontdialog);
++
+ QT_BEGIN_NAMESPACE
+ 
+ class QCocoaFontDialogHelper : public QPlatformFontDialogHelper
+diff --git a/cocoa/qcocoafontdialoghelper.mm b/cocoa/qcocoafontdialoghelper.mm
+index b045a1e..8858bb0 100644
+--- a/cocoa/qcocoafontdialoghelper.mm
++++ b/cocoa/qcocoafontdialoghelper.mm
+@@ -37,8 +37,6 @@
+ **
+ ****************************************************************************/
+ 
+-#ifndef QT_NO_FONTDIALOG
+-
+ #include <QtCore/qtimer.h>
+ #include <QtGui/qfontdatabase.h>
+ #include <qpa/qplatformtheme.h>
+@@ -452,5 +450,3 @@ QFont QCocoaFontDialogHelper::currentFont() const
+ }
+ 
+ QT_END_NAMESPACE
+-
+-#endif // QT_NO_FONTDIALOG
+diff --git a/cocoa/qcocoahelpers.h b/cocoa/qcocoahelpers.h
+index a2e0876..4478895 100644
+--- a/cocoa/qcocoahelpers.h
++++ b/cocoa/qcocoahelpers.h
+@@ -167,7 +167,12 @@ QT_END_NAMESPACE
+ - (void)onCancelClicked;
+ @end
+ 
+-@interface QT_MANGLE_NAMESPACE(QNSPanelContentsWrapper) : NSView
++@interface QT_MANGLE_NAMESPACE(QNSPanelContentsWrapper) : NSView {
++    NSButton *_okButton;
++    NSButton *_cancelButton;
++    NSView *_panelContents;
++    NSEdgeInsets _panelContentsMargins;
++}
+ 
+ @property (nonatomic, readonly) NSButton *okButton;
+ @property (nonatomic, readonly) NSButton *cancelButton;
+diff --git a/cocoa/qcocoahelpers.mm b/cocoa/qcocoahelpers.mm
+index eb5d19a..e6302b4 100644
+--- a/cocoa/qcocoahelpers.mm
++++ b/cocoa/qcocoahelpers.mm
+@@ -308,6 +308,11 @@ QT_END_NAMESPACE
+  */
+ @implementation QNSPanelContentsWrapper
+ 
++@synthesize okButton = _okButton;
++@synthesize cancelButton = _cancelButton;
++@synthesize panelContents = _panelContents;
++@synthesize panelContentsMargins = _panelContentsMargins;
++
+ - (instancetype)initWithPanelDelegate:(id<QT_MANGLE_NAMESPACE(QNSPanelDelegate)>)panelDelegate
+ {
+     if ((self = [super initWithFrame:NSZeroRect])) {
+diff --git a/cocoa/qcocoatheme.mm b/cocoa/qcocoatheme.mm
+index 46c8b67..4212801 100644
+--- a/cocoa/qcocoatheme.mm
++++ b/cocoa/qcocoatheme.mm
+@@ -44,7 +44,6 @@
+ 
+ #include <QtCore/QVariant>
+ 
+-#include "qcocoafontdialoghelper.h"
+ #include "qcocoasystemsettings.h"
+ #include "qcocoasystemtrayicon.h"
+ #include "qcocoamenuitem.h"
+@@ -58,6 +57,7 @@
+ #include <QtGui/qpainter.h>
+ #include <QtFontDatabaseSupport/private/qcoretextfontdatabase_p.h>
+ #include <QtThemeSupport/private/qabstractfileiconengine_p.h>
++#include <qpa/qplatformdialoghelper.h>
+ #include <qpa/qplatformintegration.h>
+ #include <qpa/qplatformnativeinterface.h>
+ 
+@@ -69,6 +69,9 @@
+ #if QT_CONFIG(filedialog)
+ #include "qcocoafiledialoghelper.h"
+ #endif
++#if QT_CONFIG(fontdialog)
++#include "qcocoafontdialoghelper.h"
++#endif
+ #endif
+ 
+ #include <Carbon/Carbon.h>
+@@ -132,11 +135,11 @@ bool QCocoaTheme::usePlatformNativeDialog(DialogType dialogType) const
+ {
+     if (dialogType == QPlatformTheme::FileDialog)
+         return true;
+-#if QT_CONFIG(colordialog)
++#if defined(QT_WIDGETS_LIB) && QT_CONFIG(colordialog)
+     if (dialogType == QPlatformTheme::ColorDialog)
+         return true;
+ #endif
+-#ifndef QT_NO_FONTDIALOG
++#if defined(QT_WIDGETS_LIB) && QT_CONFIG(fontdialog)
+     if (dialogType == QPlatformTheme::FontDialog)
+         return true;
+ #endif
+@@ -150,11 +153,11 @@ QPlatformDialogHelper * QCocoaTheme::createPlatformDialogHelper(DialogType dialo
+     case QPlatformTheme::FileDialog:
+         return new QCocoaFileDialogHelper();
+ #endif
+-#if QT_CONFIG(colordialog)
++#if defined(QT_WIDGETS_LIB) && QT_CONFIG(colordialog)
+     case QPlatformTheme::ColorDialog:
+         return new QCocoaColorDialogHelper();
+ #endif
+-#ifndef QT_NO_FONTDIALOG
++#if defined(QT_WIDGETS_LIB) && QT_CONFIG(fontdialog)
+     case QPlatformTheme::FontDialog:
+         return new QCocoaFontDialogHelper();
+ #endif
+diff --git a/cocoa/qnswindowdelegate.mm b/cocoa/qnswindowdelegate.mm
+index 92837ce..5952a5b 100644
+--- a/cocoa/qnswindowdelegate.mm
++++ b/cocoa/qnswindowdelegate.mm
+@@ -75,7 +75,7 @@
+     // window.screen.visibleFrame directly, as that ensures we have the same
+     // behavior for both use-cases/APIs.
+     Q_ASSERT(window == m_cocoaWindow->nativeWindow());
+-    return m_cocoaWindow->screen()->availableGeometry().toCGRect();
++    return NSRectFromCGRect(m_cocoaWindow->screen()->availableGeometry().toCGRect());
+ }
+ 
+ #if !QT_MACOS_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_11)
+@@ -88,8 +88,9 @@
+ */
+ - (NSSize)window:(NSWindow *)window willUseFullScreenContentSize:(NSSize)proposedSize
+ {
+-    Q_ASSERT(NSEqualSizes(m_cocoaWindow->screen()->geometry().size().toCGSize(), proposedSize));
+-    return proposedSize;
++    Q_UNUSED(proposedSize);
++    Q_ASSERT(window == m_cocoaWindow->nativeWindow());
++    return NSSizeFromCGSize(m_cocoaWindow->screen()->geometry().size().toCGSize());
+ }
+ #endif
+ 
