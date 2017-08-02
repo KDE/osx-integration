@@ -1,3 +1,23 @@
+20180802: upstream head (5.9): 0a5f71c6062d575602ff041fb1b88ec2d8ad92bc
+touched:
+ src/plugins/platforms/cocoa/cocoa.pro                                             |   7 +-
+ src/plugins/platforms/cocoa/qcocoafontdialoghelper.h                              |   3 +
+ src/plugins/platforms/cocoa/qcocoafontdialoghelper.mm                             |   4 -
+ src/plugins/platforms/cocoa/qcocoahelpers.h                                       |   7 +-
+ src/plugins/platforms/cocoa/qcocoahelpers.mm                                      |   5 ++
+ src/plugins/platforms/cocoa/qcocoatheme.mm                                        |  13 +--
+ src/plugins/platforms/cocoa/qnswindowdelegate.mm                                  |   7 +-
+> patch: patches/20-sync-upstream-170801.diff
+Changes:
+    Fix 32-bit build on macOS
+    macOS: Don't assume the proposed fullscreen size matches the screen size
+      Sometimes AppKit will pass in a proposed size that's smaller than the
+      geometry of the screen. We don't know why, but shouldn't assert.
+    Add missing #include for -no-widgets
+    macOS: Fix unused variable in window:willUseFullScreenContentSize:
+    Convert features.fontdialog to QT_[REQUIRE_]CONFIG
+    Fix macOS build for -no-widgets, take 2
+
 20170707: upstream head (5.9): 9d3cd2268ce3beafcf6fa886bb70d8463260d602
 touched:
  src/plugins/platforms/cocoa/qcocoatheme.mm

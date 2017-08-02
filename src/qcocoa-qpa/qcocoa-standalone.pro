@@ -32,7 +32,6 @@ OBJECTIVE_SOURCES += main.mm \
     qcocoaaccessibility.mm \
     qcocoacolordialoghelper.mm \
     qcocoafiledialoghelper.mm \
-    qcocoafontdialoghelper.mm \
     qcocoacursor.mm \
     qcocoaclipboard.mm \
     qcocoadrag.mm \
@@ -67,7 +66,6 @@ HEADERS += qcocoaintegration.h \
     qcocoaaccessibility.h \
     qcocoacolordialoghelper.h \
     qcocoafiledialoghelper.h \
-    qcocoafontdialoghelper.h \
     qcocoacursor.h \
     qcocoaclipboard.h \
     qcocoadrag.h \
@@ -111,6 +109,11 @@ CONFIG += no_app_extension_api_only
         qprintengine_mac_p.h \
         qcocoaprintersupport.h \
         qcocoaprintdevice.h \
+
+#     qtConfig(fontdialog) {
+        SOURCES += qcocoafontdialoghelper.mm
+        HEADERS += qcocoafontdialoghelper.h
+#     }
 
     QT += widgets-private printsupport-private
 # }
