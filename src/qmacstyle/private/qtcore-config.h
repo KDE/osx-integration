@@ -89,3 +89,93 @@
 #       define QT_FEATURE_wizard 1
 #   endif
 #endif
+
+#ifndef QT_FEATURE_tabbar
+#   ifdef QT_NO_TABBAR
+#       warning "No support for QTabBar"
+#       define QT_FEATURE_tabbar -1
+#   else
+#       define QT_FEATURE_tabbar 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_dockwidget
+#   ifdef QT_NO_DOCKWIDGET
+#       warning "No support for QDockWidget"
+#       define QT_FEATURE_dockwidget -1
+#   else
+#       define QT_FEATURE_dockwidget 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_tabwidget
+#   ifdef QT_NO_TABWIDGET
+#       warning "No support for QTabWidget"
+#       define QT_FEATURE_tabwidget -1
+#   else
+#       define QT_FEATURE_tabwidget 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_itemviews
+#   ifdef QT_NO_ITEMVIEWS
+#       warning "No support for QItemViews"
+#       define QT_FEATURE_itemviews -1
+#   else
+#       define QT_FEATURE_itemviews 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_combobox
+#   ifdef QT_NO_COMBOBOX
+#       warning "No support for QComboBox"
+#       define QT_FEATURE_combobox -1
+#   else
+#       define QT_FEATURE_combobox 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_treeview
+#   ifdef QT_NO_TREEVIEW
+#       warning "No support for QTreeView"
+#       define QT_FEATURE_treeview -1
+#   else
+#       define QT_FEATURE_treeview 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_tableview
+#   ifdef QT_NO_TABLEVIEW
+#       warning "No support for QTableView"
+#       define QT_FEATURE_tableview -1
+#   else
+#       define QT_FEATURE_tableview 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_rubberband
+#   ifdef QT_NO_RUBBERBAND
+#       warning "No support for QRubberBand"
+#       define QT_FEATURE_rubberband -1
+#   else
+#       define QT_FEATURE_rubberband 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_listview
+#   ifdef QT_NO_LISTVIEW
+#       warning "No support for QListView"
+#       define QT_FEATURE_listview -1
+#   else
+#       define QT_FEATURE_listview 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_datetimeedit
+#   ifdef QT_NO_DATETIMEEDIT
+#       warning "No support for QDateTimeEdit"
+#       define QT_FEATURE_datetimeedit -1
+#   else
+#       define QT_FEATURE_datetimeedit 1
+#   endif
+#endif

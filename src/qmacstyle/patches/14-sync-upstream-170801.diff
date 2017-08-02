@@ -1,0 +1,1227 @@
+diff --git a/private/qcombobox.cpp b/private/qcombobox.cpp
+index aa9e701..4658a96 100644
+--- a/private/qcombobox.cpp
++++ b/private/qcombobox.cpp
+@@ -39,7 +39,6 @@
+ 
+ #include "qcombobox.h"
+ 
+-#ifndef QT_NO_COMBOBOX
+ #include <qstylepainter.h>
+ #include <qpa/qplatformtheme.h>
+ #include <qpa/qplatformmenu.h>
+@@ -47,14 +46,18 @@
+ #include <qapplication.h>
+ #include <qdesktopwidget.h>
+ #include <qlistview.h>
++#if QT_CONFIG(tableview)
+ #include <qtableview.h>
++#endif
+ #include <qitemdelegate.h>
+ #include <qmap.h>
+ #include <qmenu.h>
+ #include <qevent.h>
+ #include <qlayout.h>
+ #include <qscrollbar.h>
++#if QT_CONFIG(treeview)
+ #include <qtreeview.h>
++#endif
+ #include <qheaderview.h>
+ #include <qmath.h>
+ #include <qmetaobject.h>
+@@ -598,7 +601,7 @@ int QComboBoxPrivateContainer::topMargin() const
+ {
+     if (const QListView *lview = qobject_cast<const QListView*>(view))
+         return lview->spacing();
+-#ifndef QT_NO_TABLEVIEW
++#if QT_CONFIG(tableview)
+     if (const QTableView *tview = qobject_cast<const QTableView*>(view))
+         return tview->showGrid() ? 1 : 0;
+ #endif
+@@ -613,7 +616,7 @@ int QComboBoxPrivateContainer::spacing() const
+     QListView *lview = qobject_cast<QListView*>(view);
+     if (lview)
+         return 2 * lview->spacing(); // QListView::spacing is the padding around the item.
+-#ifndef QT_NO_TABLEVIEW
++#if QT_CONFIG(tableview)
+     QTableView *tview = qobject_cast<QTableView*>(view);
+     if (tview)
+         return tview->showGrid() ? 1 : 0;
+@@ -2602,7 +2605,7 @@ void QComboBox::showPopup()
+         int count = 0;
+         QStack<QModelIndex> toCheck;
+         toCheck.push(view()->rootIndex());
+-#ifndef QT_NO_TREEVIEW
++#if QT_CONFIG(treeview)
+         QTreeView *treeView = qobject_cast<QTreeView*>(view());
+         if (treeView && treeView->header() && !treeView->header()->isHidden())
+             listHeight += treeView->header()->height();
+@@ -2614,7 +2617,7 @@ void QComboBox::showPopup()
+                 if (!idx.isValid())
+                     continue;
+                 listHeight += view()->visualRect(idx).height();
+-#ifndef QT_NO_TREEVIEW
++#if QT_CONFIG(treeview)
+                 if (d->model->hasChildren(idx) && treeView && treeView->isExpanded(idx))
+                     toCheck.push(idx);
+ #endif
+@@ -3484,5 +3487,3 @@ QT_END_NAMESPACE
+ 
+ #include "moc_qcombobox.cpp"
+ #include "moc_qcombobox_p.cpp"
+-
+-#endif // QT_NO_COMBOBOX
+diff --git a/private/qcombobox.h b/private/qcombobox.h
+index 8f99594..a6aac6f 100644
+--- a/private/qcombobox.h
++++ b/private/qcombobox.h
+@@ -46,9 +46,9 @@
+ #include <QtCore/qabstractitemmodel.h>
+ #include <QtCore/qvariant.h>
+ 
+-QT_BEGIN_NAMESPACE
++QT_REQUIRE_CONFIG(combobox);
+ 
+-#ifndef QT_NO_COMBOBOX
++QT_BEGIN_NAMESPACE
+ 
+ class QAbstractItemView;
+ class QLineEdit;
+@@ -277,8 +277,6 @@ inline void QComboBox::insertItem(int aindex, const QString &atext,
+                                   const QVariant &auserData)
+ { insertItem(aindex, QIcon(), atext, auserData); }
+ 
+-#endif // QT_NO_COMBOBOX
+-
+ QT_END_NAMESPACE
+ 
+ #endif // QCOMBOBOX_H
+diff --git a/private/qcombobox_p.h b/private/qcombobox_p.h
+index 6c36359..ab4dd02 100644
+--- a/private/qcombobox_p.h
++++ b/private/qcombobox_p.h
+@@ -54,7 +54,6 @@
+ #include <QtWidgets/private/qtwidgetsglobal_p.h>
+ #include "QtWidgets/qcombobox.h"
+ 
+-#ifndef QT_NO_COMBOBOX
+ #include "QtWidgets/qabstractslider.h"
+ #include "QtWidgets/qapplication.h"
+ #include "QtWidgets/qitemdelegate.h"
+@@ -74,6 +73,8 @@
+ 
+ #include <limits.h>
+ 
++QT_REQUIRE_CONFIG(combobox);
++
+ QT_BEGIN_NAMESPACE
+ 
+ class QAction;
+@@ -423,6 +424,4 @@ public:
+ 
+ QT_END_NAMESPACE
+ 
+-#endif // QT_NO_COMBOBOX
+-
+ #endif // QCOMBOBOX_P_H
+diff --git a/private/qcommonstyle.cpp b/private/qcommonstyle.cpp
+index af229eb..22c6efd 100644
+--- a/private/qcommonstyle.cpp
++++ b/private/qcommonstyle.cpp
+@@ -42,12 +42,17 @@
+ #include "qcommonstyle_p.h"
+ 
+ #include <qfile.h>
++#if QT_CONFIG(itemviews)
++#include <qabstractitemview.h>
++#endif
+ #include <qapplication.h>
+ #include <private/qguiapplication_p.h>
+ #include <qpa/qplatformtheme.h>
+ #include <qbitmap.h>
+ #include <qcache.h>
++#if QT_CONFIG(dockwidget)
+ #include <qdockwidget.h>
++#endif
+ #include <qdrawutil.h>
+ #if QT_CONFIG(dialogbuttonbox)
+ #include <qdialogbuttonbox.h>
+@@ -65,12 +70,20 @@
+ #include <qpainterpath.h>
+ #include <qslider.h>
+ #include <qstyleoption.h>
++#if QT_CONFIG(tabbar)
+ #include <qtabbar.h>
++#endif
++#if QT_CONFIG(tabwidget)
+ #include <qtabwidget.h>
++#endif
+ #include <qtoolbar.h>
+ #include <qtoolbutton.h>
++#if QT_CONFIG(rubberband)
+ #include <qrubberband.h>
++#endif
++#if QT_CONFIG(treeview)
+ #include "qtreeview.h"
++#endif
+ #include <private/qcommonstylepixmaps_p.h>
+ #include <private/qmath_p.h>
+ #include <qdebug.h>
+@@ -87,7 +100,7 @@
+ 
+ #include <limits.h>
+ 
+-#ifndef QT_NO_ITEMVIEWS
++#if QT_CONFIG(itemviews)
+ #   include "private/qtextengine_p.h"
+ #endif
+ 
+@@ -358,7 +371,7 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
+             p->setPen(oldPen);
+         }
+         break;
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+     case PE_FrameTabBarBase:
+         if (const QStyleOptionTabBarBase *tbb
+                 = qstyleoption_cast<const QStyleOptionTabBarBase *>(opt)) {
+@@ -421,7 +434,7 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
+     }
+ #else
+     Q_UNUSED(d);
+-#endif // QT_NO_TABBAR
++#endif // QT_CONFIG(tabbar)
+     case PE_FrameTabWidget:
+     case PE_FrameWindow:
+         qDrawWinPanel(p, opt->rect, opt->palette, false, 0);
+@@ -446,7 +459,7 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
+         }
+         break;
+ #endif // QT_NO_GROUPBOX
+-#ifndef QT_NO_DOCKWIDGET
++#if QT_CONFIG(dockwidget)
+     case PE_FrameDockWidget:
+         if (const QStyleOptionFrame *frame = qstyleoption_cast<const QStyleOptionFrame *>(opt)) {
+             int lw = frame->lineWidth;
+@@ -456,7 +469,7 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
+             qDrawShadePanel(p, frame->rect, frame->palette, false, lw);
+         }
+         break;
+-#endif // QT_NO_DOCKWIDGET
++#endif // QT_CONFIG(dockwidget)
+ #ifndef QT_NO_TOOLBAR
+     case PE_IndicatorToolBarHandle:
+         p->save();
+@@ -565,7 +578,7 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
+         p->setBrush(oldBrush);
+         break;
+     }
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+     case PE_IndicatorTabTear:
+         if (const QStyleOptionTab *tab = qstyleoption_cast<const QStyleOptionTab *>(opt)) {
+             bool rtl = tab->direction == Qt::RightToLeft;
+@@ -599,7 +612,7 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
+             p->drawPath(path);
+         }
+         break;
+-#endif // QT_NO_TABBAR
++#endif // QT_CONFIG(tabbar)
+ #ifndef QT_NO_LINEEDIT
+     case PE_PanelLineEdit:
+         if (const QStyleOptionFrame *panel = qstyleoption_cast<const QStyleOptionFrame *>(opt)) {
+@@ -671,7 +684,7 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
+         else
+             p->drawRect(rect);
+         break; }
+-#ifndef QT_NO_ITEMVIEWS
++#if QT_CONFIG(itemviews)
+     case PE_PanelItemViewRow:
+         if (const QStyleOptionViewItem *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt)) {
+             QPalette::ColorGroup cg = (widget ? widget->isEnabled() : (vopt->state & QStyle::State_Enabled))
+@@ -709,7 +722,7 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
+             }
+         }
+         break;
+-#endif //QT_NO_ITEMVIEWS
++#endif // QT_CONFIG(itemviews)
+     case PE_PanelScrollAreaCorner: {
+         const QBrush brush(opt->palette.brush(QPalette::Window));
+         p->fillRect(opt->rect, brush);
+@@ -820,7 +833,7 @@ static void drawArrow(const QStyle *style, const QStyleOptionToolButton *toolbut
+ }
+ #endif // QT_NO_TOOLBUTTON
+ 
+-#ifndef QT_NO_ITEMVIEWS
++#if QT_CONFIG(itemviews)
+ 
+ static QSizeF viewItemTextLayout(QTextLayout &textLayout, int lineWidth)
+ {
+@@ -1091,10 +1104,10 @@ void QCommonStylePrivate::viewItemLayout(const QStyleOptionViewItem *opt,  QRect
+         *textRect = display;
+     }
+ }
+-#endif // QT_NO_ITEMVIEWS
++#endif // QT_CONFIG(itemviews)
+ 
+ 
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+ /*! \internal
+     Compute the textRect and the pixmapRect from the opt rect
+ 
+@@ -1161,7 +1174,7 @@ void QCommonStylePrivate::tabLayout(const QStyleOptionTab *opt, const QWidget *w
+ 
+     *textRect = tr;
+ }
+-#endif //QT_NO_TABBAR
++#endif // QT_CONFIG(tabbar)
+ 
+ #ifndef QT_NO_ANIMATION
+ /*! \internal */
+@@ -1708,7 +1721,7 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
+         }
+         break;
+ #endif // QT_NO_TOOLBOX
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+     case CE_TabBarTab:
+         if (const QStyleOptionTab *tab = qstyleoption_cast<const QStyleOptionTab *>(opt)) {
+             proxy()->drawControl(CE_TabBarTabShape, tab, p, widget);
+@@ -1928,7 +1941,7 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
+             }
+         }
+         break;
+-#endif // QT_NO_TABBAR
++#endif // QT_CONFIG(tabbar)
+ #ifndef QT_NO_SIZEGRIP
+     case CE_SizeGrip: {
+         p->save();
+@@ -2003,7 +2016,7 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
+         p->restore();
+         break; }
+ #endif // QT_NO_SIZEGRIP
+-#ifndef QT_NO_RUBBERBAND
++#if QT_CONFIG(rubberband)
+     case CE_RubberBand: {
+         if (const QStyleOptionRubberBand *rbOpt = qstyleoption_cast<const QStyleOptionRubberBand *>(opt)) {
+             QPixmap tiledPixmap(16, 16);
+@@ -2031,8 +2044,8 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
+             p->restore();
+         }
+         break; }
+-#endif // QT_NO_RUBBERBAND
+-#ifndef QT_NO_DOCKWIDGET
++#endif // QT_CONFIG(rubberband)
++#if QT_CONFIG(dockwidget)
+     case CE_DockWidgetTitle:
+         if (const QStyleOptionDockWidget *dwOpt = qstyleoption_cast<const QStyleOptionDockWidget *>(opt)) {
+             QRect r = dwOpt->rect.adjusted(0, 0, -1, -1);
+@@ -2064,7 +2077,7 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
+             }
+         }
+         break;
+-#endif // QT_NO_DOCKWIDGET
++#endif // QT_CONFIG(dockwidget)
+     case CE_Header:
+         if (const QStyleOptionHeader *header = qstyleoption_cast<const QStyleOptionHeader *>(opt)) {
+             QRegion clipRegion = p->clipRegion();
+@@ -2092,7 +2105,7 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
+     case CE_HeaderEmptyArea:
+             p->fillRect(opt->rect, opt->palette.background());
+         break;
+-#ifndef QT_NO_COMBOBOX
++#if QT_CONFIG(combobox)
+     case CE_ComboBoxLabel:
+         if (const QStyleOptionComboBox *cb = qstyleoption_cast<const QStyleOptionComboBox *>(opt)) {
+             QRect editRect = proxy()->subControlRect(CC_ComboBox, cb, SC_ComboBoxEditField, widget);
+@@ -2124,7 +2137,7 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
+             p->restore();
+         }
+         break;
+-#endif // QT_NO_COMBOBOX
++#endif // QT_CONFIG(combobox)
+ #ifndef QT_NO_TOOLBAR
+     case CE_ToolBar:
+         if (const QStyleOptionToolBar *toolBar = qstyleoption_cast<const QStyleOptionToolBar *>(opt)) {
+@@ -2164,7 +2177,7 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
+         }
+         break;
+ 
+-#ifndef QT_NO_ITEMVIEWS
++#if QT_CONFIG(itemviews)
+     case CE_ItemViewItem:
+         if (const QStyleOptionViewItem *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt)) {
+             p->save();
+@@ -2244,7 +2257,7 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
+         }
+         break;
+ 
+-#endif // QT_NO_ITEMVIEWS
++#endif // QT_CONFIG(itemviews)
+ #ifndef QT_NO_FRAME
+     case CE_ShapedFrame:
+         if (const QStyleOptionFrame *f = qstyleoption_cast<const QStyleOptionFrame *>(opt)) {
+@@ -2501,7 +2514,7 @@ QRect QCommonStyle::subElementRect(SubElement sr, const QStyleOption *opt,
+         }
+         break;
+ #endif // QT_NO_PROGRESSBAR
+-#ifndef QT_NO_COMBOBOX
++#if QT_CONFIG(combobox)
+     case SE_ComboBoxFocusRect:
+         if (const QStyleOptionComboBox *cb = qstyleoption_cast<const QStyleOptionComboBox *>(opt)) {
+             int margin = cb->frame ? 3 : 0;
+@@ -2510,7 +2523,7 @@ QRect QCommonStyle::subElementRect(SubElement sr, const QStyleOption *opt,
+             r = visualRect(opt->direction, opt->rect, r);
+         }
+         break;
+-#endif // QT_NO_COMBOBOX
++#endif // QT_CONFIG(combobox)
+ #ifndef QT_NO_TOOLBOX
+     case SE_ToolBoxTabContents:
+         r = opt->rect;
+@@ -2560,7 +2573,7 @@ QRect QCommonStyle::subElementRect(SubElement sr, const QStyleOption *opt,
+         r = subElementRect(SE_CheckBoxFocusRect, opt, widget);
+         r |= subElementRect(SE_CheckBoxIndicator, opt, widget);
+         break;
+-#ifndef QT_NO_TABWIDGET
++#if QT_CONFIG(tabwidget)
+     case SE_TabWidgetTabBar:
+         if (const QStyleOptionTabWidgetFrame *twf
+                 = qstyleoption_cast<const QStyleOptionTabWidgetFrame *>(opt)) {
+@@ -2802,8 +2815,8 @@ QRect QCommonStyle::subElementRect(SubElement sr, const QStyleOption *opt,
+         }
+ 
+         break;
+-#endif // QT_NO_TABWIDGET
+-#ifndef QT_NO_TABBAR
++#endif // QT_CONFIG(tabwidget)
++#if QT_CONFIG(tabbar)
+     case SE_TabBarTearIndicator:
+         if (const QStyleOptionTab *tab = qstyleoption_cast<const QStyleOptionTab *>(opt)) {
+             switch (tab->shape) {
+@@ -2915,7 +2928,7 @@ QRect QCommonStyle::subElementRect(SubElement sr, const QStyleOption *opt,
+             r = f->rect.adjusted(frameWidth, frameWidth, -frameWidth, -frameWidth);
+         }
+         break;
+-#ifndef QT_NO_DOCKWIDGET
++#if QT_CONFIG(dockwidget)
+     case SE_DockWidgetCloseButton:
+     case SE_DockWidgetFloatButton:
+     case SE_DockWidgetTitleBarText:
+@@ -3016,7 +3029,7 @@ QRect QCommonStyle::subElementRect(SubElement sr, const QStyleOption *opt,
+         break;
+     }
+ #endif
+-#ifndef QT_NO_ITEMVIEWS
++#if QT_CONFIG(itemviews)
+     case SE_ItemViewItemCheckIndicator:
+         if (!qstyleoption_cast<const QStyleOptionViewItem *>(opt)) {
+             r = subElementRect(SE_CheckBoxIndicator, opt, widget);
+@@ -3043,7 +3056,7 @@ QRect QCommonStyle::subElementRect(SubElement sr, const QStyleOption *opt,
+                 r = d->displayRect;
+                                }
+         break;
+-#endif //QT_NO_ITEMVIEWS
++#endif // QT_CONFIG(itemviews)
+ #ifndef QT_NO_TOOLBAR
+     case SE_ToolBarHandle:
+         if (const QStyleOptionToolBar *tbopt = qstyleoption_cast<const QStyleOptionToolBar *>(opt)) {
+@@ -3435,7 +3448,7 @@ void QCommonStyle::drawComplexControl(ComplexControl cc, const QStyleOptionCompl
+                 ir = proxy()->subControlRect(CC_TitleBar, tb, SC_TitleBarCloseButton, widget);
+                 down = tb->activeSubControls & SC_TitleBarCloseButton && (opt->state & State_Sunken);
+                 if ((tb->titleBarFlags & Qt::WindowType_Mask) == Qt::Tool
+-#ifndef QT_NO_DOCKWIDGET
++#if QT_CONFIG(dockwidget)
+                     || qobject_cast<const QDockWidget *>(widget)
+ #endif
+                     )
+@@ -3888,7 +3901,7 @@ QStyle::SubControl QCommonStyle::hitTestComplexControl(ComplexControl cc, const
+             }
+         }
+         break;
+-#ifndef QT_NO_COMBOBOX
++#if QT_CONFIG(combobox)
+     case CC_ComboBox:
+         if (const QStyleOptionComboBox *cb = qstyleoption_cast<const QStyleOptionComboBox *>(opt)) {
+             QRect r;
+@@ -3903,7 +3916,7 @@ QStyle::SubControl QCommonStyle::hitTestComplexControl(ComplexControl cc, const
+             }
+         }
+         break;
+-#endif // QT_NO_COMBOBOX
++#endif // QT_CONFIG(combobox)
+ #ifndef QT_NO_GROUPBOX
+     case CC_GroupBox:
+         if (const QStyleOptionGroupBox *groupBox = qstyleoption_cast<const QStyleOptionGroupBox *>(opt)) {
+@@ -4136,7 +4149,7 @@ QRect QCommonStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex
+         }
+         break;
+ #endif // QT_NO_TOOLBUTTON
+-#ifndef QT_NO_COMBOBOX
++#if QT_CONFIG(combobox)
+     case CC_ComboBox:
+         if (const QStyleOptionComboBox *cb = qstyleoption_cast<const QStyleOptionComboBox *>(opt)) {
+             int x = cb->rect.x(),
+@@ -4168,7 +4181,7 @@ QRect QCommonStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex
+             ret = visualRect(cb->direction, cb->rect, ret);
+         }
+         break;
+-#endif // QT_NO_COMBOBOX
++#endif // QT_CONFIG(combobox)
+     case CC_TitleBar:
+         if (const QStyleOptionTitleBar *tb = qstyleoption_cast<const QStyleOptionTitleBar *>(opt)) {
+             const int controlMargin = 2;
+@@ -4408,7 +4421,7 @@ int QCommonStyle::pixelMetric(PixelMetric m, const QStyleOption *opt, const QWid
+         if (const QStyleOptionTitleBar *tb = qstyleoption_cast<const QStyleOptionTitleBar *>(opt)) {
+             if ((tb->titleBarFlags & Qt::WindowType_Mask) == Qt::Tool) {
+                 ret = qMax(widget ? widget->fontMetrics().height() : opt->fontMetrics.height(), 16);
+-#ifndef QT_NO_DOCKWIDGET
++#if QT_CONFIG(dockwidget)
+             } else if (qobject_cast<const QDockWidget*>(widget)) {
+                 ret = qMax(widget->fontMetrics().height(), int(QStyleHelper::dpiScaled(13)));
+ #endif
+@@ -4520,7 +4533,7 @@ int QCommonStyle::pixelMetric(PixelMetric m, const QStyleOption *opt, const QWid
+         }
+         break;
+ #endif // QT_NO_SLIDER
+-#ifndef QT_NO_DOCKWIDGET
++#if QT_CONFIG(dockwidget)
+     case PM_DockWidgetSeparatorExtent:
+         ret = int(QStyleHelper::dpiScaled(6.));
+         break;
+@@ -4534,7 +4547,7 @@ int QCommonStyle::pixelMetric(PixelMetric m, const QStyleOption *opt, const QWid
+     case PM_DockWidgetFrameWidth:
+         ret = 1;
+         break;
+-#endif // QT_NO_DOCKWIDGET
++#endif // QT_CONFIG(dockwidget)
+ 
+     case PM_SpinBoxSliderHeight:
+     case PM_MenuBarPanelWidth:
+@@ -4571,7 +4584,7 @@ int QCommonStyle::pixelMetric(PixelMetric m, const QStyleOption *opt, const QWid
+         break;
+ #endif // QT_NO_TOOLBAR
+ 
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+     case PM_TabBarTabOverlap:
+         ret = 3;
+         break;
+@@ -4835,7 +4848,7 @@ QSize QCommonStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+         sz = QSize(sz.width() + 6, sz.height() + 5);
+         break;
+ #endif // QT_NO_TOOLBUTTON
+-#ifndef QT_NO_COMBOBOX
++#if QT_CONFIG(combobox)
+     case CT_ComboBox:
+         if (const QStyleOptionComboBox *cmb = qstyleoption_cast<const QStyleOptionComboBox *>(opt)) {
+             int fw = cmb->frame ? proxy()->pixelMetric(PM_ComboBoxFrameWidth, opt, widget) * 2 : 0;
+@@ -4845,7 +4858,7 @@ QSize QCommonStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+             sz = QSize(sz.width() + fw + other, sz.height() + fw);
+         }
+         break;
+-#endif // QT_NO_COMBOBOX
++#endif // QT_CONFIG(combobox)
+     case CT_HeaderSection:
+         if (const QStyleOptionHeader *hdr = qstyleoption_cast<const QStyleOptionHeader *>(opt)) {
+             bool nullIcon = hdr->icon.isNull();
+@@ -4893,7 +4906,7 @@ QSize QCommonStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+             sz = QSize(1 + 3 * (buttonSize + 1), buttonSize);
+         }
+         break;
+-#ifndef QT_NO_ITEMVIEWS
++#if QT_CONFIG(itemviews)
+     case CT_ItemViewItem:
+         if (const QStyleOptionViewItem *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt)) {
+             QRect decorationRect, displayRect, checkRect;
+@@ -4905,7 +4918,7 @@ QSize QCommonStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+         break;
+ #else
+         Q_UNUSED(d);
+-#endif // QT_NO_ITEMVIEWS
++#endif // QT_CONFIG(itemviews)
+ #ifndef QT_NO_SPINBOX
+     case CT_SpinBox:
+         if (const QStyleOptionSpinBox *vopt = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
+@@ -5094,7 +5107,7 @@ int QCommonStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget
+             }
+         }
+         break;
+-#ifndef QT_NO_RUBBERBAND
++#if QT_CONFIG(rubberband)
+     case SH_RubberBand_Mask:
+         if (const QStyleOptionRubberBand *rbOpt = qstyleoption_cast<const QStyleOptionRubberBand *>(opt)) {
+             ret = 0;
+@@ -5108,7 +5121,7 @@ int QCommonStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget
+             }
+         }
+         break;
+-#endif // QT_NO_RUBBERBAND
++#endif // QT_CONFIG(rubberband)
+     case SH_SpinControls_DisableOnBounds:
+         ret = 1;
+         break;
+@@ -5173,7 +5186,7 @@ int QCommonStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget
+     case SH_FocusFrame_AboveWidget:
+         ret = false;
+         break;
+-#ifndef QT_NO_TABWIDGET
++#if QT_CONFIG(tabwidget)
+     case SH_TabWidget_DefaultTabPosition:
+         ret = QTabWidget::North;
+         break;
+@@ -5215,7 +5228,7 @@ int QCommonStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget
+     case SH_ItemView_DrawDelegateFrame:
+         ret = 0;
+         break;
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+     case SH_TabBar_CloseButtonPosition:
+         ret = QTabBar::RightSide;
+         break;
+@@ -5249,7 +5262,7 @@ int QCommonStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget
+         break;
+ #endif
+     case SH_Widget_Animate:
+-#ifndef QT_NO_TREEVIEW
++#if QT_CONFIG(treeview)
+         if (qobject_cast<const QTreeView*>(widget)) {
+             ret = false;
+         } else
+diff --git a/private/qcommonstyle_p.h b/private/qcommonstyle_p.h
+index 2ef7f30..9fb7312 100644
+--- a/private/qcommonstyle_p.h
++++ b/private/qcommonstyle_p.h
+@@ -68,7 +68,7 @@ class QCommonStylePrivate : public QStylePrivate
+     Q_DECLARE_PUBLIC(QCommonStyle)
+ public:
+     inline QCommonStylePrivate() :
+-#ifndef QT_NO_ITEMVIEWS
++#if QT_CONFIG(itemviews)
+     cachedOption(0),
+ #endif
+     animationFps(30)
+@@ -79,12 +79,12 @@ public:
+ #ifndef QT_NO_ANIMATION
+         qDeleteAll(animations);
+ #endif
+-#ifndef QT_NO_ITEMVIEWS
++#if QT_CONFIG(itemviews)
+         delete cachedOption;
+ #endif
+     }
+ 
+-#ifndef QT_NO_ITEMVIEWS
++#if QT_CONFIG(itemviews)
+     void viewItemDrawText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect) const;
+     void viewItemLayout(const QStyleOptionViewItem *opt,  QRect *checkRect,
+                         QRect *pixmapRect, QRect *textRect, bool sizehint) const;
+@@ -110,7 +110,7 @@ public:
+     }
+ #endif
+     mutable QIcon tabBarcloseButtonIcon;
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+     void tabLayout(const QStyleOptionTab *opt, const QWidget *widget, QRect *textRect, QRect *pixmapRect) const;
+ #endif
+ 
+diff --git a/private/qtcore-config.h b/private/qtcore-config.h
+index 9020561..79f64fc 100644
+--- a/private/qtcore-config.h
++++ b/private/qtcore-config.h
+@@ -89,3 +89,93 @@
+ #       define QT_FEATURE_wizard 1
+ #   endif
+ #endif
++
++#ifndef QT_FEATURE_tabbar
++#   ifdef QT_NO_TABBAR
++#       warning "No support for QTabBar"
++#       define QT_FEATURE_tabbar -1
++#   else
++#       define QT_FEATURE_tabbar 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_dockwidget
++#   ifdef QT_NO_DOCKWIDGET
++#       warning "No support for QDockWidget"
++#       define QT_FEATURE_dockwidget -1
++#   else
++#       define QT_FEATURE_dockwidget 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_tabwidget
++#   ifdef QT_NO_TABWIDGET
++#       warning "No support for QTabWidget"
++#       define QT_FEATURE_tabwidget -1
++#   else
++#       define QT_FEATURE_tabwidget 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_itemviews
++#   ifdef QT_NO_ITEMVIEWS
++#       warning "No support for QItemViews"
++#       define QT_FEATURE_itemviews -1
++#   else
++#       define QT_FEATURE_itemviews 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_combobox
++#   ifdef QT_NO_COMBOBOX
++#       warning "No support for QComboBox"
++#       define QT_FEATURE_combobox -1
++#   else
++#       define QT_FEATURE_combobox 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_treeview
++#   ifdef QT_NO_TREEVIEW
++#       warning "No support for QTreeView"
++#       define QT_FEATURE_treeview -1
++#   else
++#       define QT_FEATURE_treeview 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_tableview
++#   ifdef QT_NO_TABLEVIEW
++#       warning "No support for QTableView"
++#       define QT_FEATURE_tableview -1
++#   else
++#       define QT_FEATURE_tableview 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_rubberband
++#   ifdef QT_NO_RUBBERBAND
++#       warning "No support for QRubberBand"
++#       define QT_FEATURE_rubberband -1
++#   else
++#       define QT_FEATURE_rubberband 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_listview
++#   ifdef QT_NO_LISTVIEW
++#       warning "No support for QListView"
++#       define QT_FEATURE_listview -1
++#   else
++#       define QT_FEATURE_listview 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_datetimeedit
++#   ifdef QT_NO_DATETIMEEDIT
++#       warning "No support for QDateTimeEdit"
++#       define QT_FEATURE_datetimeedit -1
++#   else
++#       define QT_FEATURE_datetimeedit 1
++#   endif
++#endif
+diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
+index 1879335..fd5011e 100644
+--- a/qmacstyle_mac.mm
++++ b/qmacstyle_mac.mm
+@@ -51,17 +51,23 @@
+ //#define DEBUG_SIZE_CONSTRAINT
+ 
+ #include <private/qcore_mac_p.h>
+-#include <private/qcombobox_p.h>
++#if QT_CONFIG(tabbar)
+ #include <private/qtabbar_p.h>
++#endif
+ #include <private/qpainter_p.h>
+ #include <private/qapplication_p.h>
+ #include <qapplication.h>
+ #include <qbitmap.h>
++#if QT_CONFIG(combobox)
++#include <private/qcombobox_p.h>
+ #include <qcombobox.h>
++#endif
+ #if QT_CONFIG(dialogbuttonbox)
+ #include <qdialogbuttonbox.h>
+ #endif
++#if QT_CONFIG(dockwidget)
+ #include <qdockwidget.h>
++#endif
+ #include <qevent.h>
+ #include <qfocusframe.h>
+ #include <qformlayout.h>
+@@ -81,21 +87,29 @@
+ #include <qpushbutton.h>
+ #endif
+ #include <qradiobutton.h>
++#if QT_CONFIG(rubberband)
+ #include <qrubberband.h>
++#endif
+ #include <qscrollbar.h>
+ #include <qsizegrip.h>
+ #include <qstyleoption.h>
+ #include <qtoolbar.h>
+ #include <qtoolbutton.h>
++#if QT_CONFIG(treeview)
+ #include <qtreeview.h>
++#endif
++#if QT_CONFIG(tableview)
+ #include <qtableview.h>
++#endif
+ #include <qoperatingsystemversion.h>
+ #if QT_CONFIG(wizard)
+ #include <qwizard.h>
+ #endif
+ #include <qdebug.h>
+ #include <qlibrary.h>
++#if QT_CONFIG(datetimeedit)
+ #include <qdatetimeedit.h>
++#endif
+ #include <qmath.h>
+ #include <QtWidgets/qgraphicsproxywidget.h>
+ #include <QtWidgets/qgraphicsview.h>
+@@ -231,7 +245,7 @@ static const qreal closeButtonCornerRadius = 2.0;
+ typedef HIRect * (*PtrHIShapeGetBounds)(HIShapeRef, HIRect *);
+ static PtrHIShapeGetBounds ptrHIShapeGetBounds = 0;
+ 
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+ static bool isVerticalTabs(const QTabBar::Shape shape) {
+     return (shape == QTabBar::RoundedEast
+                 || shape == QTabBar::TriangularEast
+@@ -290,7 +304,7 @@ static void drawTabCloseButton(QPainter *p, bool hover, bool selected, bool pres
+     p->drawLine(margin, height - margin, width - margin, margin);
+ }
+ 
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+ QRect rotateTabPainter(QPainter *p, QTabBar::Shape shape, QRect tabRect)
+ {
+     if (isVerticalTabs(shape)) {
+@@ -425,7 +439,7 @@ static int getControlSize(const QStyleOption *option, const QWidget *widget)
+ }
+ 
+ 
+-#ifndef QT_NO_TREEVIEW
++#if QT_CONFIG(treeview)
+ static inline bool isTreeView(const QWidget *widget)
+ {
+     return (widget && widget->parentWidget() &&
+@@ -434,7 +448,7 @@ static inline bool isTreeView(const QWidget *widget)
+ }
+ #endif
+ 
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+ static inline ThemeTabDirection getTabDirection(QTabBar::Shape shape)
+ {
+     ThemeTabDirection ttd;
+@@ -645,7 +659,7 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
+         else if (qobject_cast<const QCheckBox *>(widg))
+             ct = QStyle::CT_CheckBox;
+ #endif
+-#ifndef QT_NO_COMBOBOX
++#if QT_CONFIG(combobox)
+         else if (qobject_cast<const QComboBox *>(widg))
+             ct = QStyle::CT_ComboBox;
+ #endif
+@@ -892,7 +906,7 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
+         break;
+     }
+ #endif
+-#ifndef QT_NO_COMBOBOX
++#if QT_CONFIG(combobox)
+     case QStyle::CT_LineEdit:
+         if (!widg || !qobject_cast<QComboBox *>(widg->parentWidget())) {
+             //should I take into account the font dimentions of the lineedit? -Sam
+@@ -904,7 +918,7 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
+         break;
+ #endif
+     case QStyle::CT_HeaderSection:
+-#ifndef QT_NO_TREEVIEW
++#if QT_CONFIG(treeview)
+         if (isTreeView(widg))
+            ret = QSize(-1, qt_mac_aqua_get_metric(kThemeMetricListHeaderHeight));
+ #endif
+@@ -1026,17 +1040,17 @@ void QMacStylePrivate::drawFocusRing(QPainter *p, const QRect &targetRect, int h
+             NSBezierPath *focusRingPath;
+             if (radius > 0) {
+                 const CGFloat roundedRectInset = -1.5;
+-                focusRingPath = [NSBezierPath bezierPathWithRoundedRect:CGRectInset(focusRingRect, roundedRectInset, roundedRectInset)
++                focusRingPath = [NSBezierPath bezierPathWithRoundedRect:NSRectFromCGRect(CGRectInset(focusRingRect, roundedRectInset, roundedRectInset))
+                                                                 xRadius:radius
+                                                                 yRadius:radius];
+             } else {
+                 const CGFloat outerClipInset = -focusRingWidth / 2;
+-                NSBezierPath *focusRingClipPath = [NSBezierPath bezierPathWithRect:CGRectInset(focusRingRect, outerClipInset, outerClipInset)];
++                NSBezierPath *focusRingClipPath = [NSBezierPath bezierPathWithRect:NSRectFromCGRect(CGRectInset(focusRingRect, outerClipInset, outerClipInset))];
+                 const CGFloat innerClipInset = 1;
+-                NSBezierPath *focusRingInnerClipPath = [NSBezierPath bezierPathWithRect:CGRectInset(focusRingRect, innerClipInset, innerClipInset)];
++                NSBezierPath *focusRingInnerClipPath = [NSBezierPath bezierPathWithRect:NSRectFromCGRect(CGRectInset(focusRingRect, innerClipInset, innerClipInset))];
+                 [focusRingClipPath appendBezierPath:focusRingInnerClipPath.bezierPathByReversingPath];
+                 [focusRingClipPath setClip];
+-                focusRingPath = [NSBezierPath bezierPathWithRect:focusRingRect];
++                focusRingPath = [NSBezierPath bezierPathWithRect:NSRectFromCGRect(focusRingRect)];
+                 focusRingPath.lineJoinStyle = NSRoundLineJoinStyle;
+             }
+ 
+@@ -1081,10 +1095,11 @@ void QMacStylePrivate::drawFocusRing(QPainter *p, const QRect &targetRect, int h
+                   QRect(focusRingPixmap.width() - shCornerSize, svCornerSize, shCornerSize, focusRingPixmap.width() - 2 * svCornerSize));
+ }
+ 
+-#ifndef QT_NO_TABBAR
+-void QMacStylePrivate::tabLayout(const QStyleOptionTab *opt, const QWidget *widget, QRect *textRect) const
++#if QT_CONFIG(tabbar)
++void QMacStylePrivate::tabLayout(const QStyleOptionTab *opt, const QWidget *widget, QRect *textRect, QRect *iconRect) const
+ {
+     Q_ASSERT(textRect);
++    Q_ASSERT(iconRect);
+     QRect tr = opt->rect;
+     const bool verticalTabs = opt->shape == QTabBar::RoundedEast
+                               || opt->shape == QTabBar::RoundedWest
+@@ -1118,12 +1133,32 @@ void QMacStylePrivate::tabLayout(const QStyleOptionTab *opt, const QWidget *widg
+             tr.setLeft(tr.left() + 4 + buttonSize);
+     }
+ 
++    // icon
++    if (!opt->icon.isNull()) {
++        QSize iconSize = opt->iconSize;
++        if (!iconSize.isValid()) {
++            int iconExtent = proxyStyle->pixelMetric(QStyle::PM_SmallIconSize);
++            iconSize = QSize(iconExtent, iconExtent);
++        }
++        QSize tabIconSize = opt->icon.actualSize(iconSize,
++                        (opt->state & QStyle::State_Enabled) ? QIcon::Normal : QIcon::Disabled,
++                        (opt->state & QStyle::State_Selected) ? QIcon::On : QIcon::Off);
++        // High-dpi icons do not need adjustment; make sure tabIconSize is not larger than iconSize
++        tabIconSize = QSize(qMin(tabIconSize.width(), iconSize.width()), qMin(tabIconSize.height(), iconSize.height()));
++
++        *iconRect = QRect(tr.left(), tr.center().y() - tabIconSize.height() / 2,
++                    tabIconSize.width(), tabIconSize.height());
++        if (!verticalTabs)
++            *iconRect = proxyStyle->visualRect(opt->direction, opt->rect, *iconRect);
++        tr.setLeft(tr.left() + tabIconSize.width() + 4);
++    }
++
+     if (!verticalTabs)
+         tr = proxyStyle->visualRect(opt->direction, opt->rect, tr);
+ 
+     *textRect = tr;
+ }
+-#endif //QT_NO_TABBAR
++#endif // QT_CONFIG(tabbar)
+ 
+ QAquaWidgetSize QMacStylePrivate::effectiveAquaSizeConstrain(const QStyleOption *option,
+                                                             const QWidget *widg,
+@@ -1384,7 +1419,7 @@ void QMacStylePrivate::initComboboxBdi(const QStyleOptionComboBox *combo, HIThem
+         // an extra check here before using the mini and small buttons.
+         int h = combo->rect.size().height();
+         if (combo->editable){
+-#ifndef QT_NO_DATETIMEEDIT
++#if QT_CONFIG(datetimeedit)
+             if (qobject_cast<const QDateTimeEdit *>(widget)) {
+                 // Except when, you know, we get a QDateTimeEdit with calendarPopup
+                 // enabled. And then things get weird, basically because it's a
+@@ -2280,7 +2315,7 @@ void QMacStyle::polish(QWidget* w)
+ 
+ #ifndef QT_NO_MENU
+     if (qobject_cast<QMenu*>(w)
+-#ifndef QT_NO_COMBOBOX
++#if QT_CONFIG(combobox)
+             || qobject_cast<QComboBoxPrivateContainer *>(w)
+ #endif
+             ) {
+@@ -2305,7 +2340,7 @@ void QMacStyle::polish(QWidget* w)
+     }
+ #endif
+ 
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+     if (QTabBar *tb = qobject_cast<QTabBar*>(w)) {
+         if (tb->documentMode()) {
+             w->setAttribute(Qt::WA_Hover);
+@@ -2348,7 +2383,7 @@ void QMacStyle::unpolish(QWidget* w)
+         w->setWindowOpacity(1.0);
+     }
+ 
+-#ifndef QT_NO_COMBOBOX
++#if QT_CONFIG(combobox)
+     if (QComboBox *combo = qobject_cast<QComboBox *>(w)) {
+         if (!combo->isEditable()) {
+             if (QWidget *widget = combo->findChild<QComboBoxPrivateContainer *>())
+@@ -2357,8 +2392,8 @@ void QMacStyle::unpolish(QWidget* w)
+     }
+ #endif
+ 
+-#ifndef QT_NO_TABBAR
+-    if (QTabBar *tb = qobject_cast<QTabBar*>(w)) {
++#if QT_CONFIG(tabbar)
++    if (qobject_cast<QTabBar*>(w)) {
+         if (!w->testAttribute(Qt::WA_SetFont))
+             w->setFont(qApp->font(w));
+         if (!w->testAttribute(Qt::WA_SetPalette))
+@@ -2882,7 +2917,7 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
+         ret = QEvent::MouseButtonRelease;
+         break;
+     case SH_TabBar_SelectMouseType:
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+         if (const QStyleOptionTabBarBase *opt2 = qstyleoption_cast<const QStyleOptionTabBarBase *>(opt)) {
+             ret = opt2->documentMode ? QEvent::MouseButtonPress : QEvent::MouseButtonRelease;
+         } else
+@@ -2907,7 +2942,7 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
+         ret = Qt::AlignRight;
+         break;
+     case SH_TabBar_Alignment: {
+-#ifndef QT_NO_TABWIDGET
++#if QT_CONFIG(tabwidget)
+         if (const QTabWidget *tab = qobject_cast<const QTabWidget*>(w)) {
+             if (tab->documentMode()) {
+                 ret = Qt::AlignLeft;
+@@ -2915,7 +2950,7 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
+             }
+         }
+ #endif
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+         if (const QTabBar *tab = qobject_cast<const QTabBar*>(w)) {
+             if (tab->documentMode()) {
+                 ret = Qt::AlignLeft;
+@@ -3092,7 +3127,7 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
+     case SH_ItemView_PaintAlternatingRowColorsForEmptyArea:
+         ret = true;
+         break;
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+     case SH_TabBar_CloseButtonPosition:
+         ret = QTabBar::LeftSide;
+         break;
+@@ -3251,7 +3286,7 @@ void QMacStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPai
+         p->drawPath(path);
+         p->restore();
+         break; }
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+     case PE_FrameTabBarBase:
+         if (const QStyleOptionTabBarBase *tbb
+                 = qstyleoption_cast<const QStyleOptionTabBarBase *>(opt)) {
+@@ -3577,7 +3612,7 @@ void QMacStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPai
+         }
+ 
+         break;
+-#ifndef QT_NO_TABWIDGET
++#if QT_CONFIG(tabwidget)
+     case PE_FrameTabWidget:
+         if (const QStyleOptionTabWidgetFrame *twf
+                 = qstyleoption_cast<const QStyleOptionTabWidgetFrame *>(opt)) {
+@@ -3751,7 +3786,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+             HIRect bounds = qt_hirectForQRect(ir);
+ 
+             bool noVerticalHeader = true;
+-#ifndef QT_NO_TABLEVIEW
++#if QT_CONFIG(tableview)
+             if (w)
+                 if (const QTableView *table = qobject_cast<const QTableView *>(w->parentWidget()))
+                     noVerticalHeader = !table->verticalHeader()->isVisible();
+@@ -4192,7 +4227,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+             QCommonStyle::drawControl(CE_ComboBoxLabel, &comboCopy, p, w);
+         }
+         break;
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+     case CE_TabBarTabShape:
+         if (const QStyleOptionTab *tabOpt = qstyleoption_cast<const QStyleOptionTab *>(opt)) {
+             if (tabOpt->documentMode) {
+@@ -4387,7 +4422,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+         }
+         break;
+ #endif
+-#ifndef QT_NO_DOCKWIDGET
++#if QT_CONFIG(dockwidget)
+     case CE_DockWidgetTitle:
+         if (const QDockWidget *dockWidget = qobject_cast<const QDockWidget *>(w)) {
+             bool floating = dockWidget->isFloating();
+@@ -4558,7 +4593,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+                     // Always be normal or disabled to follow the Mac style.
+                     int smallIconSize = proxy()->pixelMetric(PM_SmallIconSize);
+                     QSize iconSize(smallIconSize, smallIconSize);
+-#ifndef QT_NO_COMBOBOX
++#if QT_CONFIG(combobox)
+                     if (const QComboBox *comboBox = qobject_cast<const QComboBox *>(w)) {
+                         iconSize = comboBox->iconSize();
+                     }
+@@ -5042,7 +5077,7 @@ QRect QMacStyle::subElementRect(SubElement sr, const QStyleOption *opt,
+                   int(outRect.size.height));
+         break;
+     }
+-#ifndef QT_NO_TABWIDGET
++#if QT_CONFIG(tabwidget)
+     case SE_TabWidgetLeftCorner:
+         if (const QStyleOptionTabWidgetFrame *twf
+                 = qstyleoption_cast<const QStyleOptionTabWidgetFrame *>(opt)) {
+@@ -5106,7 +5141,8 @@ QRect QMacStyle::subElementRect(SubElement sr, const QStyleOption *opt,
+         break;
+     case SE_TabBarTabText:
+         if (const QStyleOptionTab *tab = qstyleoption_cast<const QStyleOptionTab *>(opt)) {
+-            d->tabLayout(tab, widget, &rect);
++            QRect dummyIconRect;
++            d->tabLayout(tab, widget, &rect, &dummyIconRect);
+         }
+         break;
+     case SE_TabBarTabLeftButton:
+@@ -5174,7 +5210,7 @@ QRect QMacStyle::subElementRect(SubElement sr, const QStyleOption *opt,
+ #endif
+     case SE_LineEditContents:
+         rect = QCommonStyle::subElementRect(sr, opt, widget);
+-#ifndef QT_NO_COMBOBOX
++#if QT_CONFIG(combobox)
+         if (widget && qobject_cast<const QComboBox*>(widget->parentWidget()))
+             rect.adjust(-1, -2, 0, 0);
+         else
+@@ -5318,7 +5354,7 @@ QRect QMacStyle::subElementRect(SubElement sr, const QStyleOption *opt,
+         }
+         rect.setBottom(rect.bottom() - 1);
+         break;
+-#ifndef QT_NO_TABWIDGET
++#if QT_CONFIG(tabwidget)
+     case SE_TabWidgetLayoutItem:
+         if (const QStyleOptionTabWidgetFrame *tabWidgetOpt =
+                 qstyleoption_cast<const QStyleOptionTabWidgetFrame *>(opt)) {
+@@ -5333,7 +5369,7 @@ QRect QMacStyle::subElementRect(SubElement sr, const QStyleOption *opt,
+         }
+         break;
+ #endif
+-#ifndef QT_NO_DOCKWIDGET
++#if QT_CONFIG(dockwidget)
+         case SE_DockWidgetCloseButton:
+         case SE_DockWidgetFloatButton:
+         case SE_DockWidgetTitleBarText:
+@@ -6753,7 +6789,7 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+              * overlap is how much the pane should overlap the tab bar
+         */
+         // then add the size between the stackwidget and the "contentsRect"
+-#ifndef QT_NO_TABWIDGET
++#if QT_CONFIG(tabwidget)
+         if (const QStyleOptionTabWidgetFrame *twf
+                 = qstyleoption_cast<const QStyleOptionTabWidgetFrame *>(opt)) {
+             QSize extra(0,0);
+@@ -6769,7 +6805,7 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+         }
+ #endif
+         break;
+-#ifndef QT_NO_TABBAR
++#if QT_CONFIG(tabbar)
+     case QStyle::CT_TabBarTab:
+         if (const QStyleOptionTab *tab = qstyleoption_cast<const QStyleOptionTab *>(opt)) {
+             const QAquaWidgetSize AquaSize = d->aquaSizeConstrain(opt, widget);
+@@ -6852,7 +6888,7 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+     case QStyle::CT_MenuItem:
+         if (const QStyleOptionMenuItem *mi = qstyleoption_cast<const QStyleOptionMenuItem *>(opt)) {
+             int maxpmw = mi->maxIconWidth;
+-#ifndef QT_NO_COMBOBOX
++#if QT_CONFIG(combobox)
+             const QComboBox *comboBox = qobject_cast<const QComboBox *>(widget);
+ #endif
+             int w = sz.width(),
+@@ -6871,7 +6907,7 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+             } else {
+                 h = mi->fontMetrics.height() + 2;
+                 if (!mi->icon.isNull()) {
+-#ifndef QT_NO_COMBOBOX
++#if QT_CONFIG(combobox)
+                     if (comboBox) {
+                         const QSize &iconSize = comboBox->iconSize();
+                         h = qMax(h, iconSize.height() + 4);
+@@ -6892,7 +6928,7 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+                 w += maxpmw + 6;
+             // add space for a check. All items have place for a check too.
+             w += 20;
+-#ifndef QT_NO_COMBOBOX
++#if QT_CONFIG(combobox)
+             if (comboBox && comboBox->isVisible()) {
+                 QStyleOptionComboBox cmb;
+                 cmb.initFrom(comboBox);
+diff --git a/qmacstyle_mac_p_p.h b/qmacstyle_mac_p_p.h
+index 97e17b5..c764b80 100644
+--- a/qmacstyle_mac_p_p.h
++++ b/qmacstyle_mac_p_p.h
+@@ -48,7 +48,9 @@
+ #include "qmacstyle_mac_p.h"
+ #include "qcommonstyle_p.h"
+ #include <private/qapplication_p.h>
++#if QT_CONFIG(combobox)
+ #include <private/qcombobox_p.h>
++#endif
+ #include <private/qpainter_p.h>
+ #include <private/qstylehelper_p.h>
+ #include <qapplication.h>
+@@ -60,7 +62,9 @@
+ #if QT_CONFIG(dialogbuttonbox)
+ #include <qdialogbuttonbox.h>
+ #endif
++#if QT_CONFIG(dockwidget)
+ #include <qdockwidget.h>
++#endif
+ #include <qevent.h>
+ #include <qfocusframe.h>
+ #include <qformlayout.h>
+@@ -69,7 +73,9 @@
+ #include <qheaderview.h>
+ #include <qlayout.h>
+ #include <qlineedit.h>
++#if QT_CONFIG(listview)
+ #include <qlistview.h>
++#endif
+ #include <qmainwindow.h>
+ #include <qmap.h>
+ #include <qmenubar.h>
+@@ -82,7 +88,9 @@
+ #include <qpushbutton.h>
+ #endif
+ #include <qradiobutton.h>
++#if QT_CONFIG(rubberband)
+ #include <qrubberband.h>
++#endif
+ #include <qsizegrip.h>
+ #include <qspinbox.h>
+ #include <qsplitter.h>
+@@ -91,10 +99,16 @@
+ #include <qtextstream.h>
+ #include <qtoolbar.h>
+ #include <qtoolbutton.h>
++#if QT_CONFIG(treeview)
+ #include <qtreeview.h>
++#endif
++#if QT_CONFIG(tableview)
+ #include <qtableview.h>
++#endif
+ #include <qdebug.h>
++#if QT_CONFIG(datetimeedit)
+ #include <qdatetimeedit.h>
++#endif
+ #include <qmath.h>
+ #include <qpair.h>
+ #include <qvector.h>
+@@ -159,7 +173,7 @@ typedef void (^QCocoaDrawRectBlock)(NSRect, CGContextRef);
+     do { \
+         static const int sizes[] = { (large), (small), (mini) }; \
+         return sizes[controlSize]; \
+-    } while (0)
++    } while (false)
+ 
+ #if QT_CONFIG(pushbutton)
+ bool qt_mac_buttonIsRenderedFlat(const QPushButton *pushButton, const QStyleOptionButton *option);
+@@ -230,8 +244,8 @@ public:
+ 
+     void drawFocusRing(QPainter *p, const QRect &targetRect, int hMargin, int vMargin, qreal radius = 0) const;
+ 
+-#ifndef QT_NO_TABBAR
+-    void tabLayout(const QStyleOptionTab *opt, const QWidget *widget, QRect *textRect) const;
++#if QT_CONFIG(tabbar)
++    void tabLayout(const QStyleOptionTab *opt, const QWidget *widget, QRect *textRect, QRect *iconRect) const;
+ #endif
+ 
+ public:

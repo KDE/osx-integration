@@ -48,7 +48,9 @@
 #include "qmacstyle_mac_p.h"
 #include "qcommonstyle_p.h"
 #include <private/qapplication_p.h>
+#if QT_CONFIG(combobox)
 #include <private/qcombobox_p.h>
+#endif
 #include <private/qpainter_p.h>
 #include <private/qstylehelper_p.h>
 #include <qapplication.h>
@@ -60,7 +62,9 @@
 #if QT_CONFIG(dialogbuttonbox)
 #include <qdialogbuttonbox.h>
 #endif
+#if QT_CONFIG(dockwidget)
 #include <qdockwidget.h>
+#endif
 #include <qevent.h>
 #include <qfocusframe.h>
 #include <qformlayout.h>
@@ -69,7 +73,9 @@
 #include <qheaderview.h>
 #include <qlayout.h>
 #include <qlineedit.h>
+#if QT_CONFIG(listview)
 #include <qlistview.h>
+#endif
 #include <qmainwindow.h>
 #include <qmap.h>
 #include <qmenubar.h>
@@ -82,7 +88,9 @@
 #include <qpushbutton.h>
 #endif
 #include <qradiobutton.h>
+#if QT_CONFIG(rubberband)
 #include <qrubberband.h>
+#endif
 #include <qsizegrip.h>
 #include <qspinbox.h>
 #include <qsplitter.h>
@@ -91,10 +99,16 @@
 #include <qtextstream.h>
 #include <qtoolbar.h>
 #include <qtoolbutton.h>
+#if QT_CONFIG(treeview)
 #include <qtreeview.h>
+#endif
+#if QT_CONFIG(tableview)
 #include <qtableview.h>
+#endif
 #include <qdebug.h>
+#if QT_CONFIG(datetimeedit)
 #include <qdatetimeedit.h>
+#endif
 #include <qmath.h>
 #include <qpair.h>
 #include <qvector.h>
@@ -159,7 +173,7 @@ typedef void (^QCocoaDrawRectBlock)(NSRect, CGContextRef);
     do { \
         static const int sizes[] = { (large), (small), (mini) }; \
         return sizes[controlSize]; \
-    } while (0)
+    } while (false)
 
 #if QT_CONFIG(pushbutton)
 bool qt_mac_buttonIsRenderedFlat(const QPushButton *pushButton, const QStyleOptionButton *option);
@@ -230,8 +244,8 @@ public:
 
     void drawFocusRing(QPainter *p, const QRect &targetRect, int hMargin, int vMargin, qreal radius = 0) const;
 
-#ifndef QT_NO_TABBAR
-    void tabLayout(const QStyleOptionTab *opt, const QWidget *widget, QRect *textRect) const;
+#if QT_CONFIG(tabbar)
+    void tabLayout(const QStyleOptionTab *opt, const QWidget *widget, QRect *textRect, QRect *iconRect) const;
 #endif
 
 public:
