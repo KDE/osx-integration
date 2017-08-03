@@ -1,6 +1,6 @@
 # OS X Integration
 
-Improved integration of Qt and KDE applications with the Mac OS (X) desktop
+Improved integration of Qt and KDE applications with the Mac OS X desktop
 
 ### KDEPlatformTheme
 
@@ -23,24 +23,50 @@ and the plugin can now also be built to override the native Cocoa QPA plugin
 (OVERRIDE_NATIVE_THEME CMake option). The Menu key emulation still requires
 a Qt patch (or a dedicated event handler) to do anything useful though.
 
+This component should still build against Qt 5.5.x; the other components need at
+least Qt 5.8 .
+
 ### QMacStyle
-A modified fork of the native macintosh style from Qt 5.8.0 which doesn't
+A modified fork of the native macintosh style from Qt 5.9 (git) which doesn't
 impose the Mac standard font for QComboBox menu items and provides support
 for named menu sections in context menus and menus attached to a "non-native"
-menubar.
+menubar. Also builds against Qt 5.8.0 .
+A standalone build of this component can be done using the provided QMake file
+(qmacstyle/macstyle.pro).
 
 ### QCocoaQPA
-A modified fork of the Cocoa platform plugin from Qt 5.8.0 which provides
-support for named menu sections under the native menubar and also improves 
-the basic fullscreen mode that works consistently across Mission Control
-settings and platforms - i.e. it never blackens out other
+A modified fork of the Cocoa platform plugin from Qt 5.9 (git; builds against Qt
+5.8.0) which provides support for named menu sections under the native menubar
+and also reintroduces a basic fullscreen mode that works consistently across
+Mission Control settings and platforms - i.e. it never blackens out other
 attached monitors but keeps their content visible and accessible. It's also a
 lot faster and supports opening new windows without side-effects when in
-fullscreen mode. This mode is active for windows lacking Qt's fullscreen hint
-window flag (and thus the fullscreen button in their titlebar).
-
-This plugin installs next to the stock plugin and will be loaded instead it; it
+fullscreen mode.
+This plugin installs next to and will be loaded instead of the stock plugin; it
 will then give priority to the modified QMacStyle if that is installed. If the
-KDE platform *theme* plugin is built in override mode (see above) that plugin is
+KDE platform theme plugin is built in override mode (see above) this plugin is
 loaded instead (and will then load the modified or the stock cocoa platform
 plugin).
+A standalone build of this component can be done using the provided QMake file
+(qcocoa-qpa/qcocoa-standalone.pro).
+
+### Building
+The preferred way of building this project is using CMake, and requires KDE's Extra
+CMake Modules (http://projects.kde.org/projects/kdesupport/extra-cmake-modules) ;
+this is also the only way to build the KDE platform theme plugin component.
+
+* CMake options:
+- BUILD_KDE_THEME_PLUGIN : should the KDE platform theme plugin be built?
+- BUILD_QT_PLUGINS : should the Qt style and QPA plugin components be built?
+
+* CMake options for the KDE platform theme plugin:
+- DEFINE_ICONTHEME_SETTINGS : Should the theme plugin define a standard theme and
+  add the standard locations for icon themes to the search path?
+- PREFER_NATIVE_DIALOGS : Should native dialogs be preferred over Qt's cross-platform
+  dialogs?
+- NEVER_NATIVE_DIALOGS : Should native dialogs never be used (when not already preferred)?
+- OVERRIDE_NATIVE_THEME : see above. NB: the Macintosh/Aqua widget style remains the
+  default style!
+- DISABLE_DBUS_SUPPORT : Don't build the D-Bus functionality. Experimental!
+- EMULATE_MENU_KEY : emulate a Menu key (right Command+Option key-combo); requires
+  BUILD_QT_PLUGINS to be set in order for that keypress to open the context menu.
