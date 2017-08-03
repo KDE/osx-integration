@@ -144,37 +144,51 @@ public:
     }
 #endif
 
+    int pressedMouseButtons()
+    {
+        return [NSEvent pressedMouseButtons];
+    }
+
     bool eventFilter(QObject *obj, QEvent *event) override
     {
 #ifndef QT_NO_GESTURES
         static QVariant qTrue(true), qFalse(false);
+// #ifdef TAPANDHOLD_DEBUG
+//         if (qEnvironmentVariableIsSet("TAPANDHOLD_CONTEXTMENU_DEBUG")) {
+//             QVariant isGrabbed = obj->property("OurTaHGestureActive");
+//             if (isGrabbed.isValid() && isGrabbed.toBool()) {
+//                 qWarning() << "event=" << event << "grabbed obj=" << obj;
+//             }
+//         }
+// #endif
         switch (event->type()) {
             case QEvent::MouseButtonPress: {
                 QMouseEvent *me = dynamic_cast<QMouseEvent*>(event);
                 if (me->button() == Qt::LeftButton && me->modifiers() == Qt::NoModifier) {
                     QWidget *w = qobject_cast<QWidget*>(obj);
                     if (w && handleGestureForObject(obj)) {
-                        // ideally we'd check first - if we could.
-                        // storing all grabbed QObjects is potentially dangerous since we won't
-                        // know when they go stale.
-                        w->grabGesture(Qt::TapAndHoldGesture);
-                        // accept this event but resend it so that the 1st mousepress
-                        // can also trigger a tap-and-hold!
                         QVariant isGrabbed = obj->property("OurTaHGestureActive");
-                        obj->setProperty("OurTaHGestureActive", qTrue);
+                        if (!(isGrabbed.isValid() && isGrabbed.toBool())) {
+                            // ideally we'd check first - if we could.
+                            // storing all grabbed QObjects is potentially dangerous since we won't
+                            // know when they go stale.
+                            w->grabGesture(Qt::TapAndHoldGesture);
+                            // accept this event but resend it so that the 1st mousepress
+                            // can also trigger a tap-and-hold!
+                            obj->setProperty("OurTaHGestureActive", qTrue);
 #ifdef TAPANDHOLD_DEBUG
-                        if (qEnvironmentVariableIsSet("TAPANDHOLD_CONTEXTMENU_DEBUG")) {
-                            qWarning() << "event=" << event << "grabbing obj=" << obj << "parent=" << obj->parent();
-                        }
+                            if (qEnvironmentVariableIsSet("TAPANDHOLD_CONTEXTMENU_DEBUG")) {
+                                qWarning() << "event=" << event << "grabbing obj=" << obj << "parent=" << obj->parent();
+                            }
 #endif
-                        // isGrabbed.toBool() will return false unless it contains a bool true value (i.e. also when invalid).
-                        if (!m_grabbing.contains(obj)) {
-                            QMouseEvent relay(*me);
-                            me->accept();
-                            m_grabbing.insert(obj);
-                            int ret = QCoreApplication::sendEvent(obj, &relay);
-                            m_grabbing.remove(obj);
-                            return ret;
+                            if (!m_grabbing.contains(obj)) {
+                                QMouseEvent relay(*me);
+                                me->accept();
+                                m_grabbing.insert(obj);
+                                int ret = QCoreApplication::sendEvent(obj, &relay);
+                                m_grabbing.remove(obj);
+                                return ret;
+                            }
                         }
                     }
 #ifdef TAPANDHOLD_DEBUG
@@ -186,9 +200,18 @@ public:
                 // NB: don't "eat" the event if no action was taken!
                 break;
             }
+//             case QEvent::Paint:
+//                 if (pressedMouseButtons() == 1) {
+//                     // ignore QPaintEvents when the left mouse button (1<<0) is being held
+//                     break;
+//                 } else {
+//                     // not holding the left mouse button; fall through to check if
+//                     // maybe we should cancel a click-and-hold-opens-contextmenu process.
+//                 }
             case QEvent::MouseMove:
             case QEvent::MouseButtonRelease: {
-                if (obj->property("OurTaHGestureActive").toBool()) {
+                QVariant isGrabbed = obj->property("OurTaHGestureActive");
+                if (isGrabbed.isValid() && isGrabbed.toBool()) {
 #ifdef TAPANDHOLD_DEBUG
                     qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent()
                         << "grabbed=" << obj->property("OurTaHGestureActive");
@@ -202,7 +225,7 @@ public:
                 if (QTapAndHoldGesture *heldTap = static_cast<QTapAndHoldGesture*>(gEvent->gesture(Qt::TapAndHoldGesture))) {
                     if (heldTap->state() == Qt::GestureFinished) {
                         QVariant isGrabbed = obj->property("OurTaHGestureActive");
-                        if (isGrabbed.toBool()) {
+                        if (isGrabbed.isValid() && isGrabbed.toBool() && pressedMouseButtons() == 1) {
                             QWidget *w = qobject_cast<QWidget*>(obj);
                             // user clicked and held a button, send it a simulated ContextMenuEvent
                             // but send a simulated buttonrelease event first.
