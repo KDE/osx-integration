@@ -54,10 +54,17 @@ QCocoaPrinterSupport::QCocoaPrinterSupport()
 QCocoaPrinterSupport::~QCocoaPrinterSupport()
 { }
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+QPrintEngine *QCocoaPrinterSupport::createNativePrintEngine(QPrinter::PrinterMode printerMode, const QString &deviceId)
+{
+    return new QMacPrintEngine(printerMode, deviceId);
+}
+#else
 QPrintEngine *QCocoaPrinterSupport::createNativePrintEngine(QPrinter::PrinterMode printerMode)
 {
-    return new QMacPrintEngine(printerMode);
+    return new QMacPrintEngine(printerMode, QString());
 }
+#endif
 
 QPaintEngine *QCocoaPrinterSupport::createPaintEngine(QPrintEngine *printEngine, QPrinter::PrinterMode printerMode)
 {
