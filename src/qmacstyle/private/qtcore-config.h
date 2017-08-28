@@ -179,3 +179,75 @@
 #       define QT_FEATURE_datetimeedit 1
 #   endif
 #endif
+
+//     Convert features.graphicsview to QT_[REQUIRE_]CONFIG
+//     Convert features.toolbutton to QT_[REQUIRE_]CONFIG
+//     Convert features.groupbox to QT_[REQUIRE_]CONFIG
+//     Convert features.scrollbar to QT_[REQUIRE_]CONFIG
+//     Convert features.toolbox to QT_[REQUIRE_]CONFIG
+//     Convert features.progressbar to QT_[REQUIRE_]CONFIG
+//     Convert features.dial to QT_[REQUIRE_]CONFIG
+
+#ifndef QT_FEATURE_graphicsview
+#   ifdef QT_NO_GRAPHICSVIEW
+#       warning "No support for QGraphicsView"
+#       define QT_FEATURE_graphicsview -1
+#   else
+#       define QT_FEATURE_graphicsview 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_toolbutton
+#   ifdef QT_NO_TOOLBUTTON
+#       warning "No support for QToolButton"
+#       define QT_FEATURE_toolbutton -1
+#   else
+#       define QT_FEATURE_toolbutton 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_groupbox
+#   ifdef QT_NO_GROUPBOX
+#       warning "No support for QGroupBox"
+#       define QT_FEATURE_groupbox -1
+#   else
+#       define QT_FEATURE_groupbox 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_scrollbar
+#   ifdef QT_NO_SCROLLBAR
+#       warning "No support for QScrollBar"
+#       define QT_FEATURE_scrollbar -1
+#   else
+#       define QT_FEATURE_scrollbar 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_toolbox
+#   ifdef QT_NO_TOOLBOX
+#       warning "No support for QToolBox"
+#       define QT_FEATURE_toolbox -1
+#   else
+#       define QT_FEATURE_toolbox 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_progressbar
+#   ifdef QT_NO_PROGRESSBAR
+#       warning "No support for QProgressBar"
+#       define QT_FEATURE_progressbar -1
+#   else
+#       define QT_FEATURE_progressbar 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_dial
+#   ifdef QT_NO_DIAL
+#       warning "No support for QDial and/or QSlider"
+#       define QT_FEATURE_dial -1
+#   else
+#       define QT_FEATURE_dial 1
+#   endif
+#endif
+
