@@ -54,7 +54,7 @@ QCocoaPrinterSupport::QCocoaPrinterSupport()
 QCocoaPrinterSupport::~QCocoaPrinterSupport()
 { }
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 2)
 QPrintEngine *QCocoaPrinterSupport::createNativePrintEngine(QPrinter::PrinterMode printerMode, const QString &deviceId)
 {
     return new QMacPrintEngine(printerMode, deviceId);

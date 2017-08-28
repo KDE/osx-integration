@@ -1,12 +1,14 @@
 diff --git a/cocoa/qcocoamenu.h b/cocoa/qcocoamenu.h
-index b770715..06688db 100644
+index b770715..05556d4 100644
 --- a/cocoa/qcocoamenu.h
 +++ b/cocoa/qcocoamenu.h
-@@ -96,14 +96,18 @@ public:
+@@ -96,14 +96,20 @@ public:
      bool isOpen() const;
      void setIsOpen(bool isOpen);
  
++#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 2)
 +    void timerEvent(QTimerEvent *e) Q_DECL_OVERRIDE;
++#endif
 +
  private:
      QCocoaMenuItem *itemOrNull(int index) const;
@@ -22,7 +24,7 @@ index b770715..06688db 100644
      bool m_parentEnabled:1;
      bool m_visible:1;
 diff --git a/cocoa/qcocoamenu.mm b/cocoa/qcocoamenu.mm
-index de2105e..43d486d 100644
+index de2105e..2b0a261 100644
 --- a/cocoa/qcocoamenu.mm
 +++ b/cocoa/qcocoamenu.mm
 @@ -260,6 +260,7 @@ QT_BEGIN_NAMESPACE
@@ -40,14 +42,14 @@ index de2105e..43d486d 100644
 +
 +    // Empty menus on a menubar are hidden by default. If the menu gets
 +    // added to the menubar before it contains any item, we need to sync.
-+    if (isVisible() && attachedItem().hidden) {
++    if (isVisible() && [m_attachedItem isHidden]) {
 +        if (auto *mb = qobject_cast<QCocoaMenuBar *>(menuParent()))
 +            mb->syncMenu(this);
 +    }
  }
  
  void QCocoaMenu::insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem)
-@@ -433,6 +441,20 @@ QCocoaMenuItem *QCocoaMenu::itemOrNull(int index) const
+@@ -433,6 +441,22 @@ QCocoaMenuItem *QCocoaMenu::itemOrNull(int index) const
      return m_menuItems.at(index);
  }
  
@@ -57,6 +59,7 @@ index de2105e..43d486d 100644
 +        m_updateTimer = startTimer(0);
 +}
 +
++#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 2)
 +void QCocoaMenu::timerEvent(QTimerEvent *e)
 +{
 +    if (e->timerId() == m_updateTimer) {
@@ -64,19 +67,23 @@ index de2105e..43d486d 100644
 +        [m_nativeMenu update];
 +    }
 +}
++#endif
 +
  void QCocoaMenu::syncMenuItem(QPlatformMenuItem *menuItem)
  {
      QMacAutoReleasePool pool;
-@@ -459,9 +481,9 @@ void QCocoaMenu::syncMenuItem(QPlatformMenuItem *menuItem)
+@@ -459,9 +483,13 @@ void QCocoaMenu::syncMenuItem(QPlatformMenuItem *menuItem)
          QCocoaMenuItem* beforeItem = itemOrNull(m_menuItems.indexOf(cocoaItem) + 1);
          insertNative(cocoaItem, beforeItem);
      } else {
 -        // Force NSMenuValidation to kick in. This is needed e.g.
 +        // Schedule NSMenuValidation to kick in. This is needed e.g.
          // when an item's enabled state changes after menuWillOpen:
--        [m_nativeMenu update];
++#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 2)
 +        scheduleUpdate();
++#else
+         [m_nativeMenu update];
++#endif
      }
  }
  
@@ -94,14 +101,14 @@ index 4cdf004..70fcb40 100644
          [mergedItems addObject:m->nsItem()];
          m->syncMerged();
 diff --git a/cocoa/qcocoaprintersupport.h b/cocoa/qcocoaprintersupport.h
-index 371212d..4945610 100644
+index 371212d..41db7d4 100644
 --- a/cocoa/qcocoaprintersupport.h
 +++ b/cocoa/qcocoaprintersupport.h
 @@ -53,7 +53,11 @@ public:
      QCocoaPrinterSupport();
      ~QCocoaPrinterSupport();
  
-+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
++#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 2)
 +    QPrintEngine *createNativePrintEngine(QPrinter::PrinterMode printerMode, const QString &deviceId = QString()) Q_DECL_OVERRIDE;
 +#else
      QPrintEngine *createNativePrintEngine(QPrinter::PrinterMode printerMode) Q_DECL_OVERRIDE;
@@ -110,14 +117,14 @@ index 371212d..4945610 100644
  
      QPrintDevice createPrintDevice(const QString &id) Q_DECL_OVERRIDE;
 diff --git a/cocoa/qcocoaprintersupport.mm b/cocoa/qcocoaprintersupport.mm
-index c2f7d5b..e52d945 100644
+index c2f7d5b..b0240fe 100644
 --- a/cocoa/qcocoaprintersupport.mm
 +++ b/cocoa/qcocoaprintersupport.mm
 @@ -54,10 +54,17 @@ QCocoaPrinterSupport::QCocoaPrinterSupport()
  QCocoaPrinterSupport::~QCocoaPrinterSupport()
  { }
  
-+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
++#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 2)
 +QPrintEngine *QCocoaPrinterSupport::createNativePrintEngine(QPrinter::PrinterMode printerMode, const QString &deviceId)
 +{
 +    return new QMacPrintEngine(printerMode, deviceId);
