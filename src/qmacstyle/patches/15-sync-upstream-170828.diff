@@ -595,7 +595,7 @@ index 79f64fc..98c3ca9 100644
 +#endif
 +
 diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
-index fd5011e..1cd2120 100644
+index fd5011e..8f61e54 100644
 --- a/qmacstyle_mac.mm
 +++ b/qmacstyle_mac.mm
 @@ -82,7 +82,9 @@
@@ -668,7 +668,21 @@ index fd5011e..1cd2120 100644
      case QStyle::CT_ProgressBar: {
          int finalValue = -1;
          Qt::Orientation orient = Qt::Horizontal;
-@@ -3334,7 +3342,7 @@ void QMacStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPai
+@@ -1150,7 +1158,12 @@ void QMacStylePrivate::tabLayout(const QStyleOptionTab *opt, const QWidget *widg
+                     tabIconSize.width(), tabIconSize.height());
+         if (!verticalTabs)
+             *iconRect = proxyStyle->visualRect(opt->direction, opt->rect, *iconRect);
+-        tr.setLeft(tr.left() + tabIconSize.width() + 4);
++
++        int stylePadding = proxyStyle->pixelMetric(QStyle::PM_TabBarTabHSpace, opt, widget) / 2;
++        stylePadding -= hpadding;
++
++        tr.setLeft(tr.left() + stylePadding + tabIconSize.width() + 4);
++        tr.setRight(tr.right() - stylePadding - tabIconSize.width() - 4);
+     }
+ 
+     if (!verticalTabs)
+@@ -3334,7 +3347,7 @@ void QMacStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPai
                  HIThemeGroupBoxDrawInfo gdi;
                  gdi.version = qt_mac_hitheme_version;
                  gdi.state = tds;
@@ -677,7 +691,7 @@ index fd5011e..1cd2120 100644
                  if (w && qobject_cast<QGroupBox *>(w->parentWidget()))
                      gdi.kind = kHIThemeGroupBoxKindSecondary;
                  else
-@@ -6241,7 +6249,7 @@ void QMacStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex
+@@ -6241,7 +6254,7 @@ void QMacStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex
  #endif
          }
          break;
@@ -686,7 +700,7 @@ index fd5011e..1cd2120 100644
      case CC_Dial:
          if (const QStyleOptionSlider *dial = qstyleoption_cast<const QStyleOptionSlider *>(opt))
              QStyleHelper::drawDial(dial, p);
-@@ -7102,7 +7110,7 @@ bool QMacStyle::event(QEvent *e)
+@@ -7102,7 +7115,7 @@ bool QMacStyle::event(QEvent *e)
      if(e->type() == QEvent::FocusIn) {
          QWidget *f = 0;
          QWidget *focusWidget = QApplication::focusWidget();
