@@ -24,6 +24,7 @@ Changes: git log 0a5f71c6062d575602ff041fb1b88ec2d8ad92bc..HEAD src/plugins/plat
  commit f27d1ccbb24ec2fd4098f2976503478831006cc8
     QCocoaMenu: De-pessimize the number of calls to validateMenuItem:
     Task-number: QTBUG-62396
+    >>> change enabled for Qt >= 5.9.2
  commit c35fc435950437d3d046b17d06593873d7b82011
     macOS: Make alpha-based click-trough work again
     Restore 5.6 behavior by not modifying ignoresMouseEvent

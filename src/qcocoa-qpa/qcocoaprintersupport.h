@@ -53,7 +53,7 @@ public:
     QCocoaPrinterSupport();
     ~QCocoaPrinterSupport();
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 2)
     QPrintEngine *createNativePrintEngine(QPrinter::PrinterMode printerMode, const QString &deviceId = QString()) Q_DECL_OVERRIDE;
 #else
     QPrintEngine *createNativePrintEngine(QPrinter::PrinterMode printerMode) Q_DECL_OVERRIDE;
