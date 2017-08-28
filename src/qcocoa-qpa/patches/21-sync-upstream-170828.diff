@@ -1,0 +1,243 @@
+diff --git a/cocoa/qcocoamenu.h b/cocoa/qcocoamenu.h
+index b770715..06688db 100644
+--- a/cocoa/qcocoamenu.h
++++ b/cocoa/qcocoamenu.h
+@@ -96,14 +96,18 @@ public:
+     bool isOpen() const;
+     void setIsOpen(bool isOpen);
+ 
++    void timerEvent(QTimerEvent *e) Q_DECL_OVERRIDE;
++
+ private:
+     QCocoaMenuItem *itemOrNull(int index) const;
+     void insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem);
++    void scheduleUpdate();
+ 
+     QList<QCocoaMenuItem *> m_menuItems;
+     NSMenu *m_nativeMenu;
+     NSMenuItem *m_attachedItem;
+     quintptr m_tag;
++    int m_updateTimer;
+     bool m_enabled:1;
+     bool m_parentEnabled:1;
+     bool m_visible:1;
+diff --git a/cocoa/qcocoamenu.mm b/cocoa/qcocoamenu.mm
+index de2105e..43d486d 100644
+--- a/cocoa/qcocoamenu.mm
++++ b/cocoa/qcocoamenu.mm
+@@ -260,6 +260,7 @@ QT_BEGIN_NAMESPACE
+ QCocoaMenu::QCocoaMenu() :
+     m_attachedItem(0),
+     m_tag(0),
++    m_updateTimer(0),
+     m_enabled(true),
+     m_parentEnabled(true),
+     m_visible(true),
+@@ -327,6 +328,13 @@ void QCocoaMenu::insertMenuItem(QPlatformMenuItem *menuItem, QPlatformMenuItem *
+     }
+ 
+     insertNative(cocoaItem, beforeItem);
++
++    // Empty menus on a menubar are hidden by default. If the menu gets
++    // added to the menubar before it contains any item, we need to sync.
++    if (isVisible() && attachedItem().hidden) {
++        if (auto *mb = qobject_cast<QCocoaMenuBar *>(menuParent()))
++            mb->syncMenu(this);
++    }
+ }
+ 
+ void QCocoaMenu::insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem)
+@@ -433,6 +441,20 @@ QCocoaMenuItem *QCocoaMenu::itemOrNull(int index) const
+     return m_menuItems.at(index);
+ }
+ 
++void QCocoaMenu::scheduleUpdate()
++{
++    if (!m_updateTimer)
++        m_updateTimer = startTimer(0);
++}
++
++void QCocoaMenu::timerEvent(QTimerEvent *e)
++{
++    if (e->timerId() == m_updateTimer) {
++        m_updateTimer = 0;
++        [m_nativeMenu update];
++    }
++}
++
+ void QCocoaMenu::syncMenuItem(QPlatformMenuItem *menuItem)
+ {
+     QMacAutoReleasePool pool;
+@@ -459,9 +481,9 @@ void QCocoaMenu::syncMenuItem(QPlatformMenuItem *menuItem)
+         QCocoaMenuItem* beforeItem = itemOrNull(m_menuItems.indexOf(cocoaItem) + 1);
+         insertNative(cocoaItem, beforeItem);
+     } else {
+-        // Force NSMenuValidation to kick in. This is needed e.g.
++        // Schedule NSMenuValidation to kick in. This is needed e.g.
+         // when an item's enabled state changes after menuWillOpen:
+-        [m_nativeMenu update];
++        scheduleUpdate();
+     }
+ }
+ 
+diff --git a/cocoa/qcocoamenubar.mm b/cocoa/qcocoamenubar.mm
+index 4cdf004..70fcb40 100644
+--- a/cocoa/qcocoamenubar.mm
++++ b/cocoa/qcocoamenubar.mm
+@@ -370,7 +370,7 @@ void QCocoaMenuBar::updateMenuBarImmediately()
+     QCocoaMenuLoader *loader = [QCocoaMenuLoader sharedMenuLoader];
+     [loader ensureAppMenuInMenu:mb->nsMenu()];
+ 
+-    NSMutableSet *mergedItems = [[NSMutableSet setWithCapacity:0] retain];
++    NSMutableSet *mergedItems = [[NSMutableSet setWithCapacity:mb->merged().count()] retain];
+     foreach (QCocoaMenuItem *m, mb->merged()) {
+         [mergedItems addObject:m->nsItem()];
+         m->syncMerged();
+diff --git a/cocoa/qcocoaprintersupport.h b/cocoa/qcocoaprintersupport.h
+index 371212d..4945610 100644
+--- a/cocoa/qcocoaprintersupport.h
++++ b/cocoa/qcocoaprintersupport.h
+@@ -53,7 +53,11 @@ public:
+     QCocoaPrinterSupport();
+     ~QCocoaPrinterSupport();
+ 
++#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
++    QPrintEngine *createNativePrintEngine(QPrinter::PrinterMode printerMode, const QString &deviceId = QString()) Q_DECL_OVERRIDE;
++#else
+     QPrintEngine *createNativePrintEngine(QPrinter::PrinterMode printerMode) Q_DECL_OVERRIDE;
++#endif
+     QPaintEngine *createPaintEngine(QPrintEngine *, QPrinter::PrinterMode printerMode) Q_DECL_OVERRIDE;
+ 
+     QPrintDevice createPrintDevice(const QString &id) Q_DECL_OVERRIDE;
+diff --git a/cocoa/qcocoaprintersupport.mm b/cocoa/qcocoaprintersupport.mm
+index c2f7d5b..e52d945 100644
+--- a/cocoa/qcocoaprintersupport.mm
++++ b/cocoa/qcocoaprintersupport.mm
+@@ -54,10 +54,17 @@ QCocoaPrinterSupport::QCocoaPrinterSupport()
+ QCocoaPrinterSupport::~QCocoaPrinterSupport()
+ { }
+ 
++#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
++QPrintEngine *QCocoaPrinterSupport::createNativePrintEngine(QPrinter::PrinterMode printerMode, const QString &deviceId)
++{
++    return new QMacPrintEngine(printerMode, deviceId);
++}
++#else
+ QPrintEngine *QCocoaPrinterSupport::createNativePrintEngine(QPrinter::PrinterMode printerMode)
+ {
+-    return new QMacPrintEngine(printerMode);
++    return new QMacPrintEngine(printerMode, QString());
+ }
++#endif
+ 
+ QPaintEngine *QCocoaPrinterSupport::createPaintEngine(QPrintEngine *printEngine, QPrinter::PrinterMode printerMode)
+ {
+diff --git a/cocoa/qcocoawindow.mm b/cocoa/qcocoawindow.mm
+index 2a36ff4..06a3c00 100644
+--- a/cocoa/qcocoawindow.mm
++++ b/cocoa/qcocoawindow.mm
+@@ -1109,8 +1109,18 @@ void QCocoaWindow::setWindowFlags(Qt::WindowFlags flags)
+         setWindowZoomButton(flags);
+     }
+ 
+-    if (m_nsWindow)
+-        m_nsWindow.ignoresMouseEvents = flags & Qt::WindowTransparentForInput;
++    // Make window ignore mouse events if WindowTransparentForInput is set.
++    // Note that ignoresMouseEvents has a special initial state where events
++    // are ignored (passed through) based on window transparency, and that
++    // setting the property to false does not return us to that state. Instead,
++    // this makes the window capture all mouse events. Take care to only
++    // set the property if needed. FIXME: recreate window if needed or find
++    // some other way to implement WindowTransparentForInput.
++    if (m_nsWindow) {
++        bool ignoreMouse = flags & Qt::WindowTransparentForInput;
++        if (m_nsWindow.ignoresMouseEvents != ignoreMouse)
++            m_nsWindow.ignoresMouseEvents = ignoreMouse;
++    }
+ 
+     m_windowFlags = flags;
+ }
+diff --git a/cocoa/qnsview.h b/cocoa/qnsview.h
+index a78151e..c37c45c 100644
+--- a/cocoa/qnsview.h
++++ b/cocoa/qnsview.h
+@@ -133,9 +133,11 @@ Q_FORWARD_DECLARE_OBJC_CLASS(QT_MANGLE_NAMESPACE(QNSViewMouseMoveHelper));
+ - (void)otherMouseUp:(NSEvent *)theEvent;
+ - (void)handleFrameStrutMouseEvent:(NSEvent *)theEvent;
+ 
++#ifndef QT_NO_TABLETEVENT
+ - (bool)handleTabletEvent: (NSEvent *)theEvent;
+ - (void)tabletPoint: (NSEvent *)theEvent;
+ - (void)tabletProximity: (NSEvent *)theEvent;
++#endif
+ 
+ - (int) convertKeyCode : (QChar)keyCode;
+ + (Qt::KeyboardModifiers) convertKeyModifiers : (ulong)modifierFlags;
+diff --git a/cocoa/qnsview.mm b/cocoa/qnsview.mm
+index 9f33ad0..e20bd8b 100644
+--- a/cocoa/qnsview.mm
++++ b/cocoa/qnsview.mm
+@@ -648,10 +648,12 @@ static bool _q_dontOverrideCtrlLMB = false;
+     if (!m_platformWindow)
+         return;
+ 
++#ifndef QT_NO_TABLETEVENT
+     // Tablet events may come in via the mouse event handlers,
+     // check if this is a valid tablet event first.
+     if ([self handleTabletEvent: theEvent])
+         return;
++#endif
+ 
+     QPointF qtWindowPoint;
+     QPointF qtScreenPoint;
+@@ -1045,6 +1047,7 @@ static bool _q_dontOverrideCtrlLMB = false;
+     m_platformWindow->m_enterLeaveTargetWindow = 0;
+ }
+ 
++#ifndef QT_NO_TABLETEVENT
+ struct QCocoaTabletDeviceData
+ {
+     QTabletEvent::TabletDevice device;
+@@ -1215,6 +1218,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+         QWindowSystemInterface::handleTabletLeaveProximityEvent(timestamp, deviceData.device, deviceData.pointerType, deviceData.uid);
+     }
+ }
++#endif
+ 
+ - (bool)shouldSendSingleTouch
+ {
+diff --git a/cocoa/qprintengine_mac.mm b/cocoa/qprintengine_mac.mm
+index 8098c5e..c39af87 100644
+--- a/cocoa/qprintengine_mac.mm
++++ b/cocoa/qprintengine_mac.mm
+@@ -51,11 +51,15 @@ QT_BEGIN_NAMESPACE
+ 
+ extern QMarginsF qt_convertMargins(const QMarginsF &margins, QPageLayout::Unit fromUnits, QPageLayout::Unit toUnits);
+ 
+-QMacPrintEngine::QMacPrintEngine(QPrinter::PrinterMode mode) : QPaintEngine(*(new QMacPrintEnginePrivate))
++QMacPrintEngine::QMacPrintEngine(QPrinter::PrinterMode mode, const QString &deviceId)
++    : QPaintEngine(*(new QMacPrintEnginePrivate))
+ {
+     Q_D(QMacPrintEngine);
+     d->mode = mode;
+-    d->m_printDevice.reset(new QCocoaPrintDevice(QCocoaPrinterSupport().defaultPrintDeviceId()));
++    QString id = deviceId;
++    if (id.isEmpty())
++        id = QCocoaPrinterSupport().defaultPrintDeviceId();
++    d->m_printDevice.reset(new QCocoaPrintDevice(id));
+     d->m_pageLayout.setPageSize(d->m_printDevice->defaultPageSize());
+     d->initialize();
+ }
+diff --git a/cocoa/qprintengine_mac_p.h b/cocoa/qprintengine_mac_p.h
+index ee98275..2d46a25 100644
+--- a/cocoa/qprintengine_mac_p.h
++++ b/cocoa/qprintengine_mac_p.h
+@@ -78,7 +78,7 @@ class QMacPrintEngine : public QPaintEngine, public QPrintEngine
+ {
+     Q_DECLARE_PRIVATE(QMacPrintEngine)
+ public:
+-    QMacPrintEngine(QPrinter::PrinterMode mode);
++    QMacPrintEngine(QPrinter::PrinterMode mode, const QString &deviceId);
+ 
+     Qt::HANDLE handle() const;
+ 

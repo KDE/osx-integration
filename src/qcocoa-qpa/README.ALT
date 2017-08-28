@@ -1,3 +1,37 @@
+20180828 : upstream head (5.9): f1a857c079e11c8e298ec8f2dafef49039f8ca40
+touched:
+ src/plugins/platforms/cocoa/qcocoamenu.h                                            |     4 +
+ src/plugins/platforms/cocoa/qcocoamenu.mm                                           |    26 +-
+ src/plugins/platforms/cocoa/qcocoamenubar.mm                                        |     2 +-
+ src/plugins/platforms/cocoa/qcocoaprintersupport.h                                  |     2 +-
+ src/plugins/platforms/cocoa/qcocoaprintersupport.mm                                 |     4 +-
+ src/plugins/platforms/cocoa/qcocoawindow.mm                                         |    14 +-
+ src/plugins/platforms/cocoa/qnsview.h                                               |     2 +
+ src/plugins/platforms/cocoa/qnsview.mm                                              |     4 +
+ src/plugins/platforms/cocoa/qprintengine_mac.mm                                     |     8 +-
+ src/plugins/platforms/cocoa/qprintengine_mac_p.h                                    |     2 +-
+patch: patches/21-sync-upstream-170828.diff
+Changes: git log 0a5f71c6062d575602ff041fb1b88ec2d8ad92bc..HEAD src/plugins/platforms/cocoa
+ commit dbaa4de28e5cdfa1787af77d236586833786ee61
+    Cocoa: Fix compile when using QT_NO_TABLETEVENT
+ commit 8ebfe00f4ab79516a8276929a682c24f4c675b5f
+    Initialize the print engine with the given printer name
+    QAltCocoa: only on Qt >= 5.9.0
+    Task-number: QTBUG-62221
+ commit 306071e50eac8290d234caab90985ddf705a5fc6
+    QCocoaMenu: Sync menubar menu when adding items
+    Task-number: QTBUG-62260
+ commit f27d1ccbb24ec2fd4098f2976503478831006cc8
+    QCocoaMenu: De-pessimize the number of calls to validateMenuItem:
+    Task-number: QTBUG-62396
+ commit c35fc435950437d3d046b17d06593873d7b82011
+    macOS: Make alpha-based click-trough work again
+    Restore 5.6 behavior by not modifying ignoresMouseEvent
+    if we can. Toggling WindowTransparentForInput on and
+    off again is still broken.
+    Task-number: QTBUG-54830
+
+
 20180801: upstream head (5.9): 0a5f71c6062d575602ff041fb1b88ec2d8ad92bc
 touched:
  src/plugins/platforms/cocoa/cocoa.pro                                             |   7 +-
