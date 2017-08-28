@@ -1,3 +1,36 @@
+20180828 : upstream head (5.9): f1a857c079e11c8e298ec8f2dafef49039f8ca40
+touched:
+ src/widgets/styles/qcommonstyle.cpp
+ src/widgets/widgets/qcombobox.cpp
+ src/widgets/styles/qstylehelper.cpp                                                 |     6 +-
+ src/widgets/styles/qstylehelper_p.h                                                 |     4 +-
+ src/widgets/styles/qmacstyle_mac.mm                                                 |    29 +-
+ src/widgets/styles/qmacstyle_mac_p_p.h                                              |     8 +
+> patch: patches/15-sync-upstream-170828.diff
+Changes: git log 0a5f71c6062d575602ff041fb1b88ec2d8ad92bc..HEAD <changed files>
+    Convert features.graphicsview to QT_[REQUIRE_]CONFIG
+    Convert features.toolbutton to QT_[REQUIRE_]CONFIG
+    Convert features.groupbox to QT_[REQUIRE_]CONFIG
+    Convert features.scrollbar to QT_[REQUIRE_]CONFIG
+    Convert features.toolbox to QT_[REQUIRE_]CONFIG
+    Convert features.progressbar to QT_[REQUIRE_]CONFIG
+    Convert features.dial to QT_[REQUIRE_]CONFIG
+ commit b5d762ae87e8f3a35a84a6c7d6d324c27d487a8c
+ Author: Eskil Abrahamsen Blomfeldt <eskil.abrahamsen-blomfeldt@qt.io>
+ Date:   Thu Aug 17 11:31:27 2017 +0200
+    macOS: Fix padding around tab label with icon
+    Change c12072c685f7e93d5b84e289ca23106482379eff fixed a problem
+    where tab labels would overlap with the icons if the tab became
+    too small to contain the text. But it did not properly account
+    for the full area occupied by the icon, because the horizontal
+    padding is hardcoded to 4 in the mac style, whereas in the
+    common style (where the icon is drawn) it uses the pixel metric
+    for this.
+    In addition, the change only allocated space on the left side,
+    causing the label to no longer be centered.
+    Task-number: QTBUG-61235
+
+
 20180801: upstream head (5.9): 0a5f71c6062d575602ff041fb1b88ec2d8ad92bc
 touched:
  src/widgets/widgets/qcombobox*
