@@ -447,15 +447,14 @@ void QCocoaMenu::scheduleUpdate()
         m_updateTimer = startTimer(0);
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 2)
 void QCocoaMenu::timerEvent(QTimerEvent *e)
 {
     if (e->timerId() == m_updateTimer) {
+        killTimer(m_updateTimer);
         m_updateTimer = 0;
         [m_nativeMenu update];
     }
 }
-#endif
 
 void QCocoaMenu::syncMenuItem(QPlatformMenuItem *menuItem)
 {
@@ -485,11 +484,7 @@ void QCocoaMenu::syncMenuItem(QPlatformMenuItem *menuItem)
     } else {
         // Schedule NSMenuValidation to kick in. This is needed e.g.
         // when an item's enabled state changes after menuWillOpen:
-#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 2)
         scheduleUpdate();
-#else
-        [m_nativeMenu update];
-#endif
     }
 }
 

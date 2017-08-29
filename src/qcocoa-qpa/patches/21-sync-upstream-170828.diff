@@ -1,14 +1,12 @@
 diff --git a/cocoa/qcocoamenu.h b/cocoa/qcocoamenu.h
-index b770715..05556d4 100644
+index b770715..06688db 100644
 --- a/cocoa/qcocoamenu.h
 +++ b/cocoa/qcocoamenu.h
-@@ -96,14 +96,20 @@ public:
+@@ -96,14 +96,18 @@ public:
      bool isOpen() const;
      void setIsOpen(bool isOpen);
  
-+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 2)
 +    void timerEvent(QTimerEvent *e) Q_DECL_OVERRIDE;
-+#endif
 +
  private:
      QCocoaMenuItem *itemOrNull(int index) const;
@@ -24,7 +22,7 @@ index b770715..05556d4 100644
      bool m_parentEnabled:1;
      bool m_visible:1;
 diff --git a/cocoa/qcocoamenu.mm b/cocoa/qcocoamenu.mm
-index de2105e..2b0a261 100644
+index de2105e..7ed6c16 100644
 --- a/cocoa/qcocoamenu.mm
 +++ b/cocoa/qcocoamenu.mm
 @@ -260,6 +260,7 @@ QT_BEGIN_NAMESPACE
@@ -49,7 +47,7 @@ index de2105e..2b0a261 100644
  }
  
  void QCocoaMenu::insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem)
-@@ -433,6 +441,22 @@ QCocoaMenuItem *QCocoaMenu::itemOrNull(int index) const
+@@ -433,6 +441,21 @@ QCocoaMenuItem *QCocoaMenu::itemOrNull(int index) const
      return m_menuItems.at(index);
  }
  
@@ -59,31 +57,27 @@ index de2105e..2b0a261 100644
 +        m_updateTimer = startTimer(0);
 +}
 +
-+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 2)
 +void QCocoaMenu::timerEvent(QTimerEvent *e)
 +{
 +    if (e->timerId() == m_updateTimer) {
++        killTimer(m_updateTimer);
 +        m_updateTimer = 0;
 +        [m_nativeMenu update];
 +    }
 +}
-+#endif
 +
  void QCocoaMenu::syncMenuItem(QPlatformMenuItem *menuItem)
  {
      QMacAutoReleasePool pool;
-@@ -459,9 +483,13 @@ void QCocoaMenu::syncMenuItem(QPlatformMenuItem *menuItem)
+@@ -459,9 +482,9 @@ void QCocoaMenu::syncMenuItem(QPlatformMenuItem *menuItem)
          QCocoaMenuItem* beforeItem = itemOrNull(m_menuItems.indexOf(cocoaItem) + 1);
          insertNative(cocoaItem, beforeItem);
      } else {
 -        // Force NSMenuValidation to kick in. This is needed e.g.
 +        // Schedule NSMenuValidation to kick in. This is needed e.g.
          // when an item's enabled state changes after menuWillOpen:
-+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 2)
+-        [m_nativeMenu update];
 +        scheduleUpdate();
-+#else
-         [m_nativeMenu update];
-+#endif
      }
  }
  

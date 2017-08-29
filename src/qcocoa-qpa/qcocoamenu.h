@@ -96,9 +96,7 @@ public:
     bool isOpen() const;
     void setIsOpen(bool isOpen);
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 2)
     void timerEvent(QTimerEvent *e) Q_DECL_OVERRIDE;
-#endif
 
 private:
     QCocoaMenuItem *itemOrNull(int index) const;
