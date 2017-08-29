@@ -1,4 +1,4 @@
-20180828 : upstream head (5.9): f1a857c079e11c8e298ec8f2dafef49039f8ca40
+20180829 : upstream head (5.9): e81f430e30635f975dd4635ffb64d66fc1bce355
 touched:
  src/plugins/platforms/cocoa/qcocoamenu.h                                            |     4 +
  src/plugins/platforms/cocoa/qcocoamenu.mm                                           |    26 +-
@@ -12,6 +12,8 @@ touched:
  src/plugins/platforms/cocoa/qprintengine_mac_p.h                                    |     2 +-
 patch: patches/21-sync-upstream-170828.diff
 Changes: git log 0a5f71c6062d575602ff041fb1b88ec2d8ad92bc..HEAD src/plugins/platforms/cocoa
+ commit 48784486a36f60dea882baabc6923f4b59d2bfe6
+    QCocoaMenu: Stop update timer
  commit dbaa4de28e5cdfa1787af77d236586833786ee61
     Cocoa: Fix compile when using QT_NO_TABLETEVENT
  commit 8ebfe00f4ab79516a8276929a682c24f4c675b5f
