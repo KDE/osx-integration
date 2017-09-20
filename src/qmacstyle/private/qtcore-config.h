@@ -39,6 +39,10 @@
 
 #include <QtCore/qtcore-config.h>
 
+/*
+ * These QT_[REQUIRE_]CONFIG features were introduced in Qt 5.9:
+ */
+
 #ifndef QT_FEATURE_style_mac
 #   define QT_FEATURE_style_mac 1
 #endif
@@ -57,6 +61,10 @@
 
 #ifndef QT_FEATURE_formlayout
 #   define QT_FEATURE_formlayout 1
+#endif
+
+#ifndef QT_FEATURE_effects
+#   define QT_FEATURE_effects 1
 #endif
 
 /*
@@ -180,14 +188,6 @@
 #   endif
 #endif
 
-//     Convert features.graphicsview to QT_[REQUIRE_]CONFIG
-//     Convert features.toolbutton to QT_[REQUIRE_]CONFIG
-//     Convert features.groupbox to QT_[REQUIRE_]CONFIG
-//     Convert features.scrollbar to QT_[REQUIRE_]CONFIG
-//     Convert features.toolbox to QT_[REQUIRE_]CONFIG
-//     Convert features.progressbar to QT_[REQUIRE_]CONFIG
-//     Convert features.dial to QT_[REQUIRE_]CONFIG
-
 #ifndef QT_FEATURE_graphicsview
 #   ifdef QT_NO_GRAPHICSVIEW
 #       warning "No support for QGraphicsView"
@@ -251,3 +251,83 @@
 #   endif
 #endif
 
+#ifndef QT_FEATURE_menu
+#   ifdef QT_NO_MENU
+#       warning "No support for QMenu"
+#       define QT_FEATURE_menu -1
+#   else
+#       define QT_FEATURE_menu 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_slider
+#   ifdef QT_NO_SLIDER
+#       warning "No support for QSlider"
+#       define QT_FEATURE_slider -1
+#   else
+#       define QT_FEATURE_slider 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_lineedit
+#   ifdef QT_NO_LINEEDIT
+#       warning "No support for QLineEdit"
+#       define QT_FEATURE_lineedit -1
+#   else
+#       define QT_FEATURE_lineedit 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_spinbox
+#   ifdef QT_NO_SPINBOX
+#       warning "No support for QSpinBox"
+#       define QT_FEATURE_spinbox -1
+#   else
+#       define QT_FEATURE_spinbox 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_sizegrip
+#   ifdef QT_NO_SIZEGRIP
+#       warning "No support for QSizeGrip"
+#       define QT_FEATURE_sizegrip -1
+#   else
+#       define QT_FEATURE_sizegrip 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_mdiarea
+#   ifdef QT_NO_MDIAREA
+#       warning "No support for QMdiArea"
+#       define QT_FEATURE_mdiarea -1
+#   else
+#       define QT_FEATURE_mdiarea 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_completer
+#   ifdef QT_NO_COMPLETER
+#       warning "No support for QCompleter"
+#       define QT_FEATURE_completer -1
+#   else
+#       define QT_FEATURE_completer 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_mainwindow
+#   ifdef QT_NO_MAINWINDOW
+#       warning "No support for QMainWindow"
+#       define QT_FEATURE_mainwindow -1
+#   else
+#       define QT_FEATURE_mainwindow 1
+#   endif
+#endif
+
+#ifndef QT_FEATURE_menubar
+#   ifdef QT_NO_MENUBAR
+#       warning "No support for QMenuBar"
+#       define QT_FEATURE_menubar -1
+#   else
+#       define QT_FEATURE_menubar 1
+#   endif
+#endif

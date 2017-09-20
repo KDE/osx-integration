@@ -74,10 +74,18 @@
 #include <qgroupbox.h>
 #include <qhash.h>
 #include <qheaderview.h>
+#if QT_CONFIG(lineedit)
 #include <qlineedit.h>
+#endif
+#if QT_CONFIG(mainwindow)
 #include <qmainwindow.h>
+#endif
+#if QT_CONFIG(mdiarea)
 #include <qmdisubwindow.h>
+#endif
+#if QT_CONFIG(menubar)
 #include <qmenubar.h>
+#endif
 #include <qpaintdevice.h>
 #include <qpainter.h>
 #include <qpixmapcache.h>
@@ -95,7 +103,9 @@
 #if QT_CONFIG(scrollbar)
 #include <qscrollbar.h>
 #endif
+#if QT_CONFIG(sizegrip)
 #include <qsizegrip.h>
+#endif
 #include <qstyleoption.h>
 #include <qtoolbar.h>
 #if QT_CONFIG(toolbutton)
@@ -685,17 +695,17 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
         else if (qobject_cast<const QProgressBar *>(widg))
             ct = QStyle::CT_ProgressBar;
 #endif
-#ifndef QT_NO_LINEEDIT
+#if QT_CONFIG(lineedit)
         else if (qobject_cast<const QLineEdit *>(widg))
             ct = QStyle::CT_LineEdit;
 #endif
         else if (qobject_cast<const QHeaderView *>(widg))
             ct = QStyle::CT_HeaderSection;
-#ifndef QT_NO_MENUBAR
+#if QT_CONFIG(menubar)
         else if (qobject_cast<const QMenuBar *>(widg))
             ct = QStyle::CT_MenuBar;
 #endif
-#ifndef QT_NO_SIZEGRIP
+#if QT_CONFIG(sizegrip)
         else if (qobject_cast<const QSizeGrip *>(widg))
             ct = QStyle::CT_SizeGrip;
 #endif
@@ -784,7 +794,7 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
             gbi.size = sz == QAquaSizeSmall ? kHIThemeGrowBoxSizeSmall : kHIThemeGrowBoxSizeNormal;
             if (HIThemeGetGrowBoxBounds(&p, &gbi, &r) == noErr) {
                 int width = 0;
-#ifndef QT_NO_MDIAREA
+#if QT_CONFIG(mdiarea)
             if (widg && qobject_cast<QMdiSubWindow *>(widg->parentWidget()))
                 width = r.size.width;
 #endif
@@ -972,7 +982,7 @@ static QAquaWidgetSize qt_aqua_guess_size(const QWidget *widg, QSize large, QSiz
         return QAquaSizeLarge;
     }
 
-#ifndef QT_NO_MAINWINDOW
+#if QT_CONFIG(mainwindow)
     if (qEnvironmentVariableIsSet("QWIDGET_ALL_SMALL")) {
         //if (small.width() != -1 || small.height() != -1)
         return QAquaSizeSmall;
@@ -2330,7 +2340,7 @@ void QMacStyle::polish(QWidget* w)
         w->setAttribute(Qt::WA_SetPalette, false);
     }
 
-#ifndef QT_NO_MENU
+#if QT_CONFIG(menu)
     if (qobject_cast<QMenu*>(w)
 #if QT_CONFIG(combobox)
             || qobject_cast<QComboBoxPrivateContainer *>(w)
@@ -2389,7 +2399,7 @@ void QMacStyle::polish(QWidget* w)
 void QMacStyle::unpolish(QWidget* w)
 {
     if ((
-#ifndef QT_NO_MENU
+#if QT_CONFIG(menu)
             qobject_cast<QMenu*>(w) ||
 #endif
             qt_mac_is_metal(w)
@@ -2504,7 +2514,7 @@ int QMacStyle::pixelMetric(PixelMetric metric, const QStyleOption *opt, const QW
 #endif
         break;
     case PM_DefaultFrameWidth:
-#ifndef QT_NO_MAINWINDOW
+#if QT_CONFIG(mainwindow)
         if (widget && (widget->isWindow() || !widget->parentWidget()
                 || (qobject_cast<const QMainWindow*>(widget->parentWidget())
                    && static_cast<QMainWindow *>(widget->parentWidget())->centralWidget() == widget))
@@ -3128,7 +3138,7 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
                                              opt->rect.width(), opt->rect.height() - 8);
                 HIThemeMenuDrawInfo mdi;
                 mdi.version = 0;
-#ifndef QT_NO_MENU
+#if QT_CONFIG(menu)
                 if (w && qobject_cast<QMenu *>(w->parentWidget()))
                     mdi.menuType = kThemeMenuTypeHierarchical;
                 else
@@ -3617,7 +3627,7 @@ void QMacStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPai
         // Draw the focus frame for widgets other than QLineEdit (e.g. for line edits in Webkit).
         // Focus frame is drawn outside the rectangle passed in the option-rect.
         if (const QStyleOptionFrame *panel = qstyleoption_cast<const QStyleOptionFrame *>(opt)) {
-#ifndef QT_NO_LINEEDIT
+#if QT_CONFIG(lineedit)
             if ((opt->state & State_HasFocus) && !qobject_cast<const QLineEdit*>(w)) {
                 int vmargin = pixelMetric(QStyle::PM_FocusFrameVMargin);
                 int hmargin = pixelMetric(QStyle::PM_FocusFrameHMargin);
@@ -4962,7 +4972,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
         // the title bar. The following code fills the toolBar area with transparent pixels
         // to make that gradient visible.
         if (w)  {
-#ifndef QT_NO_MAINWINDOW
+#if QT_CONFIG(mainwindow)
             if (QMainWindow * mainWindow = qobject_cast<QMainWindow *>(w->window())) {
                 if (toolBar && toolBar->toolBarArea == Qt::TopToolBarArea && mainWindow->unifiedTitleAndToolBarOnMac()) {
 
@@ -5909,7 +5919,7 @@ void QMacStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
             }
         }
         break;
-#ifndef QT_NO_SPINBOX
+#if QT_CONFIG(spinbox)
     case CC_SpinBox:
         if (const QStyleOptionSpinBox *sb = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
             QStyleOptionSpinBox newSB = *sb;
@@ -6661,7 +6671,7 @@ QRect QMacStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
             }
         }
         break;
-#ifndef QT_NO_SPINBOX
+#if QT_CONFIG(spinbox)
     case CC_SpinBox:
         if (const QStyleOptionSpinBox *spin = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
             QAquaWidgetSize aquaSize = d->aquaSizeConstrain(spin, widget);
@@ -6781,7 +6791,7 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
     bool useAquaGuideline = true;
 
     switch (ct) {
-#ifndef QT_NO_SPINBOX
+#if QT_CONFIG(spinbox)
     case CT_SpinBox:
         if (const QStyleOptionSpinBox *vopt = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
             // Add button + frame widths
@@ -7154,7 +7164,7 @@ bool QMacStyle::event(QEvent *e)
             QWidget *top = f->parentWidget();
             while (top && !top->isWindow() && !(top->windowType() == Qt::SubWindow))
                 top = top->parentWidget();
-#ifndef QT_NO_MAINWINDOW
+#if QT_CONFIG(mainwindow)
             if (qobject_cast<QMainWindow *>(top)) {
                 QWidget *central = static_cast<QMainWindow *>(top)->centralWidget();
                 for (const QWidget *par = f; par; par = par->parentWidget()) {
