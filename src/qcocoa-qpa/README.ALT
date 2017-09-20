@@ -1,4 +1,28 @@
-20180829 : upstream head (5.9): e81f430e30635f975dd4635ffb64d66fc1bce355
+20170920 : upstream head (5.9): e0c2d328b11ab893538393fad66ad61d22d823c6
+ src/plugins/platforms/cocoa/qcocoaeventdispatcher.mm                        |  12 +-
+ src/plugins/platforms/cocoa/qcocoainputcontext.mm                           |  17 +-
+ src/plugins/platforms/cocoa/qcocoamenubar.mm                                |  10 +-
+ src/plugins/platforms/cocoa/qnsview.h                                       |   2 +
+ src/plugins/platforms/cocoa/qnsview.mm                                      |  41 ++-
+patch: patches/22-sync-upstream-170920.diff
+Changes: git log e81f430e30635f975dd4635ffb64d66fc1bce355..HEAD src/plugins/platforms/cocoa/qcocoaeventdispatcher.mm src/plugins/platforms/cocoa/qcocoainputcontext.mm src/plugins/platforms/cocoa/qcocoamenubar.mm src/plugins/platforms/cocoa/qnsview.h src/plugins/platforms/cocoa/qnsview.mm
+commit 689606de91faecf91f1f92e8d355789d9be62d2f
+    Cocoa: Update the known menu items when the QCocoaMenuBar is deleted
+    Task-number: QTBUG-62193
+commit 202d3ba3e6c9982608f41f5e7d836825c8664c93
+    Cocoa: Check if charactersIgnoringModifiers is not empty too
+    Task-number: QTBUG-57933
+commit 0adc14d8dbdd9e28ccb72c49d865009dd8df1b1c
+    macOS: Don‚Äôt color convert the backing store
+    Task-number: QTBUG-61384
+commit 52bda430af2749da1a0467b71d9cca5208f22402
+    macOS: Reset composition when focus object changes inside window
+    Task-number: QTBUG-59222
+commit 0270651dda8e247164a8dccd71fb65712c7d1480
+    Cocoa integration: do not use released session
+    Task-number: QTBUG-62589
+
+20170829 : upstream head (5.9): e81f430e30635f975dd4635ffb64d66fc1bce355
 touched:
  src/plugins/platforms/cocoa/qcocoamenu.h                                            |     4 +
  src/plugins/platforms/cocoa/qcocoamenu.mm                                           |    26 +-

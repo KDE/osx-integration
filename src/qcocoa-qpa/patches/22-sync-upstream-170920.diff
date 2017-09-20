@@ -1,0 +1,197 @@
+diff --git a/cocoa/qcocoaeventdispatcher.mm b/cocoa/qcocoaeventdispatcher.mm
+index d2f985e..b22f1b1 100644
+--- a/cocoa/qcocoaeventdispatcher.mm
++++ b/cocoa/qcocoaeventdispatcher.mm
+@@ -401,8 +401,18 @@ bool QCocoaEventDispatcher::processEvents(QEventLoop::ProcessEventsFlags flags)
+             // [NSApp run], which is the normal code path for cocoa applications.
+             if (NSModalSession session = d->currentModalSession()) {
+                 QBoolBlocker execGuard(d->currentExecIsNSAppRun, false);
+-                while ([NSApp runModalSession:session] == NSModalResponseContinue && !d->interrupt)
++                while ([NSApp runModalSession:session] == NSModalResponseContinue && !d->interrupt) {
+                     qt_mac_waitForMoreEvents(NSModalPanelRunLoopMode);
++                    if (session != d->currentModalSessionCached) {
++                        // It's possible to release the current modal session
++                        // while we are in this loop, for example, by closing all
++                        // windows from a slot via QApplication::closeAllWindows.
++                        // In this case we cannot use 'session' anymore. A warning
++                        // from Cocoa is: "Use of freed session detected. Do not
++                        // call runModalSession: after calling endModalSesion:."
++                        break;
++                    }
++                }
+ 
+                 if (!d->interrupt && session == d->currentModalSessionCached) {
+                     // Someone called [NSApp stopModal:] from outside the event
+diff --git a/cocoa/qcocoainputcontext.mm b/cocoa/qcocoainputcontext.mm
+index 9e3d747..9221099 100644
+--- a/cocoa/qcocoainputcontext.mm
++++ b/cocoa/qcocoainputcontext.mm
+@@ -124,7 +124,22 @@ void QCocoaInputContext::connectSignals()
+ void QCocoaInputContext::focusObjectChanged(QObject *focusObject)
+ {
+     Q_UNUSED(focusObject);
+-    mWindow = QGuiApplication::focusWindow();
++    if (mWindow == QGuiApplication::focusWindow()) {
++        if (!mWindow)
++            return;
++
++        QCocoaWindow *window = static_cast<QCocoaWindow *>(mWindow->handle());
++        QNSView *view = qnsview_cast(window->view());
++        if (!view)
++            return;
++
++        if (NSTextInputContext *ctxt = [NSTextInputContext currentInputContext]) {
++            [ctxt discardMarkedText];
++            [view cancelComposingText];
++        }
++    } else {
++        mWindow = QGuiApplication::focusWindow();
++    }
+ }
+ 
+ void QCocoaInputContext::updateLocale()
+diff --git a/cocoa/qcocoamenubar.mm b/cocoa/qcocoamenubar.mm
+index 70fcb40..3e466c9 100644
+--- a/cocoa/qcocoamenubar.mm
++++ b/cocoa/qcocoamenubar.mm
+@@ -86,6 +86,7 @@ QCocoaMenuBar::~QCocoaMenuBar()
+         // the menu bar was updated
+         qDeleteAll(children());
+         updateMenuBarImmediately();
++        resetKnownMenuItemsToQt();
+     }
+ }
+ 
+@@ -306,16 +307,9 @@ void QCocoaMenuBar::resetKnownMenuItemsToQt()
+     foreach (QCocoaMenuBar *mb, static_menubars) {
+         foreach (QCocoaMenu *m, mb->m_menus) {
+             foreach (QCocoaMenuItem *i, m->items()) {
+-                switch (i->effectiveRole()) {
+-                case QPlatformMenuItem::CutRole:
+-                case QPlatformMenuItem::CopyRole:
+-                case QPlatformMenuItem::PasteRole:
+-                case QPlatformMenuItem::SelectAllRole:
++                if (i->effectiveRole() >= QPlatformMenuItem::ApplicationSpecificRole) {
+                    [i->nsItem() setTarget:m->nsMenu().delegate];
+                    [i->nsItem() setAction:@selector(itemFired:)];
+-                   break;
+-                default:
+-                   break;
+                 }
+             }
+         }
+diff --git a/cocoa/qnsview.h b/cocoa/qnsview.h
+index c37c45c..384f14b 100644
+--- a/cocoa/qnsview.h
++++ b/cocoa/qnsview.h
+@@ -70,6 +70,7 @@ Q_FORWARD_DECLARE_OBJC_CLASS(QT_MANGLE_NAMESPACE(QNSViewMouseMoveHelper));
+     Qt::MouseButtons m_acceptedMouseDowns;
+     Qt::MouseButtons m_frameStrutButtons;
+     QString m_composingText;
++    QPointer<QObject> m_composingFocusObject;
+     bool m_sendKeyEvent;
+     QStringList *currentCustomDragTypes;
+     bool m_sendUpAsRightButton;
+@@ -104,6 +105,7 @@ Q_FORWARD_DECLARE_OBJC_CLASS(QT_MANGLE_NAMESPACE(QNSViewMouseMoveHelper));
+ - (void)viewDidHide;
+ - (void)viewDidUnhide;
+ - (void)removeFromSuperview;
++- (void)cancelComposingText;
+ 
+ - (BOOL)isFlipped;
+ - (BOOL)acceptsFirstResponder;
+diff --git a/cocoa/qnsview.mm b/cocoa/qnsview.mm
+index e20bd8b..34d8ed8 100644
+--- a/cocoa/qnsview.mm
++++ b/cocoa/qnsview.mm
+@@ -520,7 +520,13 @@ static bool _q_dontOverrideCtrlLMB = false;
+         dirtyBackingRect.size.height
+     );
+     CGImageRef bsCGImage = qt_mac_toCGImage(m_backingStore->toImage());
+-    CGImageRef cleanImg = CGImageCreateWithImageInRect(bsCGImage, backingStoreRect);
++
++    // Prevent potentially costly color conversion by assiging the display
++    // color space to the backingstore image.
++    CGImageRef displayColorSpaceImage = CGImageCreateCopyWithColorSpace(bsCGImage,
++        self.window.screen.colorSpace.CGColorSpace);
++
++    CGImageRef cleanImg = CGImageCreateWithImageInRect(displayColorSpaceImage, backingStoreRect);
+ 
+     // Optimization: Copy frame buffer content instead of blending for
+     // top-level windows where Qt fills the entire window content area.
+@@ -535,6 +541,7 @@ static bool _q_dontOverrideCtrlLMB = false;
+     CGImageRelease(cleanImg);
+     CGImageRelease(subMask);
+     CGImageRelease(bsCGImage);
++    CGImageRelease(displayColorSpaceImage);
+ }
+ 
+ - (BOOL) isFlipped
+@@ -1522,10 +1529,15 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+     const bool swapCtrlAndMeta = !qApp->testAttribute(Qt::AA_MacDontSwapCtrlAndMeta);
+     QChar ch = QChar::ReplacementCharacter;
+     int keyCode = Qt::Key_unknown;
+-    if ([characters length] != 0) {
++    // If a dead key occurs as a result of pressing a key combination then
++    // characters will have 0 length, but charactersIgnoringModifiers will
++    // have a valid character in it. This enables key combinations such as
++    // ALT+E to be used as a shortcut with an English keyboard even though
++    // pressing ALT+E will give a dead key while doing normal text input.
++    if ([characters length] != 0 || [charactersIgnoringModifiers length] != 0) {
+         if (((modifiers & (swapCtrlAndMeta ? Qt::MetaModifier : Qt::ControlModifier)) || (modifiers & Qt::AltModifier)) && ([charactersIgnoringModifiers length] != 0))
+             ch = QChar([charactersIgnoringModifiers characterAtIndex:0]);
+-        else
++        else if ([characters length] != 0)
+             ch = QChar([characters characterAtIndex:0]);
+         keyCode = [self convertKeyCode:ch];
+     }
+@@ -1731,6 +1743,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+     }
+ 
+     m_composingText.clear();
++    m_composingFocusObject = nullptr;
+ }
+ 
+ - (void) setMarkedText:(id)aString selectedRange:(NSRange)selectedRange replacementRange:(NSRange)replacementRange
+@@ -1785,6 +1798,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+     m_composingText = preeditString;
+ 
+     if (QObject *fo = m_platformWindow->window()->focusObject()) {
++        m_composingFocusObject = fo;
+         QInputMethodQueryEvent queryEvent(Qt::ImEnabled);
+         if (QCoreApplication::sendEvent(fo, &queryEvent)) {
+             if (queryEvent.value(Qt::ImEnabled).toBool()) {
+@@ -1797,6 +1811,25 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+     }
+ }
+ 
++- (void)cancelComposingText
++{
++    if (m_composingText.isEmpty())
++        return;
++
++    if (m_composingFocusObject) {
++        QInputMethodQueryEvent queryEvent(Qt::ImEnabled);
++        if (QCoreApplication::sendEvent(m_composingFocusObject, &queryEvent)) {
++            if (queryEvent.value(Qt::ImEnabled).toBool()) {
++                QInputMethodEvent e;
++                QCoreApplication::sendEvent(m_composingFocusObject, &e);
++            }
++        }
++    }
++
++    m_composingText.clear();
++    m_composingFocusObject = nullptr;
++}
++
+ - (void) unmarkText
+ {
+     if (!m_composingText.isEmpty()) {
+@@ -1812,6 +1845,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+         }
+     }
+     m_composingText.clear();
++    m_composingFocusObject = nullptr;
+ }
+ 
+ - (BOOL) hasMarkedText
