@@ -1,0 +1,953 @@
+diff --git a/private/qcombobox.cpp b/private/qcombobox.cpp
+index 5b4a2a1..9deb6ce 100644
+--- a/private/qcombobox.cpp
++++ b/private/qcombobox.cpp
+@@ -38,6 +38,7 @@
+ ****************************************************************************/
+ 
+ #include "qcombobox.h"
++#include "qtcore-config.h"
+ 
+ #include <qstylepainter.h>
+ #include <qpa/qplatformtheme.h>
+@@ -51,7 +52,9 @@
+ #endif
+ #include <qitemdelegate.h>
+ #include <qmap.h>
++#if QT_CONFIG(menu)
+ #include <qmenu.h>
++#endif
+ #include <qevent.h>
+ #include <qlayout.h>
+ #include <qscrollbar.h>
+@@ -70,12 +73,12 @@
+ #include <private/qabstractscrollarea_p.h>
+ #include <private/qlineedit_p.h>
+ #include <qdebug.h>
+-#if 0 /* Used to be included in Qt4 for Q_WS_MAC */ && !defined(QT_NO_EFFECTS) && QT_CONFIG(style_mac)
++#if 0 /* Used to be included in Qt4 for Q_WS_MAC */ && QT_CONFIG(effetcts) && QT_CONFIG(style_mac)
+ #include <private/qcore_mac_p.h>
+ #include <private/qmacstyle_mac_p.h>
+ #include <private/qt_cocoa_helpers_mac_p.h>
+ #endif
+-#ifndef QT_NO_EFFECTS
++#if QT_CONFIG(effects)
+ # include <private/qeffects_p.h>
+ #endif
+ #ifndef QT_NO_ACCESSIBILITY
+@@ -107,7 +110,7 @@ QComboBoxPrivate::QComboBoxPrivate()
+ #ifdef Q_OS_MAC
+       , m_platformMenu(0)
+ #endif
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+       , completer(0)
+ #endif
+ {
+@@ -193,7 +196,7 @@ QStyleOptionMenuItem QComboMenuDelegate::getStyleOption(const QStyleOptionViewIt
+     return menuOption;
+ }
+ 
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+ void QComboBoxPrivate::_q_completerActivated(const QModelIndex &index)
+ {
+     Q_Q(QComboBox);
+@@ -214,7 +217,7 @@ void QComboBoxPrivate::_q_completerActivated(const QModelIndex &index)
+     }
+ #  endif // QT_KEYPAD_NAVIGATION
+ }
+-#endif // !QT_NO_COMPLETER
++#endif // QT_CONFIG(completer)
+ 
+ void QComboBoxPrivate::updateArrow(QStyle::StateFlag state)
+ {
+@@ -1110,7 +1113,7 @@ void QComboBoxPrivate::updateViewContainerPaletteAndOpacity()
+     Q_Q(QComboBox);
+     QStyleOptionComboBox opt;
+     q->initStyleOption(&opt);
+-#ifndef QT_NO_MENU
++#if QT_CONFIG(menu)
+     if (q->style()->styleHint(QStyle::SH_ComboBox_Popup, &opt, q)) {
+         QMenu menu;
+         menu.ensurePolished();
+@@ -1196,7 +1199,7 @@ Qt::MatchFlags QComboBoxPrivate::matchFlags() const
+ {
+     // Base how duplicates are determined on the autocompletion case sensitivity
+     Qt::MatchFlags flags = Qt::MatchFixedString;
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+     if (!lineEdit->completer() || lineEdit->completer()->caseSensitivity() == Qt::CaseSensitive)
+ #endif
+         flags |= Qt::MatchCaseSensitive;
+@@ -1425,7 +1428,7 @@ int QComboBox::maxCount() const
+     return d->maxCount;
+ }
+ 
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+ 
+ /*!
+     \property QComboBox::autoCompletion
+@@ -1520,7 +1523,7 @@ void QComboBox::setAutoCompletionCaseSensitivity(Qt::CaseSensitivity sensitivity
+         d->lineEdit->completer()->setCaseSensitivity(sensitivity);
+ }
+ 
+-#endif // QT_NO_COMPLETER
++#endif // QT_CONFIG(completer)
+ 
+ /*!
+     \property QComboBox::duplicatesEnabled
+@@ -1804,12 +1807,12 @@ void QComboBox::setLineEdit(QLineEdit *edit)
+     d->updateFocusPolicy();
+     d->lineEdit->setFocusProxy(this);
+     d->lineEdit->setAttribute(Qt::WA_MacShowFocusRect, false);
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+     setAutoCompletion(d->autoCompletion);
+ #endif
+ 
+ #ifdef QT_KEYPAD_NAVIGATION
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+     if (QApplication::keypadNavigationEnabled()) {
+         // Editable combo boxes will have a completer that is set to UnfilteredPopupCompletion.
+         // This means that when the user enters edit mode they are immediately presented with a
+@@ -1873,7 +1876,7 @@ const QValidator *QComboBox::validator() const
+ }
+ #endif // QT_NO_VALIDATOR
+ 
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+ 
+ /*!
+     \fn void QComboBox::setCompleter(QCompleter *completer)
+@@ -1913,7 +1916,7 @@ QCompleter *QComboBox::completer() const
+     return d->lineEdit ? d->lineEdit->completer() : 0;
+ }
+ 
+-#endif // QT_NO_COMPLETER
++#endif // QT_CONFIG(completer)
+ 
+ /*!
+     Returns the item delegate used by the popup list view.
+@@ -1979,7 +1982,7 @@ void QComboBox::setModel(QAbstractItemModel *model)
+     if (model == d->model)
+         return;
+ 
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+     if (d->lineEdit && d->lineEdit->completer()
+         && d->lineEdit->completer() == d->completer)
+         d->lineEdit->completer()->setModel(model);
+@@ -2125,7 +2128,7 @@ void QComboBoxPrivate::setCurrentIndex(const QModelIndex &mi)
+         const QString newText = itemText(normalized);
+         if (lineEdit->text() != newText) {
+             lineEdit->setText(newText); // may cause lineEdit -> nullptr (QTBUG-54191)
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+             if (lineEdit && lineEdit->completer())
+                 lineEdit->completer()->setCompletionPrefix(newText);
+ #endif
+@@ -2576,7 +2579,7 @@ void QComboBox::showPopup()
+ #endif // Q_OS_MAC
+ 
+ #ifdef QT_KEYPAD_NAVIGATION
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+     if (QApplication::keypadNavigationEnabled() && d->completer) {
+         // editable combo box is line edit plus completer
+         setEditFocus(true);
+@@ -2733,7 +2736,7 @@ void QComboBox::showPopup()
+     const bool updatesEnabled = container->updatesEnabled();
+ #endif
+ 
+-#if !defined(QT_NO_EFFECTS)
++#if QT_CONFIG(effects)
+     bool scrollDown = (listRect.topLeft() == below);
+     if (QApplication::isEffectEnabled(Qt::UI_AnimateCombo)
+         && !style->styleHint(QStyle::SH_ComboBox_Popup, &opt, this) && !window()->testAttribute(Qt::WA_DontShowOnScreen))
+@@ -2805,7 +2808,7 @@ void QComboBox::hidePopup()
+ {
+     Q_D(QComboBox);
+     if (d->container && d->container->isVisible()) {
+-#if !defined(QT_NO_EFFECTS)
++#if QT_CONFIG(effects)
+         QSignalBlocker modelBlocker(d->model);
+         QSignalBlocker viewBlocker(d->container->itemView());
+         QSignalBlocker containerBlocker(d->container);
+@@ -2849,7 +2852,7 @@ void QComboBox::hidePopup()
+         modelBlocker.unblock();
+ 
+         if (!didFade)
+-#endif // QT_NO_EFFECTS
++#endif // QT_CONFIG(effects)
+             // Fade should implicitly hide as well ;-)
+             d->container->hide();
+     }
+@@ -2913,7 +2916,7 @@ void QComboBox::focusInEvent(QFocusEvent *e)
+     update();
+     if (d->lineEdit) {
+         d->lineEdit->event(e);
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+         if (d->lineEdit->completer())
+             d->lineEdit->completer()->setWidget(this);
+ #endif
+@@ -3139,7 +3142,7 @@ void QComboBox::keyPressEvent(QKeyEvent *e)
+ {
+     Q_D(QComboBox);
+ 
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+     if (d->lineEdit
+         && d->lineEdit->completer()
+         && d->lineEdit->completer()->popup()
+@@ -3475,7 +3478,7 @@ void QComboBox::setModelColumn(int visibleColumn)
+     QListView *lv = qobject_cast<QListView *>(d->viewContainer()->itemView());
+     if (lv)
+         lv->setModelColumn(visibleColumn);
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+     if (d->lineEdit && d->lineEdit->completer()
+         && d->lineEdit->completer() == d->completer)
+         d->lineEdit->completer()->setCompletionColumn(visibleColumn);
+diff --git a/private/qcombobox.h b/private/qcombobox.h
+index a6aac6f..59f2a42 100644
+--- a/private/qcombobox.h
++++ b/private/qcombobox.h
+@@ -45,6 +45,7 @@
+ #include <QtWidgets/qabstractitemdelegate.h>
+ #include <QtCore/qabstractitemmodel.h>
+ #include <QtCore/qvariant.h>
++#include <QtGui/qvalidator.h>
+ 
+ QT_REQUIRE_CONFIG(combobox);
+ 
+@@ -71,10 +72,10 @@ class Q_WIDGETS_EXPORT QComboBox : public QWidget
+     Q_PROPERTY(int minimumContentsLength READ minimumContentsLength WRITE setMinimumContentsLength)
+     Q_PROPERTY(QSize iconSize READ iconSize WRITE setIconSize)
+ 
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+     Q_PROPERTY(bool autoCompletion READ autoCompletion WRITE setAutoCompletion DESIGNABLE false)
+     Q_PROPERTY(Qt::CaseSensitivity autoCompletionCaseSensitivity READ autoCompletionCaseSensitivity WRITE setAutoCompletionCaseSensitivity DESIGNABLE false)
+-#endif // QT_NO_COMPLETER
++#endif // QT_CONFIG(completer)
+ 
+     Q_PROPERTY(bool duplicatesEnabled READ duplicatesEnabled WRITE setDuplicatesEnabled)
+     Q_PROPERTY(bool frame READ hasFrame WRITE setFrame)
+@@ -91,7 +92,7 @@ public:
+     void setMaxCount(int max);
+     int maxCount() const;
+ 
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+     bool autoCompletion() const;
+     void setAutoCompletion(bool enable);
+ 
+@@ -149,7 +150,7 @@ public:
+     const QValidator *validator() const;
+ #endif
+ 
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+     void setCompleter(QCompleter *c);
+     QCompleter *completer() const;
+ #endif
+@@ -262,7 +263,7 @@ private:
+     Q_PRIVATE_SLOT(d_func(), void _q_rowsRemoved(const QModelIndex & parent, int start, int end))
+     Q_PRIVATE_SLOT(d_func(), void _q_modelDestroyed())
+     Q_PRIVATE_SLOT(d_func(), void _q_modelReset())
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+     Q_PRIVATE_SLOT(d_func(), void _q_completerActivated(const QModelIndex &index))
+ #endif
+ };
+diff --git a/private/qcombobox_p.h b/private/qcombobox_p.h
+index ab4dd02..2496108 100644
+--- a/private/qcombobox_p.h
++++ b/private/qcombobox_p.h
+@@ -67,7 +67,9 @@
+ #include "QtCore/qtimer.h"
+ #include "private/qwidget_p.h"
+ #include "QtCore/qpointer.h"
++#if QT_CONFIG(completer)
+ #include "QtWidgets/qcompleter.h"
++#endif
+ #include "QtGui/qevent.h"
+ #include "QtCore/qdebug.h"
+ 
+@@ -355,7 +357,7 @@ public:
+     void _q_emitCurrentIndexChanged(const QModelIndex &index);
+     void _q_modelDestroyed();
+     void _q_modelReset();
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+     void _q_completerActivated(const QModelIndex &index);
+ #endif
+     void _q_resetButton();
+@@ -415,7 +417,7 @@ public:
+ #ifdef Q_OS_MAC
+     QPlatformMenu *m_platformMenu;
+ #endif
+-#ifndef QT_NO_COMPLETER
++#if QT_CONFIG(completer)
+     QPointer<QCompleter> completer;
+ #endif
+     static QPalette viewContainerPalette(QComboBox *cmb)
+diff --git a/private/qcommonstyle.cpp b/private/qcommonstyle.cpp
+index 3e2c22c..15ba335 100644
+--- a/private/qcommonstyle.cpp
++++ b/private/qcommonstyle.cpp
+@@ -66,11 +66,15 @@
+ #include <qgroupbox.h>
+ #endif
+ #include <qmath.h>
++#if QT_CONFIG(menu)
+ #include <qmenu.h>
++#endif
+ #include <qpainter.h>
+ #include <qpaintengine.h>
+ #include <qpainterpath.h>
++#if QT_CONFIG(slider)
+ #include <qslider.h>
++#endif
+ #include <qstyleoption.h>
+ #if QT_CONFIG(tabbar)
+ #include <qtabbar.h>
+@@ -513,7 +517,7 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
+             break;
+         }
+ #endif // QT_NO_TOOLBAR
+-#ifndef QT_NO_SPINBOX
++#if QT_CONFIG(spinbox)
+     case PE_IndicatorSpinPlus:
+     case PE_IndicatorSpinMinus: {
+         QRect r = opt->rect;
+@@ -571,15 +575,10 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
+         }
+         p->restore();
+         break; }
+-#endif // QT_NO_SPINBOX
++#endif // QT_CONFIG(spinbox)
+     case PE_PanelTipLabel: {
+-        QBrush oldBrush = p->brush();
+-        QPen oldPen = p->pen();
+-        p->setPen(QPen(opt->palette.toolTipText(), 0));
+-        p->setBrush(opt->palette.toolTipBase());
+-        p->drawRect(opt->rect.adjusted(0, 0, -1, -1));
+-        p->setPen(oldPen);
+-        p->setBrush(oldBrush);
++        const QBrush brush(opt->palette.toolTipBase());
++        qDrawPlainRect(p, opt->rect, opt->palette.toolTipText().color(), 1, &brush);
+         break;
+     }
+ #if QT_CONFIG(tabbar)
+@@ -617,7 +616,7 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
+         }
+         break;
+ #endif // QT_CONFIG(tabbar)
+-#ifndef QT_NO_LINEEDIT
++#if QT_CONFIG(lineedit)
+     case PE_PanelLineEdit:
+         if (const QStyleOptionFrame *panel = qstyleoption_cast<const QStyleOptionFrame *>(opt)) {
+             p->fillRect(panel->rect.adjusted(panel->lineWidth, panel->lineWidth, -panel->lineWidth, -panel->lineWidth),
+@@ -627,7 +626,7 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
+                 proxy()->drawPrimitive(PE_FrameLineEdit, panel, p, widget);
+         }
+         break;
+-#endif // QT_NO_LINEEDIT
++#endif // QT_CONFIG(lineedit)
+ #if QT_CONFIG(columnview)
+     case PE_IndicatorColumnViewArrow: {
+     if (const QStyleOptionViewItem *viewOpt = qstyleoption_cast<const QStyleOptionViewItem *>(opt)) {
+@@ -1377,7 +1376,7 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
+             }
+         }
+         break;
+-#ifndef QT_NO_MENU
++#if QT_CONFIG(menu)
+     case CE_MenuScroller: {
+         QStyleOption arrowOpt = *opt;
+         arrowOpt.state |= State_Enabled;
+@@ -1397,8 +1396,8 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
+         p->drawLine(opt->rect.x() + 2, opt->rect.y() + opt->rect.height() / 2,
+                     opt->rect.x() + opt->rect.width() - 4, opt->rect.y() + opt->rect.height() / 2);
+         break;
+-#endif // QT_NO_MENU
+-#ifndef QT_NO_MENUBAR
++#endif // QT_CONFIG(menu)
++#if QT_CONFIG(menubar)
+     case CE_MenuBarItem:
+         if (const QStyleOptionMenuItem *mbi = qstyleoption_cast<const QStyleOptionMenuItem *>(opt)) {
+             uint alignment = Qt::AlignCenter | Qt::TextShowMnemonic | Qt::TextDontClip
+@@ -1418,7 +1417,7 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
+         if (widget && !widget->testAttribute(Qt::WA_NoSystemBackground))
+             p->eraseRect(opt->rect);
+         break;
+-#endif // QT_NO_MENUBAR
++#endif // QT_CONFIG(menubar)
+ #if QT_CONFIG(progressbar)
+     case CE_ProgressBar:
+         if (const QStyleOptionProgressBar *pb
+@@ -1946,7 +1945,7 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
+         }
+         break;
+ #endif // QT_CONFIG(tabbar)
+-#ifndef QT_NO_SIZEGRIP
++#if QT_CONFIG(sizegrip)
+     case CE_SizeGrip: {
+         p->save();
+         int x, y, w, h;
+@@ -2019,7 +2018,7 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
+         }
+         p->restore();
+         break; }
+-#endif // QT_NO_SIZEGRIP
++#endif // QT_CONFIG(sizegrip)
+ #if QT_CONFIG(rubberband)
+     case CE_RubberBand: {
+         if (const QStyleOptionRubberBand *rbOpt = qstyleoption_cast<const QStyleOptionRubberBand *>(opt)) {
+@@ -2478,7 +2477,7 @@ QRect QCommonStyle::subElementRect(SubElement sr, const QStyleOption *opt,
+             r = visualRect(btn->direction, btn->rect, r);
+         }
+         break;
+-#ifndef QT_NO_SLIDER
++#if QT_CONFIG(slider)
+     case SE_SliderFocusRect:
+         if (const QStyleOptionSlider *slider = qstyleoption_cast<const QStyleOptionSlider *>(opt)) {
+             int tickOffset = proxy()->pixelMetric(PM_SliderTickmarkOffset, slider, widget);
+@@ -2491,7 +2490,7 @@ QRect QCommonStyle::subElementRect(SubElement sr, const QStyleOption *opt,
+             r = visualRect(opt->direction, opt->rect, r);
+         }
+         break;
+-#endif // QT_NO_SLIDER
++#endif // QT_CONFIG(slider)
+ #if QT_CONFIG(progressbar)
+     case SE_ProgressBarGroove:
+     case SE_ProgressBarContents:
+@@ -3146,7 +3145,7 @@ void QCommonStyle::drawComplexControl(ComplexControl cc, const QStyleOptionCompl
+                                       QPainter *p, const QWidget *widget) const
+ {
+     switch (cc) {
+-#ifndef QT_NO_SLIDER
++#if QT_CONFIG(slider)
+     case CC_Slider:
+         if (const QStyleOptionSlider *slider = qstyleoption_cast<const QStyleOptionSlider *>(opt)) {
+             if (slider->subControls == SC_SliderTickmarks) {
+@@ -3202,7 +3201,7 @@ void QCommonStyle::drawComplexControl(ComplexControl cc, const QStyleOptionCompl
+             }
+         }
+         break;
+-#endif // QT_NO_SLIDER
++#endif // QT_CONFIG(slider)
+ #if QT_CONFIG(scrollbar)
+     case CC_ScrollBar:
+         if (const QStyleOptionSlider *scrollbar = qstyleoption_cast<const QStyleOptionSlider *>(opt)) {
+@@ -3291,7 +3290,7 @@ void QCommonStyle::drawComplexControl(ComplexControl cc, const QStyleOptionCompl
+         }
+         break;
+ #endif // QT_CONFIG(scrollbar)
+-#ifndef QT_NO_SPINBOX
++#if QT_CONFIG(spinbox)
+     case CC_SpinBox:
+         if (const QStyleOptionSpinBox *sb = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
+             QStyleOptionSpinBox copy = *sb;
+@@ -3355,7 +3354,7 @@ void QCommonStyle::drawComplexControl(ComplexControl cc, const QStyleOptionCompl
+             }
+         }
+         break;
+-#endif // QT_NO_SPINBOX
++#endif // QT_CONFIG(spinbox)
+ #if QT_CONFIG(toolbutton)
+     case CC_ToolButton:
+         if (const QStyleOptionToolButton *toolbutton
+@@ -3751,7 +3750,7 @@ void QCommonStyle::drawComplexControl(ComplexControl cc, const QStyleOptionCompl
+         }
+         break;
+ #endif // QT_CONFIG(groupbox)
+-#ifndef QT_NO_MDIAREA
++#if QT_CONFIG(mdiarea)
+     case CC_MdiControls:
+         {
+             QStyleOptionButton btnOpt;
+@@ -3814,7 +3813,7 @@ void QCommonStyle::drawComplexControl(ComplexControl cc, const QStyleOptionCompl
+             }
+         }
+         break;
+-#endif // QT_NO_MDIAREA
++#endif // QT_CONFIG(mdiarea)
+     default:
+         qWarning("QCommonStyle::drawComplexControl: Control %d not handled", cc);
+     }
+@@ -3828,7 +3827,7 @@ QStyle::SubControl QCommonStyle::hitTestComplexControl(ComplexControl cc, const
+ {
+     SubControl sc = SC_None;
+     switch (cc) {
+-#ifndef QT_NO_SLIDER
++#if QT_CONFIG(slider)
+     case CC_Slider:
+         if (const QStyleOptionSlider *slider = qstyleoption_cast<const QStyleOptionSlider *>(opt)) {
+             QRect r = proxy()->subControlRect(cc, slider, SC_SliderHandle, widget);
+@@ -3841,7 +3840,7 @@ QStyle::SubControl QCommonStyle::hitTestComplexControl(ComplexControl cc, const
+             }
+         }
+         break;
+-#endif // QT_NO_SLIDER
++#endif // QT_CONFIG(slider)
+ #if QT_CONFIG(scrollbar)
+     case CC_ScrollBar:
+         if (const QStyleOptionSlider *scrollbar = qstyleoption_cast<const QStyleOptionSlider *>(opt)) {
+@@ -3874,7 +3873,7 @@ QStyle::SubControl QCommonStyle::hitTestComplexControl(ComplexControl cc, const
+         }
+         break;
+ #endif // QT_CONFIG(toolbutton)
+-#ifndef QT_NO_SPINBOX
++#if QT_CONFIG(spinbox)
+     case CC_SpinBox:
+         if (const QStyleOptionSpinBox *spinbox = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
+             QRect r;
+@@ -3889,7 +3888,7 @@ QStyle::SubControl QCommonStyle::hitTestComplexControl(ComplexControl cc, const
+             }
+         }
+         break;
+-#endif // QT_NO_SPINBOX
++#endif // QT_CONFIG(spinbox)
+     case CC_TitleBar:
+         if (const QStyleOptionTitleBar *tb = qstyleoption_cast<const QStyleOptionTitleBar *>(opt)) {
+             QRect r;
+@@ -3965,7 +3964,7 @@ QRect QCommonStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex
+ {
+     QRect ret;
+     switch (cc) {
+-#ifndef QT_NO_SLIDER
++#if QT_CONFIG(slider)
+     case CC_Slider:
+         if (const QStyleOptionSlider *slider = qstyleoption_cast<const QStyleOptionSlider *>(opt)) {
+             int tickOffset = proxy()->pixelMetric(PM_SliderTickmarkOffset, slider, widget);
+@@ -4000,7 +3999,7 @@ QRect QCommonStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex
+             ret = visualRect(slider->direction, slider->rect, ret);
+         }
+         break;
+-#endif // QT_NO_SLIDER
++#endif // QT_CONFIG(slider)
+ #if QT_CONFIG(scrollbar)
+     case CC_ScrollBar:
+         if (const QStyleOptionSlider *scrollbar = qstyleoption_cast<const QStyleOptionSlider *>(opt)) {
+@@ -4086,7 +4085,7 @@ QRect QCommonStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex
+         }
+         break;
+ #endif // QT_CONFIG(scrollbar)
+-#ifndef QT_NO_SPINBOX
++#if QT_CONFIG(spinbox)
+     case CC_SpinBox:
+         if (const QStyleOptionSpinBox *spinbox = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
+             QSize bs;
+@@ -4345,7 +4344,7 @@ QRect QCommonStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex
+         break;
+     }
+ #endif // QT_CONFIG(groupbox)
+-#ifndef QT_NO_MDIAREA
++#if QT_CONFIG(mdiarea)
+     case CC_MdiControls:
+     {
+         int numSubControls = 0;
+@@ -4388,7 +4387,7 @@ QRect QCommonStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex
+         ret = QRect(offset, 0, buttonWidth, opt->rect.height());
+         break;
+     }
+-#endif // QT_NO_MDIAREA
++#endif // QT_CONFIG(mdiarea)
+      default:
+         qWarning("QCommonStyle::subControlRect: Case %d not handled", cc);
+     }
+@@ -4503,7 +4502,7 @@ int QCommonStyle::pixelMetric(PixelMetric m, const QStyleOption *opt, const QWid
+         ret = QGuiApplicationPrivate::platformTheme()->themeHint(QPlatformTheme::MaximumScrollBarDragDistance).toInt();
+         break;
+ 
+-#ifndef QT_NO_SLIDER
++#if QT_CONFIG(slider)
+     case PM_SliderThickness:
+         ret = int(QStyleHelper::dpiScaled(16.));
+         break;
+@@ -4536,7 +4535,7 @@ int QCommonStyle::pixelMetric(PixelMetric m, const QStyleOption *opt, const QWid
+             ret = 0;
+         }
+         break;
+-#endif // QT_NO_SLIDER
++#endif // QT_CONFIG(slider)
+ #if QT_CONFIG(dockwidget)
+     case PM_DockWidgetSeparatorExtent:
+         ret = int(QStyleHelper::dpiScaled(6.));
+@@ -4818,7 +4817,7 @@ QSize QCommonStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+             sz.setHeight(qMax(sz.height(), h));
+         }
+         break;
+-#ifndef QT_NO_MENU
++#if QT_CONFIG(menu)
+     case CT_MenuItem:
+         if (const QStyleOptionMenuItem *mi = qstyleoption_cast<const QStyleOptionMenuItem *>(opt)) {
+             bool checkable = mi->menuHasCheckableItems;
+@@ -4846,7 +4845,7 @@ QSize QCommonStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+             sz = QSize(w, h);
+         }
+         break;
+-#endif // QT_NO_MENU
++#endif // QT_CONFIG(menu)
+ #if QT_CONFIG(toolbutton)
+     case CT_ToolButton:
+         sz = QSize(sz.width() + 6, sz.height() + 5);
+@@ -4923,7 +4922,7 @@ QSize QCommonStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+ #else
+         Q_UNUSED(d);
+ #endif // QT_CONFIG(itemviews)
+-#ifndef QT_NO_SPINBOX
++#if QT_CONFIG(spinbox)
+     case CT_SpinBox:
+         if (const QStyleOptionSpinBox *vopt = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
+             // Add button + frame widths
+diff --git a/private/qstylehelper.cpp b/private/qstylehelper.cpp
+index 797fb0c..24d90fc 100644
+--- a/private/qstylehelper.cpp
++++ b/private/qstylehelper.cpp
+@@ -69,13 +69,13 @@ QString uniqueName(const QString &key, const QStyleOption *option, const QSize &
+                       % HexString<uint>(size.width())
+                       % HexString<uint>(size.height());
+ 
+-#ifndef QT_NO_SPINBOX
++#if QT_CONFIG(spinbox)
+     if (const QStyleOptionSpinBox *spinBox = qstyleoption_cast<const QStyleOptionSpinBox *>(option)) {
+         tmp = tmp % HexString<uint>(spinBox->buttonSymbols)
+                   % HexString<uint>(spinBox->stepEnabled)
+                   % QLatin1Char(spinBox->frame ? '1' : '0'); ;
+     }
+-#endif // QT_NO_SPINBOX
++#endif // QT_CONFIG(spinbox)
+ 
+     // QTBUG-56743, try to create a palette cache key reflecting the value,
+     // as leaks may occur in conjunction with QStyleSheetStyle/QRenderRule modifying
+diff --git a/private/qtcore-config.h b/private/qtcore-config.h
+index 98c3ca9..75df60f 100644
+--- a/private/qtcore-config.h
++++ b/private/qtcore-config.h
+@@ -39,6 +39,10 @@
+ 
+ #include <QtCore/qtcore-config.h>
+ 
++/*
++ * These QT_[REQUIRE_]CONFIG features were introduced in Qt 5.9:
++ */
++
+ #ifndef QT_FEATURE_style_mac
+ #   define QT_FEATURE_style_mac 1
+ #endif
+@@ -59,6 +63,10 @@
+ #   define QT_FEATURE_formlayout 1
+ #endif
+ 
++#ifndef QT_FEATURE_effects
++#   define QT_FEATURE_effects 1
++#endif
++
+ /*
+  * These QT_[REQUIRE_]CONFIG features already exist as QT_NO_foo in 5.8 and earlier:
+  */
+@@ -180,14 +188,6 @@
+ #   endif
+ #endif
+ 
+-//     Convert features.graphicsview to QT_[REQUIRE_]CONFIG
+-//     Convert features.toolbutton to QT_[REQUIRE_]CONFIG
+-//     Convert features.groupbox to QT_[REQUIRE_]CONFIG
+-//     Convert features.scrollbar to QT_[REQUIRE_]CONFIG
+-//     Convert features.toolbox to QT_[REQUIRE_]CONFIG
+-//     Convert features.progressbar to QT_[REQUIRE_]CONFIG
+-//     Convert features.dial to QT_[REQUIRE_]CONFIG
+-
+ #ifndef QT_FEATURE_graphicsview
+ #   ifdef QT_NO_GRAPHICSVIEW
+ #       warning "No support for QGraphicsView"
+@@ -251,3 +251,83 @@
+ #   endif
+ #endif
+ 
++#ifndef QT_FEATURE_menu
++#   ifdef QT_NO_MENU
++#       warning "No support for QMenu"
++#       define QT_FEATURE_menu -1
++#   else
++#       define QT_FEATURE_menu 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_slider
++#   ifdef QT_NO_SLIDER
++#       warning "No support for QSlider"
++#       define QT_FEATURE_slider -1
++#   else
++#       define QT_FEATURE_slider 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_lineedit
++#   ifdef QT_NO_LINEEDIT
++#       warning "No support for QLineEdit"
++#       define QT_FEATURE_lineedit -1
++#   else
++#       define QT_FEATURE_lineedit 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_spinbox
++#   ifdef QT_NO_SPINBOX
++#       warning "No support for QSpinBox"
++#       define QT_FEATURE_spinbox -1
++#   else
++#       define QT_FEATURE_spinbox 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_sizegrip
++#   ifdef QT_NO_SIZEGRIP
++#       warning "No support for QSizeGrip"
++#       define QT_FEATURE_sizegrip -1
++#   else
++#       define QT_FEATURE_sizegrip 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_mdiarea
++#   ifdef QT_NO_MDIAREA
++#       warning "No support for QMdiArea"
++#       define QT_FEATURE_mdiarea -1
++#   else
++#       define QT_FEATURE_mdiarea 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_completer
++#   ifdef QT_NO_COMPLETER
++#       warning "No support for QCompleter"
++#       define QT_FEATURE_completer -1
++#   else
++#       define QT_FEATURE_completer 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_mainwindow
++#   ifdef QT_NO_MAINWINDOW
++#       warning "No support for QMainWindow"
++#       define QT_FEATURE_mainwindow -1
++#   else
++#       define QT_FEATURE_mainwindow 1
++#   endif
++#endif
++
++#ifndef QT_FEATURE_menubar
++#   ifdef QT_NO_MENUBAR
++#       warning "No support for QMenuBar"
++#       define QT_FEATURE_menubar -1
++#   else
++#       define QT_FEATURE_menubar 1
++#   endif
++#endif
+diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
+index 8f61e54..71e9f9e 100644
+--- a/qmacstyle_mac.mm
++++ b/qmacstyle_mac.mm
+@@ -74,10 +74,18 @@
+ #include <qgroupbox.h>
+ #include <qhash.h>
+ #include <qheaderview.h>
++#if QT_CONFIG(lineedit)
+ #include <qlineedit.h>
++#endif
++#if QT_CONFIG(mainwindow)
+ #include <qmainwindow.h>
++#endif
++#if QT_CONFIG(mdiarea)
+ #include <qmdisubwindow.h>
++#endif
++#if QT_CONFIG(menubar)
+ #include <qmenubar.h>
++#endif
+ #include <qpaintdevice.h>
+ #include <qpainter.h>
+ #include <qpixmapcache.h>
+@@ -95,7 +103,9 @@
+ #if QT_CONFIG(scrollbar)
+ #include <qscrollbar.h>
+ #endif
++#if QT_CONFIG(sizegrip)
+ #include <qsizegrip.h>
++#endif
+ #include <qstyleoption.h>
+ #include <qtoolbar.h>
+ #if QT_CONFIG(toolbutton)
+@@ -681,17 +691,17 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
+         else if (qobject_cast<const QProgressBar *>(widg))
+             ct = QStyle::CT_ProgressBar;
+ #endif
+-#ifndef QT_NO_LINEEDIT
++#if QT_CONFIG(lineedit)
+         else if (qobject_cast<const QLineEdit *>(widg))
+             ct = QStyle::CT_LineEdit;
+ #endif
+         else if (qobject_cast<const QHeaderView *>(widg))
+             ct = QStyle::CT_HeaderSection;
+-#ifndef QT_NO_MENUBAR
++#if QT_CONFIG(menubar)
+         else if (qobject_cast<const QMenuBar *>(widg))
+             ct = QStyle::CT_MenuBar;
+ #endif
+-#ifndef QT_NO_SIZEGRIP
++#if QT_CONFIG(sizegrip)
+         else if (qobject_cast<const QSizeGrip *>(widg))
+             ct = QStyle::CT_SizeGrip;
+ #endif
+@@ -780,7 +790,7 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
+             gbi.size = sz == QAquaSizeSmall ? kHIThemeGrowBoxSizeSmall : kHIThemeGrowBoxSizeNormal;
+             if (HIThemeGetGrowBoxBounds(&p, &gbi, &r) == noErr) {
+                 int width = 0;
+-#ifndef QT_NO_MDIAREA
++#if QT_CONFIG(mdiarea)
+             if (widg && qobject_cast<QMdiSubWindow *>(widg->parentWidget()))
+                 width = r.size.width;
+ #endif
+@@ -968,7 +978,7 @@ static QAquaWidgetSize qt_aqua_guess_size(const QWidget *widg, QSize large, QSiz
+         return QAquaSizeLarge;
+     }
+ 
+-#ifndef QT_NO_MAINWINDOW
++#if QT_CONFIG(mainwindow)
+     if (qEnvironmentVariableIsSet("QWIDGET_ALL_SMALL")) {
+         //if (small.width() != -1 || small.height() != -1)
+         return QAquaSizeSmall;
+@@ -2326,7 +2336,7 @@ void QMacStyle::polish(QWidget* w)
+         w->setAttribute(Qt::WA_SetPalette, false);
+     }
+ 
+-#ifndef QT_NO_MENU
++#if QT_CONFIG(menu)
+     if (qobject_cast<QMenu*>(w)
+ #if QT_CONFIG(combobox)
+             || qobject_cast<QComboBoxPrivateContainer *>(w)
+@@ -2385,7 +2395,7 @@ void QMacStyle::polish(QWidget* w)
+ void QMacStyle::unpolish(QWidget* w)
+ {
+     if ((
+-#ifndef QT_NO_MENU
++#if QT_CONFIG(menu)
+             qobject_cast<QMenu*>(w) ||
+ #endif
+             qt_mac_is_metal(w)
+@@ -2500,7 +2510,7 @@ int QMacStyle::pixelMetric(PixelMetric metric, const QStyleOption *opt, const QW
+ #endif
+         break;
+     case PM_DefaultFrameWidth:
+-#ifndef QT_NO_MAINWINDOW
++#if QT_CONFIG(mainwindow)
+         if (widget && (widget->isWindow() || !widget->parentWidget()
+                 || (qobject_cast<const QMainWindow*>(widget->parentWidget())
+                    && static_cast<QMainWindow *>(widget->parentWidget())->centralWidget() == widget))
+@@ -3124,7 +3134,7 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
+                                              opt->rect.width(), opt->rect.height() - 8);
+                 HIThemeMenuDrawInfo mdi;
+                 mdi.version = 0;
+-#ifndef QT_NO_MENU
++#if QT_CONFIG(menu)
+                 if (w && qobject_cast<QMenu *>(w->parentWidget()))
+                     mdi.menuType = kThemeMenuTypeHierarchical;
+                 else
+@@ -3613,7 +3623,7 @@ void QMacStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPai
+         // Draw the focus frame for widgets other than QLineEdit (e.g. for line edits in Webkit).
+         // Focus frame is drawn outside the rectangle passed in the option-rect.
+         if (const QStyleOptionFrame *panel = qstyleoption_cast<const QStyleOptionFrame *>(opt)) {
+-#ifndef QT_NO_LINEEDIT
++#if QT_CONFIG(lineedit)
+             if ((opt->state & State_HasFocus) && !qobject_cast<const QLineEdit*>(w)) {
+                 int vmargin = pixelMetric(QStyle::PM_FocusFrameVMargin);
+                 int hmargin = pixelMetric(QStyle::PM_FocusFrameHMargin);
+@@ -4938,7 +4948,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+         // the title bar. The following code fills the toolBar area with transparent pixels
+         // to make that gradient visible.
+         if (w)  {
+-#ifndef QT_NO_MAINWINDOW
++#if QT_CONFIG(mainwindow)
+             if (QMainWindow * mainWindow = qobject_cast<QMainWindow *>(w->window())) {
+                 if (toolBar && toolBar->toolBarArea == Qt::TopToolBarArea && mainWindow->unifiedTitleAndToolBarOnMac()) {
+ 
+@@ -5885,7 +5895,7 @@ void QMacStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex
+             }
+         }
+         break;
+-#ifndef QT_NO_SPINBOX
++#if QT_CONFIG(spinbox)
+     case CC_SpinBox:
+         if (const QStyleOptionSpinBox *sb = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
+             QStyleOptionSpinBox newSB = *sb;
+@@ -6637,7 +6647,7 @@ QRect QMacStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
+             }
+         }
+         break;
+-#ifndef QT_NO_SPINBOX
++#if QT_CONFIG(spinbox)
+     case CC_SpinBox:
+         if (const QStyleOptionSpinBox *spin = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
+             QAquaWidgetSize aquaSize = d->aquaSizeConstrain(spin, widget);
+@@ -6757,7 +6767,7 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+     bool useAquaGuideline = true;
+ 
+     switch (ct) {
+-#ifndef QT_NO_SPINBOX
++#if QT_CONFIG(spinbox)
+     case CT_SpinBox:
+         if (const QStyleOptionSpinBox *vopt = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
+             // Add button + frame widths
+@@ -7130,7 +7140,7 @@ bool QMacStyle::event(QEvent *e)
+             QWidget *top = f->parentWidget();
+             while (top && !top->isWindow() && !(top->windowType() == Qt::SubWindow))
+                 top = top->parentWidget();
+-#ifndef QT_NO_MAINWINDOW
++#if QT_CONFIG(mainwindow)
+             if (qobject_cast<QMainWindow *>(top)) {
+                 QWidget *central = static_cast<QMainWindow *>(top)->centralWidget();
+                 for (const QWidget *par = f; par; par = par->parentWidget()) {
+diff --git a/qmacstyle_mac_p_p.h b/qmacstyle_mac_p_p.h
+index 784b976..490c926 100644
+--- a/qmacstyle_mac_p_p.h
++++ b/qmacstyle_mac_p_p.h
+@@ -74,13 +74,19 @@
+ #include <qhash.h>
+ #include <qheaderview.h>
+ #include <qlayout.h>
++#if QT_CONFIG(lineedit)
+ #include <qlineedit.h>
++#endif
+ #if QT_CONFIG(listview)
+ #include <qlistview.h>
+ #endif
++#if QT_CONFIG(mainwindow)
+ #include <qmainwindow.h>
++#endif
+ #include <qmap.h>
++#if QT_CONFIG(menubar)
+ #include <qmenubar.h>
++#endif
+ #include <qpaintdevice.h>
+ #include <qpainter.h>
+ #include <qpixmapcache.h>
+@@ -95,8 +101,12 @@
+ #if QT_CONFIG(rubberband)
+ #include <qrubberband.h>
+ #endif
++#if QT_CONFIG(sizegrip)
+ #include <qsizegrip.h>
++#endif
++#if QT_CONFIG(spinbox)
+ #include <qspinbox.h>
++#endif
+ #if QT_CONFIG(splitter)
+ #include <qsplitter.h>
+ #endif

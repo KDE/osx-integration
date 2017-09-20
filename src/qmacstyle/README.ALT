@@ -1,4 +1,29 @@
-20180828 : upstream head (5.9): f1a857c079e11c8e298ec8f2dafef49039f8ca40
+20170920 : upstream head (5.9): e0c2d328b11ab893538393fad66ad61d22d823c6
+ src/widgets/styles/qcommonstyle.cpp                                         |  77 +++--
+ src/widgets/widgets/qcombobox.cpp                                           |  46 +--
+ src/widgets/widgets/qcombobox.h                                             |  11 +-
+ src/widgets/widgets/qcombobox_p.h                                           |   6 +-
+ src/widgets/styles/qstylehelper.cpp                                         |   4 +-
+ src/widgets/styles/qmacstyle_mac.mm                                         |  40 ++-
+ src/widgets/styles/qmacstyle_mac_p_p.h                                      |  10 +
+patch: patches/16-sync-upstream-170920.diff
+Changes: git log e81f430e30635f975dd4635ffb64d66fc1bce355..HEAD <changed files>
+commit 6d699d08200b1fe3a616dfbc275d46c98b77fcbd .. 314a591461c58addd2805e0b4dc2cdb4308d5d31
+    Convert features.menu to QT_[REQUIRE_]CONFIG
+    Convert features.slider to QT_[REQUIRE_]CONFIG
+    Convert features.lineedit to QT_[REQUIRE_]CONFIG
+    Convert features.spinbox to QT_[REQUIRE_]CONFIG
+    Convert features.sizegrip to QT_[REQUIRE_]CONFIG
+    Convert features.mdiarea to QT_[REQUIRE_]CONFIG
+    Convert features.completer to QT_[REQUIRE_]CONFIG
+    Convert features.effects to QT_[REQUIRE_]CONFIG
+    Convert features.mainwindow to QT_[REQUIRE_]CONFIG
+    Convert features.menubar to QT_[REQUIRE_]CONFIG
+commit c827afa2820e539179c5d11ca073e4d90e98df5d
+    QWidgets/CommonStyle: Fix tooltip drawing under HighDPI
+    Task-number: QTBUG-61849
+
+20170828 : upstream head (5.9): f1a857c079e11c8e298ec8f2dafef49039f8ca40
 touched:
  src/widgets/styles/qcommonstyle.cpp
  src/widgets/widgets/qcombobox.cpp
