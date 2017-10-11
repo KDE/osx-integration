@@ -1,3 +1,12 @@
+20171011 : upstream head (5.9): e03b64c5b1eeebfbbb94d67eb9a9c1d35eaba0bb
+ src/widgets/widgets/qcombobox.cpp                                                   |  38 ++++--
+Changes: git log e0c2d328b11ab893538393fad66ad61d22d823c6..e03b64c5b1eeebfbbb94d67eb9a9c1d35eaba0bb src/widgets/widgets/qcombobox.cpp
+commit 4c025ca9c73bda320f0e7577a4fbd141c31d7c8c
+    QCompleter: Send activated() signal only once on return key
+commit d29f0bc65c1817bb73153cd546d7ab76e0768be0
+    Avoid calling QCompleter::popup() internally
+
+
 20170920 : upstream head (5.9): e0c2d328b11ab893538393fad66ad61d22d823c6
  src/widgets/styles/qcommonstyle.cpp                                         |  77 +++--
  src/widgets/widgets/qcombobox.cpp                                           |  46 +--

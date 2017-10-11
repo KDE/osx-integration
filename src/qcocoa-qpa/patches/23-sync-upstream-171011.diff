@@ -1,0 +1,24 @@
+diff --git a/src/qcocoa-qpa/qnsview.mm b/src/qcocoa-qpa/qnsview.mm
+index 34d8ed8a725f5376d59095e77a5667f22356183c..2b49d4d68c8e215a646f685be54c4e8131802a10 100644
+--- a/src/qcocoa-qpa/qnsview.mm
++++ b/src/qcocoa-qpa/qnsview.mm
+@@ -1571,11 +1571,19 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+                 pos = qtWindowPoint.toPoint();
+             }
+             QWindowSystemInterface::handleContextMenuEvent(window, false, pos, globalPos, modifiers);
++            // Handling a context menu may result in closing the window
++            if (!m_platformWindow) {
++                return true;
++            }
+         }
+ 
+         if (m_composingText.isEmpty()) {
+             m_sendKeyEvent = !QWindowSystemInterface::handleShortcutEvent(window, timestamp, keyCode,
+                 modifiers, nativeScanCode, nativeVirtualKey, nativeModifiers, text, [nsevent isARepeat], 1);
++
++            // Handling a shortcut may result in closing the window
++            if (!m_platformWindow)
++                return true;
+         }
+ 
+         QObject *fo = m_platformWindow->window()->focusObject();

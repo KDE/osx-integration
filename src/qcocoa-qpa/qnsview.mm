@@ -1571,11 +1571,19 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
                 pos = qtWindowPoint.toPoint();
             }
             QWindowSystemInterface::handleContextMenuEvent(window, false, pos, globalPos, modifiers);
+            // Handling a context menu may result in closing the window
+            if (!m_platformWindow) {
+                return true;
+            }
         }
 
         if (m_composingText.isEmpty()) {
             m_sendKeyEvent = !QWindowSystemInterface::handleShortcutEvent(window, timestamp, keyCode,
                 modifiers, nativeScanCode, nativeVirtualKey, nativeModifiers, text, [nsevent isARepeat], 1);
+
+            // Handling a shortcut may result in closing the window
+            if (!m_platformWindow)
+                return true;
         }
 
         QObject *fo = m_platformWindow->window()->focusObject();

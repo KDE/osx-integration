@@ -1,3 +1,11 @@
+20171011 : upstream head (5.9): e03b64c5b1eeebfbbb94d67eb9a9c1d35eaba0bb
+ src/plugins/platforms/cocoa/qnsview.mm                                              |   4 +
+patch: patches/23-sync-upstream-171011.diff
+Changes: git log e0c2d328b11ab893538393fad66ad61d22d823c6..e03b64c5b1eeebfbbb94d67eb9a9c1d35eaba0bb src/plugins/platforms/cocoa/qnsview.mm | cat
+commit cbbf843e96de3067e4cb7c0a7b4e59a6c27b10f7
+    macOS: Bail out early when handling shortcut event results in closing window
+NB: this protection has been added to the contextmenu handling block just above, too.
+
 20170920 : upstream head (5.9): e0c2d328b11ab893538393fad66ad61d22d823c6
  src/plugins/platforms/cocoa/qcocoaeventdispatcher.mm                        |  12 +-
  src/plugins/platforms/cocoa/qcocoainputcontext.mm                           |  17 +-
