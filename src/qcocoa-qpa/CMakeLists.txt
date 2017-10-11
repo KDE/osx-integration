@@ -32,6 +32,11 @@ if(Qt5_FOUND AND (NOT ${Qt5_VERSION} VERSION_LESS ${QT_REAL_MIN_VERSION}))
             -DQT_NO_CAST_TO_ASCII
             -DQT_NO_URL_CAST_FROM_STRING)
         add_definitions(-DQT_PLUGIN)
+        include(FindPkgConfig)
+        pkg_check_modules(FREETYPE REQUIRED freetype2)
+        pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
+        link_directories(${FREETYPE_LIBRARY_DIRS} ${FONTCONFIG_LIBRARY_DIRS})
+
         set(qaltcocoa_SRCS main.mm 
             qcocoaintegration.mm 
             qcocoatheme.mm 
@@ -100,7 +105,7 @@ if(Qt5_FOUND AND (NOT ${Qt5_VERSION} VERSION_LESS ${QT_REAL_MIN_VERSION}))
             ${QT_FRAMEWORKS_DIR}/libQt5GraphicsSupport.a
             ${QT_FRAMEWORKS_DIR}/libQt5ThemeSupport.a
             ${QT_FRAMEWORKS_DIR}/libQt5AccessibilitySupport.a
-            -lfontconfig -lfreetype
+            ${FONTCONFIG_LIBRARIES} ${FREETYPE_LIBRARIES}
             "-framework OpenGL -framework AGL"
             "-framework AppKit -framework Carbon -framework IOKit -lcups")
         install(TARGETS qaltcocoa DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/platforms)
