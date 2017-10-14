@@ -468,6 +468,8 @@ KdeMacTheme::KdeMacTheme()
             report = [[[PLCrashReport alloc] initWithData:crashData error:&error] autorelease];
         }
         if (report) {
+            // report could be sent to KAboutData::applicationData().bugAddress()
+            // using QDesktopServices::openUrl("mailto:<etc>")
             qCWarning(PLATFORMTHEME) << qApp->applicationName() << "crashed on" << QString::fromNSString([report.systemInfo.timestamp description]);
             qCWarning(PLATFORMTHEME) << "\twith signal" << QString::fromNSString(report.signalInfo.name)
                 << "code" << QString::fromNSString(report.signalInfo.code)
