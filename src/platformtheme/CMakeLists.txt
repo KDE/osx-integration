@@ -14,6 +14,18 @@ endif()
 if(EMULATE_MENU_KEY)
     add_definitions(-DADD_MENU_KEY)
 endif()
+
+if(USE_PLCRASHREPORTER)
+    find_library(CRASHREP CrashReporter
+        DOC "The Plausible CrashReporter framework from https://www.plcrashreporter.org"
+        PATHS ${CMAKE_INSTALL_PREFIX}/Library/Frameworks)
+    if(NOT CRASHREP)
+        message(WARNING "CrashReporter framework not found, building without!")
+    else()
+        add_definitions(-DUSE_PLCRASHREPORTER)
+    endif()
+endif()
+
 add_subdirectory(presets)
 
 if(OVERRIDE_NATIVE_THEME)
@@ -44,6 +56,12 @@ else()
     set(platformtheme_SRCS ${platformtheme_SRCS} main_kde.cpp)
 endif()
 
+ecm_qt_declare_logging_category(platformtheme_SRCS
+    HEADER platformtheme_logging.h
+    IDENTIFIER PLATFORMTHEME
+    CATEGORY_NAME ${PLUGIN_FILENAME}
+)
+
 include_directories(
     ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
 )
@@ -70,6 +88,7 @@ target_link_libraries(${PLUGIN_FILENAME}
         KF5::XmlGui
         KF5::I18n
         KF5::Notifications
+        "${CRASHREP}"
 )
 
 target_link_libraries(${PLUGIN_FILENAME} PRIVATE "-framework AppKit")

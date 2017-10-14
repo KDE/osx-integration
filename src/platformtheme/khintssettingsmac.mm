@@ -22,6 +22,7 @@
  */
 
 #include "khintssettingsmac.h"
+#include "platformtheme_logging.h"
 
 #include <QDebug>
 #include <QDir>
@@ -63,7 +64,7 @@ public:
                         Qt::Orientation orientation, const QStyleOption *option = 0, const QWidget *widget = 0) const
     {
         int spacing = QProxyStyle::layoutSpacing(control1, control2, orientation, option, widget);
-        qWarning() << "layoutSpacing=" << spacing;
+        qCWarning(PLATFORMTHEME) << "layoutSpacing=" << spacing;
         if (spacing > 2) {
             spacing /= 2;
         }
@@ -77,7 +78,7 @@ KHintsSettingsMac::KHintsSettingsMac()
     KSharedConfigPtr mKdeGlobals = kdeGlobals();
     if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
         if (!mKdeGlobals->name().isEmpty()) {
-            qWarning() << Q_FUNC_INFO << "config file:" << mKdeGlobals->name()
+            qCWarning(PLATFORMTHEME) << Q_FUNC_INFO << "config file:" << mKdeGlobals->name()
                 << "(" << QStandardPaths::locate(mKdeGlobals->locationType(), mKdeGlobals->name()) << ")";
         }
     }
@@ -210,7 +211,7 @@ void KHintsSettingsMac::checkNativeTheme(const QString &theme)
 // do this only when certain that there's a QApplication instance:
 //         QApplication *app = qobject_cast<QApplication *>(QCoreApplication::instance());
 //         if (app) {
-//             qWarning() << Q_FUNC_INFO << "platform theme:" << app->style()->objectName();
+//             qCWarning(PLATFORMTHEME) << Q_FUNC_INFO << "platform theme:" << app->style()->objectName();
 //         }
 }
 

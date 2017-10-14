@@ -20,6 +20,7 @@
 */
 
 #include "kfontsettingsdatamac.h"
+#include "platformtheme_logging.h"
 
 #include <QDebug>
 #include <QCoreApplication>
@@ -74,7 +75,7 @@ static const char *fontNameFor(QFontDatabase::SystemFont role)
             fn = strdup(qf.defaultFamily().toLocal8Bit().data());
         }
         if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
-            qWarning() << "fontNameFor" << role << "font:" << qf << "name:" << fn;
+            qCWarning(PLATFORMTHEME) << "fontNameFor" << role << "font:" << qf << "name:" << fn;
         }
         return fn;
     } else {
@@ -113,7 +114,7 @@ void initDefaultFonts()
                 break;
         }
         if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
-            qWarning() << "Default font for type" << i << ":" << fn << "; currently:" << DefaultFontData[i].FontName;
+            qCWarning(PLATFORMTHEME) << "Default font for type" << i << ":" << fn << "; currently:" << DefaultFontData[i].FontName;
         }
         if (fn) {
             if (DefaultFontData[i].FontName != DefaultFont
@@ -208,8 +209,8 @@ QFont *KFontSettingsDataMac::font(FontTypes fontType)
         cachedFont = new QFont(QLatin1String(fontData.FontName), fontData.Size, forceBold? QFont::Bold : fontData.Weight);
         cachedFont->setStyleHint(fontData.StyleHint);
 //         if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
-//             qWarning() << "Requested font type" << fontType << "name=" << fontData.FontName << "forceBold=" << forceBold << "styleHint=" << fontData.StyleHint;
-//             qWarning() << "\t->" << *cachedFont;
+//             qCWarning(PLATFORMTHEME) << "Requested font type" << fontType << "name=" << fontData.FontName << "forceBold=" << forceBold << "styleHint=" << fontData.StyleHint;
+//             qCWarning(PLATFORMTHEME) << "\t->" << *cachedFont;
 //         }
 
         fontInfo = configGroup.readEntry(fontData.ConfigKey, QString());
@@ -217,7 +218,7 @@ QFont *KFontSettingsDataMac::font(FontTypes fontType)
         if (!fontInfo.isEmpty()) {
             cachedFont->fromString(fontInfo);
 //             if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
-//                 qWarning() << "\tfontInfo=" << fontInfo << "->" << *cachedFont;
+//                 qCWarning(PLATFORMTHEME) << "\tfontInfo=" << fontInfo << "->" << *cachedFont;
 //             }
         }
 

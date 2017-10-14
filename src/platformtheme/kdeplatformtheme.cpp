@@ -27,6 +27,7 @@
 #include "khintssettings.h"
 #include "kdeplatformfiledialoghelper.h"
 #include "kdeplatformsystemtrayicon.h"
+#include "platformtheme_logging.h"
 
 #include <QApplication>
 #include <QFont>
@@ -229,7 +230,7 @@ QString KdePlatformTheme::standardButtonText(int button) const
 {
     switch (static_cast<QPlatformDialogHelper::StandardButton>(button)) {
     case QPlatformDialogHelper::NoButton:
-        qWarning() << Q_FUNC_INFO << "Unsupported standard button:" << button;
+        qCWarning(PLATFORMTHEME) << Q_FUNC_INFO << "Unsupported standard button:" << button;
         return QString();
     case QPlatformDialogHelper::Ok:
         return KStandardGuiItem::ok().text();

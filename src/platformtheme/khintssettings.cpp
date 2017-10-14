@@ -23,6 +23,7 @@
 #undef QT_NO_CAST_FROM_ASCII
 
 #include "khintssettings.h"
+#include "platformtheme_logging.h"
 
 #include <QDebug>
 #include <QDir>
@@ -303,7 +304,7 @@ void KHintsSettings::slotNotifyChange(int type, int arg)
         break;
     }
     default:
-        qWarning() << "Unknown type of change in KGlobalSettings::slotNotifyChange: " << type;
+        qCWarning(PLATFORMTHEME) << "Unknown type of change in KGlobalSettings::slotNotifyChange: " << type;
     }
 }
 

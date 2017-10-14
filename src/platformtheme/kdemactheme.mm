@@ -29,6 +29,7 @@
 #include "khintssettingsmac.h"
 #include "kdeplatformfiledialoghelper.h"
 #include "kdeplatformsystemtrayicon.h"
+#include "platformtheme_logging.h"
 
 #include <QObject>
 #include <QCoreApplication>
@@ -73,6 +74,10 @@
 
 #include <AppKit/AppKit.h>
 #include <IOKit/hidsystem/ev_keymap.h>
+
+#ifdef USE_PLCRASHREPORTER
+#include <CrashReporter/CrashReporter.h>
+#endif
 
 // [NSEvent modifierFlags] keycodes:
 // LeftShift=131330
@@ -157,7 +162,7 @@ public:
 //         if (qEnvironmentVariableIsSet("TAPANDHOLD_CONTEXTMENU_DEBUG")) {
 //             QVariant isGrabbed = obj->property("OurTaHGestureActive");
 //             if (isGrabbed.isValid() && isGrabbed.toBool()) {
-//                 qWarning() << "event=" << event << "grabbed obj=" << obj;
+//                 qCWarning(PLATFORMTHEME) << "event=" << event << "grabbed obj=" << obj;
 //             }
 //         }
 // #endif
@@ -178,7 +183,7 @@ public:
                             obj->setProperty("OurTaHGestureActive", qTrue);
 #ifdef TAPANDHOLD_DEBUG
                             if (qEnvironmentVariableIsSet("TAPANDHOLD_CONTEXTMENU_DEBUG")) {
-                                qWarning() << "event=" << event << "grabbing obj=" << obj << "parent=" << obj->parent();
+                                qCWarning(PLATFORMTHEME) << "event=" << event << "grabbing obj=" << obj << "parent=" << obj->parent();
                             }
 #endif
                             if (!m_grabbing.contains(obj)) {
@@ -193,7 +198,7 @@ public:
                     }
 #ifdef TAPANDHOLD_DEBUG
                     else if (w && qEnvironmentVariableIsSet("TAPANDHOLD_CONTEXTMENU_DEBUG")) {
-                        qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent();
+                        qCWarning(PLATFORMTHEME) << "event=" << event << "obj=" << obj << "parent=" << obj->parent();
                     }
 #endif
                 }
@@ -213,7 +218,7 @@ public:
                 QVariant isGrabbed = obj->property("OurTaHGestureActive");
                 if (isGrabbed.isValid() && isGrabbed.toBool()) {
 #ifdef TAPANDHOLD_DEBUG
-                    qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent()
+                    qCWarning(PLATFORMTHEME) << "event=" << event << "obj=" << obj << "parent=" << obj->parent()
                         << "grabbed=" << obj->property("OurTaHGestureActive");
 #endif
                     obj->setProperty("OurTaHGestureActive", qFalse);
@@ -241,15 +246,15 @@ public:
                             } else {
                                 QMouseEvent me(QEvent::MouseButtonRelease, localPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
 #ifdef TAPANDHOLD_DEBUG
-                                qWarning() << "Sending" << &me;
+                                qCWarning(PLATFORMTHEME) << "Sending" << &me;
 #endif
                                 // we'll be unsetting OurTaHGestureActive in the MouseButtonRelease handler above
                                 QCoreApplication::sendEvent(obj, &me);
                             }
-                            qWarning() << "Sending" << &ce << "to" << obj << "because of" << gEvent << "isGrabbed=" << isGrabbed;
+                            qCWarning(PLATFORMTHEME) << "Sending" << &ce << "to" << obj << "because of" << gEvent << "isGrabbed=" << isGrabbed;
                             bool ret = QCoreApplication::sendEvent(obj, &ce);
                             gEvent->accept();
-                            qWarning() << "\tsendEvent" << &ce << "returned" << ret;
+                            qCWarning(PLATFORMTHEME) << "\tsendEvent" << &ce << "returned" << ret;
                             return true;
                         }
                     }
@@ -259,7 +264,7 @@ public:
 #ifdef TAPANDHOLD_DEBUG
             case QEvent::ContextMenu:
                 if (qEnvironmentVariableIsSet("TAPANDHOLD_CONTEXTMENU_DEBUG")) {
-                    qWarning() << "event=" << event << "obj=" << obj << "parent=" << obj->parent()
+                    qCWarning(PLATFORMTHEME) << "event=" << event << "obj=" << obj << "parent=" << obj->parent()
                         << "grabbed=" << obj->property("OurTaHGestureActive");
                 }
                 break;
@@ -290,7 +295,7 @@ bool KdeMacThemeEventFilter::QNativeEventFilter::nativeEventFilter(const QByteAr
             const int  keyFlags  = ([event data1] & 0x0000FFFF);
             const int  keyState  = (((keyFlags & 0xFF00) >> 8) == 0xA);
 
-//             qWarning() << QStringLiteral("NSSystemDefined event keyCode=%1 keyFlags=%2 keyState=%3").arg(keyCode).arg(keyFlags).arg(keyState);
+//             qCWarning(PLATFORMTHEME) << QStringLiteral("NSSystemDefined event keyCode=%1 keyFlags=%2 keyState=%3").arg(keyCode).arg(keyFlags).arg(keyState);
             if (keyState == 1) {
                 int qtKey = 0;
                 switch (keyCode) {
@@ -308,7 +313,7 @@ bool KdeMacThemeEventFilter::QNativeEventFilter::nativeEventFilter(const QByteAr
                 }
                 if (qtKey) {
                     QKeyEvent mediaKeyEvent(QEvent::KeyPress, qtKey, Qt::NoModifier);
-                    qWarning() << "Sending mediaKeyEvent" << &mediaKeyEvent;
+                    qCWarning(PLATFORMTHEME) << "Sending mediaKeyEvent" << &mediaKeyEvent;
                     QCoreApplication::sendEvent(qApp, &mediaKeyEvent);
                     return false;
                 }
@@ -335,7 +340,7 @@ NSEvent *KdeMacThemeEventFilter::nativeEventHandler(void *message)
                     // simultaneous press (i.e. within <= 0.1s) of just the right Command and Option keys:
                     if (enabled || [event timestamp] - disableTime <= 0.1) {
                         enabled = true;
-//                         qWarning() << Q_FUNC_INFO << "event=" << QString::fromNSString([event description])
+//                         qCWarning(PLATFORMTHEME) << Q_FUNC_INFO << "event=" << QString::fromNSString([event description])
 //                             << "modifierFlags=" << [event modifierFlags] << "keyCode=" << [event keyCode];
                         const unichar menuKeyCode = static_cast<unichar>(NSMenuFunctionKey);
                         NSString *menuKeyString = [NSString stringWithCharacters:&menuKeyCode length:1];
@@ -347,7 +352,7 @@ NSEvent *KdeMacThemeEventFilter::nativeEventHandler(void *message)
                             // the keyCode must be an 8-bit value so not to be confounded with the Unicode value.
                             // Judging from Carbon/Events.h 0x7f is unused.
                             keyCode:0x7f];
-//                         qWarning() << "new event:" << QString::fromNSString([menuKeyEvent description]);
+//                         qCWarning(PLATFORMTHEME) << "new event:" << QString::fromNSString([menuKeyEvent description]);
                         return menuKeyEvent;
                     }
                     // fall through!
@@ -359,7 +364,7 @@ NSEvent *KdeMacThemeEventFilter::nativeEventHandler(void *message)
             break;
         }
 //         case NSKeyDown: {
-//             qWarning() << Q_FUNC_INFO << "event=" << QString::fromNSString([event description])
+//             qCWarning(PLATFORMTHEME) << Q_FUNC_INFO << "event=" << QString::fromNSString([event description])
 //                 << "key=" << [event keyCode] 
 //                 << "modifierFlags=" << [event modifierFlags] << "chars=" << QString::fromNSString([event characters])
 //                 << "charsIgnMods=" << QString::fromNSString([event charactersIgnoringModifiers]);
@@ -373,7 +378,7 @@ NSEvent *KdeMacThemeEventFilter::nativeEventHandler(void *message)
 
 static void warnNoNativeTheme()
 {
-    // Make sure the warning appears somewhere. qWarning() isn't guaranteed to be of use when we're
+    // Make sure the warning appears somewhere. qCWarning(PLATFORMTHEME) isn't guaranteed to be of use when we're
     // not called from a terminal session and it's probably too early to try an alert dialog.
     // NSLog() will log to system.log, but also to the terminal.
     if (platformName.contains(QLatin1String("cocoa"))) {
@@ -425,7 +430,7 @@ KdeMacTheme::KdeMacTheme()
     if (!nativeTheme) {
         warnNoNativeTheme();
     } else if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
-        qWarning() << Q_FUNC_INFO
+        qCWarning(PLATFORMTHEME) << Q_FUNC_INFO
             << "loading platform theme plugin" << QLatin1String(PLATFORM_PLUGIN_THEME_NAME) << "for platform" << platformName;
     }
     m_fontsData = Q_NULLPTR;
@@ -446,11 +451,34 @@ KdeMacTheme::KdeMacTheme()
     if (m_eventFilter->m_keyboardMonitor) {
         m_eventFilter->enabled = true;
     } else {
-        qWarning() << Q_FUNC_INFO << "Could not create a global keyboard monitor";
+        qCWarning(PLATFORMTHEME) << Q_FUNC_INFO << "Could not create a global keyboard monitor";
     }
 #endif
     // for some reason our Qt native event filter is apparently never called.
     qApp->installNativeEventFilter(m_eventFilter->qtNativeFilter);
+
+#ifdef USE_PLCRASHREPORTER
+    PLCrashReporter *crashReporter = [PLCrashReporter sharedReporter];
+    NSError *error;
+    if ([crashReporter hasPendingCrashReport]) {
+        NSData *crashData;
+        PLCrashReport *report = nil;
+        crashData = [crashReporter loadPendingCrashReportDataAndReturnError: &error];
+        if (crashData) {
+            report = [[[PLCrashReport alloc] initWithData:crashData error:&error] autorelease];
+        }
+        if (report) {
+            qCWarning(PLATFORMTHEME) << qApp->applicationName() << "crashed on" << QString::fromNSString([report.systemInfo.timestamp description]);
+            qCWarning(PLATFORMTHEME) << "\twith signal" << QString::fromNSString(report.signalInfo.name)
+                << "code" << QString::fromNSString(report.signalInfo.code)
+                << "at address" << report.signalInfo.address;
+        }
+        [crashReporter purgePendingCrashReport];
+    }
+    if (![crashReporter enableCrashReporterAndReturnError: &error]) {
+        NSLog(@"Warning: Could not enable crash reporter: %@", error);
+    }
+#endif
 }
 
 KdeMacTheme::~KdeMacTheme()
@@ -549,9 +577,9 @@ const QFont *KdeMacTheme::font(Font type) const
     if (!qf && nativeTheme) {
         qf = nativeTheme->font(type);
 //         if (qf) {
-//             qWarning() << "native font for type" << type << "=role" << fontType(type) << ":" << *qf;
+//             qCWarning(PLATFORMTHEME) << "native font for type" << type << "=role" << fontType(type) << ":" << *qf;
 //         } else {
-//             qWarning() << "native font for type" << type << "=role" << fontType(type) << ": NULL";
+//             qCWarning(PLATFORMTHEME) << "native font for type" << type << "=role" << fontType(type) << ": NULL";
 //         }
     }
     return qf;
@@ -599,7 +627,7 @@ QString KdeMacTheme::standardButtonText(int button) const
     // the nativeTheme in the default case
     switch (static_cast<QPlatformDialogHelper::StandardButton>(button)) {
         case QPlatformDialogHelper::NoButton:
-            qWarning() << Q_FUNC_INFO << "Unsupported standard button:" << button;
+            qCWarning(PLATFORMTHEME) << Q_FUNC_INFO << "Unsupported standard button:" << button;
             return QString();
         case QPlatformDialogHelper::Ok:
             return KStandardGuiItem::ok().text();

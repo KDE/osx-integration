@@ -29,6 +29,10 @@ option(EMULATE_MENU_KEY
         BUILD_QT_PLUGINS must be set for this to have any effect."
         OFF)
 
+option(USE_PLCRASHREPORTER
+        "Use the Plausible CrashReporter (https://www.plcrashreporter.org)"
+        OFF)
+
 include(FeatureSummary)
 find_package(ECM 5.20.0  NO_MODULE)
 set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://projects.kde.org/projects/kdesupport/extra-cmake-modules")
@@ -42,6 +46,7 @@ include(GenerateExportHeader)
 include(CMakePackageConfigHelpers)
 include(ECMSetupVersion)
 include(ECMGenerateHeaders)
+include(ECMQtDeclareLoggingCategory)
 
 include(KDEInstallDirs)
 include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
