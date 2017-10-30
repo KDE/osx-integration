@@ -458,9 +458,13 @@ KdeMacTheme::KdeMacTheme()
     qApp->installNativeEventFilter(m_eventFilter->qtNativeFilter);
 
 #ifdef USE_PLCRASHREPORTER
-    PLCrashReporter *crashReporter = [PLCrashReporter sharedReporter];
+    static PLCrashReporter *crashReporter = nil;
+    if (!crashReporter) {
+        crashReporter = [[PLCrashReporter alloc]
+            initWithConfiguration:[PLCrashReporterConfig defaultConfiguration]];
+    }
     NSError *error;
-    if ([crashReporter hasPendingCrashReport]) {
+    if ([crashReporter hasPendingCrashReport]) @autoreleasepool {
         NSData *crashData;
         PLCrashReport *report = nil;
         crashData = [crashReporter loadPendingCrashReportDataAndReturnError: &error];
