@@ -1,3 +1,29 @@
+20171030 : upstream head (5.9): 01c7b474f5ad2c9fcf4b90c71048624070811618
+ src/plugins/platforms/cocoa/cocoa.pro                                      |  11 +-
+ src/plugins/platforms/cocoa/messages.cpp                                   |   2 +-
+ src/plugins/platforms/cocoa/messages.h                                     |  11 +
+ src/plugins/platforms/cocoa/qcocoamenuitem.mm                              |  10 +-
+ src/plugins/platforms/cocoa/qcocoamenuloader.mm                            |  20 +-
+ src/plugins/platforms/cocoa/qcocoasystemtrayicon.mm                        |  31 ---
+ src/plugins/platforms/cocoa/qcocoawindow.mm                                |   2 +
+patch: patches/24-sync-upstream-171030.diff
+Changes: git log e03b64c5b1eeebfbbb94d67eb9a9c1d35eaba0bb..01c7b474f5ad2c9fcf4b90c71048624070811618 <changed files>
+commit 37a1478787d64b34a0716421c8a47f3246e41bfd
+    Cocoa QPA: Code clean up, make some bits more readable
+commit c99d8532c892f72f897c9e686be75d1ebba67618
+    QCocoaSystemTrayIcon: Remove unused classes
+    Both QNSMenu and QSystemTrayIconQMenu aren't referenced anywhere
+    else, including within qcocoasystemtrayicon.mm, since the QPA
+    backend was added.
+commit f13e75345d035ec906846aaa3540454787edbd3f
+    Cocoa QPA: Remove usage of OBJECTIVE_SOURCES
+commit 8ac9addd946637401e4685c6e91d1a3cd5b2d768
+    QCocoaWindow: Toggle titlebar transparency to support unified toolbar
+    This is need from macOS 10.13 onwards. See NSWindow related notes on
+    https://developer.apple.com/library/content/releasenotes/AppKit/RN-AppKit/
+NB: that NSWindow change required runtime checking for 10.9 support.
+
+
 20171011 : upstream head (5.9): e03b64c5b1eeebfbbb94d67eb9a9c1d35eaba0bb
  src/plugins/platforms/cocoa/qnsview.mm                                              |   4 +
 patch: patches/23-sync-upstream-171011.diff
