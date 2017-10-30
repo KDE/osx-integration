@@ -6,7 +6,7 @@
  src/plugins/platforms/cocoa/qcocoamenuloader.mm                            |  20 +-
  src/plugins/platforms/cocoa/qcocoasystemtrayicon.mm                        |  31 ---
  src/plugins/platforms/cocoa/qcocoawindow.mm                                |   2 +
-patch: patches/24-sync-upstream-171030.diff
+patches: patches/24-sync-upstream-171030.diff patches/24b-patch-build-on-OSX109.diff
 Changes: git log e03b64c5b1eeebfbbb94d67eb9a9c1d35eaba0bb..01c7b474f5ad2c9fcf4b90c71048624070811618 <changed files>
 commit 37a1478787d64b34a0716421c8a47f3246e41bfd
     Cocoa QPA: Code clean up, make some bits more readable

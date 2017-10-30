@@ -1,0 +1,277 @@
+diff --git a/cocoa/cocoa.pro b/cocoa/cocoa.pro
+index 13e5990..5a00e1b 100644
+--- a/cocoa/cocoa.pro
++++ b/cocoa/cocoa.pro
+@@ -1,6 +1,6 @@
+ TARGET = qcocoa
+ 
+-OBJECTIVE_SOURCES += main.mm \
++SOURCES += main.mm \
+     qcocoaintegration.mm \
+     qcocoatheme.mm \
+     qcocoabackingstore.mm \
+@@ -30,9 +30,8 @@ OBJECTIVE_SOURCES += main.mm \
+     qcocoasystemtrayicon.mm \
+     qcocoaintrospection.mm \
+     qcocoakeymapper.mm \
+-    qcocoamimetypes.mm
+-
+-SOURCES += messages.cpp
++    qcocoamimetypes.mm \
++    messages.cpp
+ 
+ HEADERS += qcocoaintegration.h \
+     qcocoatheme.h \
+@@ -66,7 +65,7 @@ HEADERS += qcocoaintegration.h \
+     qcocoamimetypes.h
+ 
+ qtConfig(opengl.*) {
+-    OBJECTIVE_SOURCES += qcocoaglcontext.mm
++    SOURCES += qcocoaglcontext.mm
+ 
+     HEADERS += qcocoaglcontext.h
+ }
+@@ -85,7 +84,7 @@ CONFIG += no_app_extension_api_only
+ qtHaveModule(widgets) {
+     QT_FOR_CONFIG += widgets
+ 
+-    OBJECTIVE_SOURCES += \
++    SOURCES += \
+         qpaintengine_mac.mm \
+         qprintengine_mac.mm \
+         qcocoaprintersupport.mm \
+diff --git a/cocoa/messages.cpp b/cocoa/messages.cpp
+index 5e2c4fd..cda89d3 100644
+--- a/cocoa/messages.cpp
++++ b/cocoa/messages.cpp
+@@ -75,7 +75,7 @@ QString qt_mac_applicationmenu_string(int type)
+ QPlatformMenuItem::MenuRole detectMenuRole(const QString &caption)
+ {
+     QString captionNoAmpersand(caption);
+-    captionNoAmpersand.remove(QChar('&'));
++    captionNoAmpersand.remove(QLatin1Char('&'));
+ //     const QString aboutString = QCoreApplication::translate("QCocoaMenuItem", "About");
+ //     if (captionNoAmpersand.startsWith(aboutString, Qt::CaseInsensitive) || caption.endsWith(aboutString, Qt::CaseInsensitive))
+ //         return QPlatformMenuItem::AboutRole;
+diff --git a/cocoa/messages.h b/cocoa/messages.h
+index a9c9cc4..e41898f 100644
+--- a/cocoa/messages.h
++++ b/cocoa/messages.h
+@@ -45,6 +45,17 @@
+ 
+ QT_BEGIN_NAMESPACE
+ 
++enum {
++    ServicesAppMenuItem = 0,
++    HideAppMenuItem,
++    HideOthersAppMenuItem,
++    ShowAllAppMenuItem,
++    PreferencesAppMenuItem,
++    QuitAppMenuItem,
++    AboutAppMenuItem
++};
++
++
+ QString msgAboutQt();
+ 
+ QString qt_mac_applicationmenu_string(int type);
+diff --git a/cocoa/qcocoa-standalone.pro b/cocoa/qcocoa-standalone.pro
+index eb3bd30..5693d55 100644
+--- a/cocoa/qcocoa-standalone.pro
++++ b/cocoa/qcocoa-standalone.pro
+@@ -10,7 +10,7 @@ CONFIG += plugin
+ 
+ TARGET = qaltcocoa
+ 
+-OBJECTIVE_SOURCES += main.mm \
++SOURCES += main.mm \
+     qcocoaintegration.mm \
+     qcocoatheme.mm \
+     qcocoabackingstore.mm \
+@@ -42,9 +42,8 @@ OBJECTIVE_SOURCES += main.mm \
+     qcocoasystemtrayicon.mm \
+     qcocoaintrospection.mm \
+     qcocoakeymapper.mm \
+-    qcocoamimetypes.mm
+-
+-SOURCES += messages.cpp
++    qcocoamimetypes.mm \
++    messages.cpp
+ 
+ HEADERS += qcocoaintegration.h \
+     qcocoatheme.h \
+@@ -80,7 +79,7 @@ HEADERS += qcocoaintegration.h \
+     qcocoamimetypes.h
+ 
+ # qtConfig(opengl.*) {
+-    OBJECTIVE_SOURCES += qcocoaglcontext.mm
++    SOURCES += qcocoaglcontext.mm
+ 
+     HEADERS += qcocoaglcontext.h
+ # }
+@@ -98,7 +97,7 @@ QT += \
+ CONFIG += no_app_extension_api_only
+ 
+ # qtHaveModule(widgets) {
+-    OBJECTIVE_SOURCES += \
++    SOURCES += \
+         qpaintengine_mac.mm \
+         qprintengine_mac.mm \
+         qcocoaprintersupport.mm \
+diff --git a/cocoa/qcocoamenuitem.mm b/cocoa/qcocoamenuitem.mm
+index 2b47e9b..137b732 100644
+--- a/cocoa/qcocoamenuitem.mm
++++ b/cocoa/qcocoamenuitem.mm
+@@ -402,24 +402,20 @@ NSMenuItem *QCocoaMenuItem::sync()
+     return m_native;
+ }
+ 
+-QT_BEGIN_NAMESPACE
+-extern QString qt_mac_applicationmenu_string(int type);
+-QT_END_NAMESPACE
+-
+ QString QCocoaMenuItem::mergeText()
+ {
+     QCocoaMenuLoader *loader = [QCocoaMenuLoader sharedMenuLoader];
+     if (m_native == [loader aboutMenuItem]) {
+-        return qt_mac_applicationmenu_string(6).arg(qt_mac_applicationName());
++        return qt_mac_applicationmenu_string(AboutAppMenuItem).arg(qt_mac_applicationName());
+     } else if (m_native== [loader aboutQtMenuItem]) {
+         if (m_text == QString("About Qt"))
+             return msgAboutQt();
+         else
+             return m_text;
+     } else if (m_native == [loader preferencesMenuItem]) {
+-        return qt_mac_applicationmenu_string(4);
++        return qt_mac_applicationmenu_string(PreferencesAppMenuItem);
+     } else if (m_native == [loader quitMenuItem]) {
+-        return qt_mac_applicationmenu_string(5).arg(qt_mac_applicationName());
++        return qt_mac_applicationmenu_string(QuitAppMenuItem).arg(qt_mac_applicationName());
+     } else if (m_text.contains('\t')) {
+         return m_text.left(m_text.indexOf('\t'));
+     }
+diff --git a/cocoa/qcocoamenuloader.mm b/cocoa/qcocoamenuloader.mm
+index 01a3c04..0d9bb50 100644
+--- a/cocoa/qcocoamenuloader.mm
++++ b/cocoa/qcocoamenuloader.mm
+@@ -47,14 +47,8 @@
+ #include <QtCore/private/qcore_mac_p.h>
+ #include <QtCore/private/qthread_p.h>
+ #include <QtCore/qcoreapplication.h>
+-#include <QtCore/qdir.h>
+-#include <QtCore/qstring.h>
+-#include <QtCore/qdebug.h>
+ #include <QtGui/private/qguiapplication_p.h>
+ 
+-QT_FORWARD_DECLARE_CLASS(QCFString)
+-QT_FORWARD_DECLARE_CLASS(QString)
+-
+ @implementation QCocoaMenuLoader
+ 
+ + (instancetype)sharedMenuLoader
+@@ -314,13 +308,13 @@ QT_FORWARD_DECLARE_CLASS(QString)
+ {
+ 
+ #ifndef QT_NO_TRANSLATION
+-    [servicesItem setTitle:qt_mac_applicationmenu_string(0).toNSString()];
+-    [hideItem setTitle:qt_mac_applicationmenu_string(1).arg(qt_mac_applicationName()).toNSString()];
+-    [hideAllOthersItem setTitle:qt_mac_applicationmenu_string(2).toNSString()];
+-    [showAllItem setTitle:qt_mac_applicationmenu_string(3).toNSString()];
+-    [preferencesItem setTitle:qt_mac_applicationmenu_string(4).toNSString()];
+-    [quitItem setTitle:qt_mac_applicationmenu_string(5).arg(qt_mac_applicationName()).toNSString()];
+-    [aboutItem setTitle:qt_mac_applicationmenu_string(6).arg(qt_mac_applicationName()).toNSString()];
++    [servicesItem setTitle:qt_mac_applicationmenu_string(ServicesAppMenuItem).toNSString()];
++    [hideItem setTitle:qt_mac_applicationmenu_string(HideAppMenuItem).arg(qt_mac_applicationName()).toNSString()];
++    [hideAllOthersItem setTitle:qt_mac_applicationmenu_string(HideOthersAppMenuItem).toNSString()];
++    [showAllItem setTitle:qt_mac_applicationmenu_string(ShowAllAppMenuItem).toNSString()];
++    [preferencesItem setTitle:qt_mac_applicationmenu_string(PreferencesAppMenuItem).toNSString()];
++    [quitItem setTitle:qt_mac_applicationmenu_string(QuitAppMenuItem).arg(qt_mac_applicationName()).toNSString()];
++    [aboutItem setTitle:qt_mac_applicationmenu_string(AboutAppMenuItem).arg(qt_mac_applicationName()).toNSString()];
+ #endif
+ }
+ 
+diff --git a/cocoa/qcocoasystemtrayicon.mm b/cocoa/qcocoasystemtrayicon.mm
+index 6af22fa..13e9d88 100644
+--- a/cocoa/qcocoasystemtrayicon.mm
++++ b/cocoa/qcocoasystemtrayicon.mm
+@@ -92,7 +92,6 @@
+ 
+ QT_USE_NAMESPACE
+ 
+-@class QT_MANGLE_NAMESPACE(QNSMenu);
+ @class QT_MANGLE_NAMESPACE(QNSImageView);
+ 
+ @interface QT_MANGLE_NAMESPACE(QNSStatusItem) : NSObject <NSUserNotificationCenterDelegate>
+@@ -123,16 +122,8 @@ QT_USE_NAMESPACE
+ -(void)mousePressed:(NSEvent *)mouseEvent button:(Qt::MouseButton)mouseButton;
+ @end
+ 
+-@interface QT_MANGLE_NAMESPACE(QNSMenu) : NSMenu <NSMenuDelegate> {
+-    QPlatformMenu *qmenu;
+-}
+--(QPlatformMenu*)menu;
+--(id)initWithQMenu:(QPlatformMenu*)qmenu;
+-@end
+-
+ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSStatusItem);
+ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSImageView);
+-QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSMenu);
+ 
+ QT_BEGIN_NAMESPACE
+ class QSystemTrayIconSys
+@@ -447,26 +438,4 @@ QT_END_NAMESPACE
+ 
+ @end
+ 
+-class QSystemTrayIconQMenu : public QPlatformMenu
+-{
+-public:
+-    void doAboutToShow() { emit aboutToShow(); }
+-private:
+-    QSystemTrayIconQMenu();
+-};
+-
+-@implementation QNSMenu
+--(id)initWithQMenu:(QPlatformMenu*)qm {
+-    self = [super init];
+-    if (self) {
+-        self->qmenu = qm;
+-        [self setDelegate:self];
+-    }
+-    return self;
+-}
+--(QPlatformMenu*)menu {
+-    return qmenu;
+-}
+-@end
+-
+ #endif // QT_NO_SYSTEMTRAYICON
+diff --git a/cocoa/qcocoawindow.mm b/cocoa/qcocoawindow.mm
+index 06a3c00..8864fc2 100644
+--- a/cocoa/qcocoawindow.mm
++++ b/cocoa/qcocoawindow.mm
+@@ -2235,9 +2235,14 @@ void QCocoaWindow::applyContentBorderThickness(NSWindow *window)
+ 
+     QMacAutoReleasePool pool;
+ 
++    bool hasTitlebarAppearsTransparent = [window respondsToSelector:@selector(setTitlebarAppearsTransparent:)];
++
+     if (!m_drawContentBorderGradient) {
+         [window setStyleMask:[window styleMask] & ~NSTexturedBackgroundWindowMask];
+         [[[window contentView] superview] setNeedsDisplay:YES];
++        if (hasTitlebarAppearsTransparent) {
++            window.titlebarAppearsTransparent = NO;
++        }
+         return;
+     }
+ 
+@@ -2262,6 +2267,9 @@ void QCocoaWindow::applyContentBorderThickness(NSWindow *window)
+     int effectiveBottomContentBorderThickness = m_bottomContentBorderThickness;
+ 
+     [window setStyleMask:[window styleMask] | NSTexturedBackgroundWindowMask];
++    if (hasTitlebarAppearsTransparent) {
++        window.titlebarAppearsTransparent = YES;
++    }
+ 
+     [window setContentBorderThickness:effectiveTopContentBorderThickness forEdge:NSMaxYEdge];
+     [window setAutorecalculatesContentBorderThickness:NO forEdge:NSMaxYEdge];
