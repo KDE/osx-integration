@@ -9,7 +9,7 @@ detection. Now trying to incorporate flag in normal key events.
 
 Task-number: QTBUG-22775
 Change-Id: I9edf97d0de93aa225435c9802372e33641cdac73
-===
+---
 
 20160615: Qt 5.6.1 introduces something (_q_dontOverrideCtrlLMB/QT_MAC_DONT_OVERRIDE_CTRL_LMB)
 which may make the 1st hunk redundant.
@@ -21,7 +21,7 @@ diff --git a/cocoa/qnsview.mm b/cocoa/qnsview.mm
 index a63bc4d..14f82e1 100644
 --- a/cocoa/qnsview.mm
 +++ b/cocoa/qnsview.mm
-@@ -1489,15 +1489,16 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+@@ -1462,15 +1462,16 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
  
  + (Qt::KeyboardModifiers) convertKeyModifiers : (ulong)modifierFlags
  {
@@ -40,24 +40,20 @@ index a63bc4d..14f82e1 100644
      if (modifierFlags & NSNumericPadKeyMask)
          qtMods |= Qt::KeypadModifier;
      return qtMods;
-@@ -1521,6 +1522,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+@@ -1494,10 +1495,11 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
      quint32 nativeScanCode = 1;
      quint32 nativeVirtualKey = [nsevent keyCode];
  
 +    const bool swapCtrlAndMeta = !qApp->testAttribute(Qt::AA_MacDontSwapCtrlAndMeta);
      QChar ch = QChar::ReplacementCharacter;
      int keyCode = Qt::Key_unknown;
- 
-@@ -1530,7 +1532,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
-     // ALT+E to be used as a shortcut with an English keyboard even though
-     // pressing ALT+E will give a dead key while doing normal text input.
-     if ([characters length] != 0 || [charactersIgnoringModifiers length] != 0) {
+     if ([characters length] != 0) {
 -        if (((modifiers & Qt::MetaModifier) || (modifiers & Qt::AltModifier)) && ([charactersIgnoringModifiers length] != 0))
 +        if (((modifiers & (swapCtrlAndMeta ? Qt::MetaModifier : Qt::ControlModifier)) || (modifiers & Qt::AltModifier)) && ([charactersIgnoringModifiers length] != 0))
              ch = QChar([charactersIgnoringModifiers characterAtIndex:0]);
-         else if ([characters length] != 0)
+         else
              ch = QChar([characters characterAtIndex:0]);
-@@ -1661,6 +1663,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+@@ -1624,6 +1626,7 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
      ulong lastKnownModifiers = m_lastKnownModifiers;
      ulong delta = lastKnownModifiers ^ modifiers;
      m_lastKnownModifiers = modifiers;
@@ -65,7 +61,7 @@ index a63bc4d..14f82e1 100644
  
      struct qt_mac_enum_mapper
      {
-@@ -1669,8 +1672,8 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+@@ -1632,8 +1635,8 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
      };
      static qt_mac_enum_mapper modifier_key_symbols[] = {
          { NSShiftKeyMask, Qt::Key_Shift },

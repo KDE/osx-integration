@@ -1,5 +1,5 @@
 diff --git a/cocoa/qcocoakeymapper.h b/cocoa/qcocoakeymapper.h
-index 4ba615efebf58f618b76596ea52b53ccf8187b05..13356682364448f2fa7e1ac43915538ef9bae8ba 100644
+index 4ba615e..1335668 100644
 --- a/cocoa/qcocoakeymapper.h
 +++ b/cocoa/qcocoakeymapper.h
 @@ -85,7 +85,7 @@ public:
@@ -12,7 +12,7 @@ index 4ba615efebf58f618b76596ea52b53ccf8187b05..13356682364448f2fa7e1ac43915538e
  
  private:
 diff --git a/cocoa/qcocoakeymapper.mm b/cocoa/qcocoakeymapper.mm
-index 1ef7f110117ab8c3d5f5476957540a5a13cc3fae..5b721a858c3edaa2bff893fd3da38e44eb659733 100644
+index 1ef7f11..5b721a8 100644
 --- a/cocoa/qcocoakeymapper.mm
 +++ b/cocoa/qcocoakeymapper.mm
 @@ -270,12 +270,25 @@ static qt_mac_enum_mapper qt_mac_private_unicode[] = {
@@ -97,10 +97,10 @@ index 1ef7f110117ab8c3d5f5476957540a5a13cc3fae..5b721a858c3edaa2bff893fd3da38e44
      KeyboardLayoutItem *kbItem = keyLayout[event->nativeVirtualKey()];
  
 diff --git a/cocoa/qnsview.mm b/cocoa/qnsview.mm
-index 14f82e1f2faf6dc882a37cd60e69cdcbfeb4915e..2501513cf6aef439df19fe02046f0f2db2b428bc 100644
+index e2f3b0b..f6cb9b2 100644
 --- a/cocoa/qnsview.mm
 +++ b/cocoa/qnsview.mm
-@@ -1525,6 +1525,18 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
+@@ -1558,6 +1558,18 @@ static QTabletEvent::TabletDevice wacomTabletDevice(NSEvent *theEvent)
  
      if (eventType == QEvent::KeyPress) {
  

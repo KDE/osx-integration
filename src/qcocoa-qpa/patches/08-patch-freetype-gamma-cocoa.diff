@@ -1,8 +1,8 @@
 diff --git a/cocoa/qcocoaintegration.mm b/cocoa/qcocoaintegration.mm
-index 91fcd1c..6d8aa52 100644
+index 20805af..2a3e78c 100644
 --- a/cocoa/qcocoaintegration.mm
 +++ b/cocoa/qcocoaintegration.mm
-@@ -610,7 +610,7 @@ QCocoaServices *QCocoaIntegration::services() const
+@@ -626,7 +626,7 @@ QCocoaServices *QCocoaIntegration::services() const
  QVariant QCocoaIntegration::styleHint(StyleHint hint) const
  {
      if (hint == QPlatformIntegration::FontSmoothingGamma)

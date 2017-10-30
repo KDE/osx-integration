@@ -1,5 +1,37 @@
+diff --git a/cocoa/qcocoamenu.mm b/cocoa/qcocoamenu.mm
+index fec03f4..56496fe 100644
+--- a/cocoa/qcocoamenu.mm
++++ b/cocoa/qcocoamenu.mm
+@@ -380,9 +380,18 @@ void QCocoaMenu::insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem)
+             qWarning("No non-merged before menu item found");
+             return;
+         }
++        if (item->isSeparator() && !item->text().isEmpty()) {
++            // menu section: add a separator before the section title text
++            const NSInteger idx = [m_nativeMenu indexOfItem:beforeItem->nsItem()];
++            [m_nativeMenu insertItem:[NSMenuItem separatorItem] atIndex:idx];
++        }
+         const NSInteger nativeIndex = [m_nativeMenu indexOfItem:beforeItem->nsItem()];
+         [m_nativeMenu insertItem:nativeItem atIndex:nativeIndex];
+     } else {
++        if (item->isSeparator() && !item->text().isEmpty()) {
++            // menu section: add a separator before the section title text
++            [m_nativeMenu addItem:[NSMenuItem separatorItem]];
++        }
+         [m_nativeMenu addItem:nativeItem];
+     }
+     item->setMenuParent(this);
+@@ -511,7 +520,7 @@ void QCocoaMenu::syncSeparatorsCollapsible(bool enable)
+         }
+     } else {
+         foreach (QCocoaMenuItem *item, m_menuItems) {
+-            if (!item->isSeparator())
++            if (!item->isSeparator() || !item->text().isEmpty())
+                 continue;
+ 
+             // sync the visiblity directly
 diff --git a/cocoa/qcocoamenuitem.mm b/cocoa/qcocoamenuitem.mm
-index 21f2b4de85155fe64db91ef28005fed115f32387..2b47e9bbbdeebd9d79ed0a2ee6ae56dccd00afa7 100644
+index ecbab38..137b732 100644
 --- a/cocoa/qcocoamenuitem.mm
 +++ b/cocoa/qcocoamenuitem.mm
 @@ -222,13 +222,18 @@ void QCocoaMenuItem::setNativeContents(WId item)
@@ -81,35 +113,3 @@ index 21f2b4de85155fe64db91ef28005fed115f32387..2b47e9bbbdeebd9d79ed0a2ee6ae56dc
      }
  
  #ifndef QT_NO_SHORTCUT
-diff --git a/cocoa/qcocoamenu.mm b/cocoa/qcocoamenu.mm
-index e177a24e737be5e8277afaf8ffd01c516b9a8f06..0a8ed6cbf9d4954daa776e1d4e988f5557ca078b 100644
---- a/cocoa/qcocoamenu.mm
-+++ b/cocoa/qcocoamenu.mm
-@@ -372,9 +372,18 @@ void QCocoaMenu::insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem)
-             qWarning("No non-merged before menu item found");
-             return;
-         }
-+        if (item->isSeparator() && !item->text().isEmpty()) {
-+            // menu section: add a separator before the section title text
-+            const NSInteger idx = [m_nativeMenu indexOfItem:beforeItem->nsItem()];
-+            [m_nativeMenu insertItem:[NSMenuItem separatorItem] atIndex:idx];
-+        }
-         const NSInteger nativeIndex = [m_nativeMenu indexOfItem:beforeItem->nsItem()];
-         [m_nativeMenu insertItem:nativeItem atIndex:nativeIndex];
-     } else {
-+        if (item->isSeparator() && !item->text().isEmpty()) {
-+            // menu section: add a separator before the section title text
-+            [m_nativeMenu addItem:[NSMenuItem separatorItem]];
-+        }
-         [m_nativeMenu addItem:nativeItem];
-     }
-     item->setMenuParent(this);
-@@ -488,7 +497,7 @@ void QCocoaMenu::syncSeparatorsCollapsible(bool enable)
-         }
-     } else {
-         foreach (QCocoaMenuItem *item, m_menuItems) {
--            if (!item->isSeparator())
-+            if (!item->isSeparator() || !item->text().isEmpty())
-                 continue;
- 
-             // sync the visiblity directly

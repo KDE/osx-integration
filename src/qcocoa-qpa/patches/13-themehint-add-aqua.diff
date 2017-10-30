@@ -1,8 +1,8 @@
 diff --git a/cocoa/qcocoatheme.mm b/cocoa/qcocoatheme.mm
-index 4d74c11..5d047d9 100644
+index a1c1b37..034a471 100644
 --- a/cocoa/qcocoatheme.mm
 +++ b/cocoa/qcocoatheme.mm
-@@ -319,7 +319,7 @@ QVariant QCocoaTheme::themeHint(ThemeHint hint) const
+@@ -330,7 +330,7 @@ QVariant QCocoaTheme::themeHint(ThemeHint hint) const
  {
      switch (hint) {
      case QPlatformTheme::StyleNames:
@@ -11,4 +11,3 @@ index 4d74c11..5d047d9 100644
      case QPlatformTheme::DialogButtonBoxLayout:
          return QVariant(QPlatformDialogHelper::MacLayout);
      case KeyboardScheme:
-

@@ -1,8 +1,8 @@
 diff --git a/cocoa/qcocoafontdialoghelper.mm b/cocoa/qcocoafontdialoghelper.mm
-index 33dd426..295984a 100644
+index dbd7e90..19baf93 100644
 --- a/cocoa/qcocoafontdialoghelper.mm
 +++ b/cocoa/qcocoafontdialoghelper.mm
-@@ -336,19 +336,68 @@ public:
+@@ -334,19 +334,68 @@ public:
  
          int weight = 5;
          NSFontTraitMask mask = 0;

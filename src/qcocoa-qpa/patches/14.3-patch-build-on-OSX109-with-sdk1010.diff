@@ -1,7 +1,7 @@
-diff --git a/src/qcocoa-qpa/qcocoawindow.mm b/src/qcocoa-qpa/qcocoawindow.mm
+diff --git a/cocoa/qcocoawindow.mm b/cocoa/qcocoawindow.mm
 index 8f886a0..3474bb2 100644
---- a/src/qcocoa-qpa/qcocoawindow.mm
-+++ b/src/qcocoa-qpa/qcocoawindow.mm
+--- a/cocoa/qcocoawindow.mm
++++ b/cocoa/qcocoawindow.mm
 @@ -326,9 +326,10 @@ static void qt_closePopups()
  + (void)applicationActivationChanged:(NSNotification*)notification
  {

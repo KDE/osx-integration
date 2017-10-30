@@ -1,8 +1,8 @@
 diff --git a/cocoa/qcocoamenu.mm b/cocoa/qcocoamenu.mm
-index e177a24..899f523 100644
+index 3a11023..fec03f4 100644
 --- a/cocoa/qcocoamenu.mm
 +++ b/cocoa/qcocoamenu.mm
-@@ -343,6 +343,19 @@ void QCocoaMenu::insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem)
+@@ -351,6 +351,19 @@ void QCocoaMenu::insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem)
      if (item->isMerged())
          return;
  
@@ -22,7 +22,7 @@ index e177a24..899f523 100644
      // if the item we're inserting before is merged, skip along until
      // we find a non-merged real item to insert ahead of.
      while (beforeItem && beforeItem->isMerged()) {
-@@ -395,7 +408,8 @@ void QCocoaMenu::removeMenuItem(QPlatformMenuItem *menuItem)
+@@ -403,7 +416,8 @@ void QCocoaMenu::removeMenuItem(QPlatformMenuItem *menuItem)
      m_menuItems.removeOne(cocoaItem);
      if (!cocoaItem->isMerged()) {
          if (m_nativeMenu != [cocoaItem->nsItem() menu]) {
