@@ -1,3 +1,10 @@
+20171030 : upstream head (5.9): 01c7b474f5ad2c9fcf4b90c71048624070811618
+ src/widgets/styles/qstylehelper.cpp                                        |   1 -
+patch: patches/18-sync-upstream-171030.diff
+Changes: git log e03b64c5b1eeebfbbb94d67eb9a9c1d35eaba0bb..01c7b474f5ad2c9fcf4b90c71048624070811618 <changed files>
+    Remove some unused, local variables
+
+
 20171011 : upstream head (5.9): e03b64c5b1eeebfbbb94d67eb9a9c1d35eaba0bb
  src/widgets/widgets/qcombobox.cpp                                                   |  38 ++++--
 Changes: git log e0c2d328b11ab893538393fad66ad61d22d823c6..e03b64c5b1eeebfbbb94d67eb9a9c1d35eaba0bb src/widgets/widgets/qcombobox.cpp
