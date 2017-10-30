@@ -1,8 +1,8 @@
 diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
-index b35317c..bc838be 100644
+index ad14fd3..04cb683 100644
 --- a/qmacstyle_mac.mm
 +++ b/qmacstyle_mac.mm
-@@ -684,7 +684,8 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
+@@ -717,7 +717,8 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
              else if (sz == QAquaSizeMini)
                  ret = QSize(-1, qt_mac_aqua_get_metric(kThemeMetricMiniPushButtonHeight));
  
@@ -12,7 +12,7 @@ index b35317c..bc838be 100644
                  // If the button got an icon, and the icon is larger than the
                  // button, we can't decide on a default size
                  ret.setWidth(-1);
-@@ -4049,8 +4050,10 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4117,8 +4118,10 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
              // tab. So, cheat a little here. However, if it *is* only an icon
              // the windows style works great, so just use that implementation.
              bool hasMenu = btn.features & QStyleOptionButton::HasMenu;
@@ -23,7 +23,7 @@ index b35317c..bc838be 100644
  
              if (!hasMenu && usingYosemiteOrLater) {
                  if (tds == kThemeStatePressed
-@@ -4108,7 +4111,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4176,7 +4179,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                      p->restore();
                  }
              } else {
@@ -32,7 +32,7 @@ index b35317c..bc838be 100644
                      QCommonStyle::drawControl(ce, &btn, p, w);
                  } else {
                      QRect freeContentRect = btn.rect;
-@@ -4118,7 +4121,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4186,7 +4189,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                          textRect.moveTo(w ? 15 : 11, textRect.top()); // Supports Qt Quick Controls
                      }
                      // Draw the icon:

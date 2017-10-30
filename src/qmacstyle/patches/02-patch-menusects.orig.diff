@@ -2,7 +2,7 @@ diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
 index a9aab10e0fa4b326b3618cb96ad0d0fbdbf9f121..0c0ad1a5d4be5d209036f47d67b894598cedaaad 100644
 --- a/qmacstyle_mac.mm
 +++ b/qmacstyle_mac.mm
-@@ -3126,6 +3126,9 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
+@@ -3041,6 +3041,9 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
      case SH_ItemView_ScrollMode:
          ret = QAbstractItemView::ScrollPerPixel;
          break;
@@ -12,7 +12,7 @@ index a9aab10e0fa4b326b3618cb96ad0d0fbdbf9f121..0c0ad1a5d4be5d209036f47d67b89459
      default:
          ret = QCommonStyle::styleHint(sh, opt, w, hret);
          break;
-@@ -4451,6 +4454,9 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4358,6 +4361,9 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                  mdi.itemType |= kThemeMenuItemHierarchical | kThemeMenuItemHierBackground;
              else
                  mdi.itemType |= kThemeMenuItemPopUpBackground;
@@ -22,7 +22,7 @@ index a9aab10e0fa4b326b3618cb96ad0d0fbdbf9f121..0c0ad1a5d4be5d209036f47d67b89459
              if (enabled)
                  mdi.state = kThemeMenuActive;
              else
-@@ -4458,7 +4464,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4365,7 +4371,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
              if (active)
                  mdi.state |= kThemeMenuSelected;
              QRect contentRect;
@@ -31,7 +31,7 @@ index a9aab10e0fa4b326b3618cb96ad0d0fbdbf9f121..0c0ad1a5d4be5d209036f47d67b89459
                  // First arg should be &menurect, but wacky stuff happens then.
                  HIThemeDrawMenuSeparator(&itemRect, &itemRect, &mdi,
                                           cg, kHIThemeOrientationNormal);
-@@ -4487,54 +4493,56 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4394,54 +4400,56 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
              else
                  p->setPen(mi->palette.buttonText().color());
  
@@ -64,19 +64,19 @@ index a9aab10e0fa4b326b3618cb96ad0d0fbdbf9f121..0c0ad1a5d4be5d209036f47d67b89459
 -                // Always be normal or disabled to follow the Mac style.
 -                int smallIconSize = proxy()->pixelMetric(PM_SmallIconSize);
 -                QSize iconSize(smallIconSize, smallIconSize);
--#if QT_CONFIG(combobox)
+-#ifndef QT_NO_COMBOBOX
 -                if (const QComboBox *comboBox = qobject_cast<const QComboBox *>(w)) {
 -                    iconSize = comboBox->iconSize();
 +            if (mi->menuItemType != QStyleOptionMenuItem::Separator) {
 +                if (mi->checked) {
 +                    QStyleOption checkmarkOpt;
 +                    checkmarkOpt.initFrom(w);
-+                    
++
 +                    const int mw = checkcol + macItemFrame;
 +                    const int mh = contentRect.height() + macItemFrame;
 +                    const int xp = contentRect.x() + macItemFrame;
 +                    checkmarkOpt.rect = QRect(xp, contentRect.y() - checkmarkOpt.fontMetrics.descent(), mw, mh);
-+                    
++
 +                    checkmarkOpt.state |= State_On; // Always on. Never rendered when off.
 +                    checkmarkOpt.state.setFlag(State_Selected, active);
 +                    checkmarkOpt.state.setFlag(State_Enabled, enabled);
@@ -84,11 +84,11 @@ index a9aab10e0fa4b326b3618cb96ad0d0fbdbf9f121..0c0ad1a5d4be5d209036f47d67b89459
 +                        checkmarkOpt.state |= State_Mini;
 +                    else if (widgetSize == QAquaSizeSmall)
 +                        checkmarkOpt.state |= State_Small;
-+                    
++
 +                    // We let drawPrimitive(PE_IndicatorMenuCheckMark) pick the right color
 +                    checkmarkOpt.palette.setColor(QPalette::HighlightedText, p->pen().color());
 +                    checkmarkOpt.palette.setColor(QPalette::Text, p->pen().color());
-+                    
++
 +                    proxy()->drawPrimitive(PE_IndicatorMenuCheckMark, &checkmarkOpt, p, w);
                  }
 +                if (!mi->icon.isNull()) {
@@ -97,7 +97,7 @@ index a9aab10e0fa4b326b3618cb96ad0d0fbdbf9f121..0c0ad1a5d4be5d209036f47d67b89459
 +                    // Always be normal or disabled to follow the Mac style.
 +                    int smallIconSize = proxy()->pixelMetric(PM_SmallIconSize);
 +                    QSize iconSize(smallIconSize, smallIconSize);
-+#if QT_CONFIG(combobox)
++#ifndef QT_NO_COMBOBOX
 +                    if (const QComboBox *comboBox = qobject_cast<const QComboBox *>(w)) {
 +                        iconSize = comboBox->iconSize();
 +                    }
@@ -129,7 +129,7 @@ index a9aab10e0fa4b326b3618cb96ad0d0fbdbf9f121..0c0ad1a5d4be5d209036f47d67b89459
                                   | Qt::TextSingleLine | Qt::AlignAbsolute;
                  int yPos = contentRect.y();
                  if (widgetSize == QAquaSizeMini)
-@@ -4544,7 +4552,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4451,7 +4459,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                      p->setFont(qt_app_fonts_hash()->value("QMenuItem", p->font()));
                      int xp = contentRect.right() - tabwidth - macRightBorder
                               - macItemHMargin - macItemFrame + 1;
@@ -138,7 +138,7 @@ index a9aab10e0fa4b326b3618cb96ad0d0fbdbf9f121..0c0ad1a5d4be5d209036f47d67b89459
                                  s.mid(t + 1));
                      s = s.left(t);
                  }
-@@ -4557,9 +4565,32 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
+@@ -4464,9 +4472,32 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                  // and then the combo inherits it and passes it onward. At that point the resolve mask
                  // is very, very weak. This makes it stonger.
                  myFont.setPointSizeF(QFontInfo(mi->font).pointSizeF());
@@ -174,7 +174,7 @@ index a9aab10e0fa4b326b3618cb96ad0d0fbdbf9f121..0c0ad1a5d4be5d209036f47d67b89459
                  p->restore();
              }
          }
-@@ -6780,10 +6811,16 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
+@@ -6685,10 +6716,16 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
              int w = sz.width(),
                  h = sz.height();
              if (mi->menuItemType == QStyleOptionMenuItem::Separator) {

@@ -2,7 +2,7 @@ diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
 index 4264a03f65aef6b9dca295a6e08364fac91fc731..703e02a70544e196562329bcd278d5f66d5a0d17 100644
 --- a/qmacstyle_mac.mm
 +++ b/qmacstyle_mac.mm
-@@ -111,16 +111,16 @@ static QWindow *qt_getWindow(const QWidget *widget)
+@@ -144,16 +144,16 @@ static QWindow *qt_getWindow(const QWidget *widget)
      return widget ? widget->window()->windowHandle() : 0;
  }
  
@@ -22,7 +22,7 @@ index 4264a03f65aef6b9dca295a6e08364fac91fc731..703e02a70544e196562329bcd278d5f6
  - (id)initWithPrivate:(QMacStylePrivate *)priv
  {
      self = [super init];
-@@ -2109,8 +2109,8 @@ QMacStyle::QMacStyle()
+@@ -2168,8 +2168,8 @@ QMacStyle::QMacStyle()
      Q_D(QMacStyle);
      QMacAutoReleasePool pool;
  
@@ -33,9 +33,9 @@ index 4264a03f65aef6b9dca295a6e08364fac91fc731..703e02a70544e196562329bcd278d5f6
  
      [[NSNotificationCenter defaultCenter] addObserver:receiver
                                                        selector:@selector(scrollBarStyleDidChange:)
-@@ -2128,7 +2128,7 @@ QMacStyle::~QMacStyle()
- 
-     [reinterpret_cast<NSScroller*>(d->nsscroller) release];
+@@ -2193,7 +2193,7 @@ QMacStyle::~QMacStyle()
+     [d->horizontalScroller release];
+     [d->verticalScroller release];
  
 -    NotificationReceiver *receiver = static_cast<NotificationReceiver *>(d->receiver);
 +    AltNotificationReceiver *receiver = static_cast<AltNotificationReceiver *>(d->receiver);

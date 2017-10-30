@@ -1,8 +1,8 @@
 diff --git a/qmacstyle_mac.mm b/qmacstyle_mac.mm
-index 5f8ce32284d1caa3c01ca6055bd43a417d3c7f54..fd39d455f57803bacb670a0db9ee857931afd9b7 100644
+index c6adbc7..ad14fd3 100644
 --- a/qmacstyle_mac.mm
 +++ b/qmacstyle_mac.mm
-@@ -1744,6 +1744,7 @@ void QMacStylePrivate::setAutoDefaultButton(QObject *button) const
+@@ -1803,6 +1803,7 @@ void QMacStylePrivate::setAutoDefaultButton(QObject *button) const
  
  QMacStylePrivate::QMacStylePrivate()
      : mouseDown(false), backingStoreNSView(nil)
@@ -10,7 +10,7 @@ index 5f8ce32284d1caa3c01ca6055bd43a417d3c7f54..fd39d455f57803bacb670a0db9ee8579
  {
      defaultButtonStart = CFAbsoluteTimeGetCurrent();
      memset(&buttonState, 0, sizeof(ButtonState));
-@@ -1963,7 +1964,7 @@ void QMacStylePrivate::drawNSViewInRect(QCocoaWidget widget, NSView *view, const
+@@ -2022,7 +2023,7 @@ void QMacStylePrivate::drawNSViewInRect(QCocoaWidget widget, NSView *view, const
  
  void QMacStylePrivate::resolveCurrentNSView(QWindow *window)
  {
@@ -19,7 +19,7 @@ index 5f8ce32284d1caa3c01ca6055bd43a417d3c7f54..fd39d455f57803bacb670a0db9ee8579
  }
  
  void QMacStylePrivate::drawColorlessButton(const HIRect &macRect, HIThemeButtonDrawInfo *bdi,
-@@ -6048,7 +6049,7 @@ void QMacStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex
+@@ -6132,7 +6133,7 @@ void QMacStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex
                      else if (opt->styleObject)
                          window = opt->styleObject->property("_q_styleObjectWindow").value<QWindow *>();
  
@@ -29,10 +29,10 @@ index 5f8ce32284d1caa3c01ca6055bd43a417d3c7f54..fd39d455f57803bacb670a0db9ee8579
                      if (view)
                          isKey = [view.window isKeyWindow];
 diff --git a/qmacstyle_mac_p_p.h b/qmacstyle_mac_p_p.h
-index 9bbd0995a532426142e06874f0797a3eec948b79..8409d0d7b6cd7f705b78dbcb84ca76b3075e6bd1 100644
+index 228abf9..490c926 100644
 --- a/qmacstyle_mac_p_p.h
 +++ b/qmacstyle_mac_p_p.h
-@@ -250,6 +250,7 @@ public:
+@@ -285,6 +285,7 @@ public:
      void *indicatorBranchButtonCell;
      NSView *backingStoreNSView;
      QHash<QCocoaWidget, NSView *> cocoaControls;
