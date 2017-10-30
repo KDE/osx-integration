@@ -1,0 +1,31 @@
+diff --git b/cocoa/qcocoawindow.mm a/cocoa/qcocoawindow.mm
+index c5d327c..8864fc2 100644
+--- b/cocoa/qcocoawindow.mm
++++ a/cocoa/qcocoawindow.mm
+@@ -2235,10 +2235,14 @@ void QCocoaWindow::applyContentBorderThickness(NSWindow *window)
+ 
+     QMacAutoReleasePool pool;
+ 
++    bool hasTitlebarAppearsTransparent = [window respondsToSelector:@selector(setTitlebarAppearsTransparent:)];
++
+     if (!m_drawContentBorderGradient) {
+         [window setStyleMask:[window styleMask] & ~NSTexturedBackgroundWindowMask];
+         [[[window contentView] superview] setNeedsDisplay:YES];
+-        window.titlebarAppearsTransparent = NO;
++        if (hasTitlebarAppearsTransparent) {
++            window.titlebarAppearsTransparent = NO;
++        }
+         return;
+     }
+ 
+@@ -2263,7 +2267,9 @@ void QCocoaWindow::applyContentBorderThickness(NSWindow *window)
+     int effectiveBottomContentBorderThickness = m_bottomContentBorderThickness;
+ 
+     [window setStyleMask:[window styleMask] | NSTexturedBackgroundWindowMask];
+-    window.titlebarAppearsTransparent = YES;
++    if (hasTitlebarAppearsTransparent) {
++        window.titlebarAppearsTransparent = YES;
++    }
+ 
+     [window setContentBorderThickness:effectiveTopContentBorderThickness forEdge:NSMaxYEdge];
+     [window setAutorecalculatesContentBorderThickness:NO forEdge:NSMaxYEdge];
