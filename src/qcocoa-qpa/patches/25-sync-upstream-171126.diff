@@ -1,0 +1,161 @@
+diff --git a/cocoa/qcocoamenu.h b/cocoa/qcocoamenu.h
+index 06688db..7baaf97 100644
+--- a/cocoa/qcocoamenu.h
++++ b/cocoa/qcocoamenu.h
+@@ -98,6 +98,8 @@ public:
+ 
+     void timerEvent(QTimerEvent *e) Q_DECL_OVERRIDE;
+ 
++    void syncMenuItem_helper(QPlatformMenuItem *menuItem, bool menubarUpdate);
++
+ private:
+     QCocoaMenuItem *itemOrNull(int index) const;
+     void insertNative(QCocoaMenuItem *item, QCocoaMenuItem *beforeItem);
+diff --git a/cocoa/qcocoamenu.mm b/cocoa/qcocoamenu.mm
+index 7ed6c16..77eca5a 100644
+--- a/cocoa/qcocoamenu.mm
++++ b/cocoa/qcocoamenu.mm
+@@ -458,6 +458,11 @@ void QCocoaMenu::timerEvent(QTimerEvent *e)
+ 
+ void QCocoaMenu::syncMenuItem(QPlatformMenuItem *menuItem)
+ {
++    syncMenuItem_helper(menuItem, false /*menubarUpdate*/);
++}
++
++void QCocoaMenu::syncMenuItem_helper(QPlatformMenuItem *menuItem, bool menubarUpdate)
++{
+     QMacAutoReleasePool pool;
+     QCocoaMenuItem *cocoaItem = static_cast<QCocoaMenuItem *>(menuItem);
+     if (!m_menuItems.contains(cocoaItem)) {
+@@ -467,8 +472,9 @@ void QCocoaMenu::syncMenuItem(QPlatformMenuItem *menuItem)
+ 
+     const bool wasMerged = cocoaItem->isMerged();
+     NSMenuItem *oldItem = cocoaItem->nsItem();
++    NSMenuItem *syncedItem = cocoaItem->sync();
+ 
+-    if (cocoaItem->sync() != oldItem) {
++    if (syncedItem != oldItem) {
+         // native item was changed for some reason
+         if (oldItem) {
+             if (wasMerged) {
+@@ -486,6 +492,14 @@ void QCocoaMenu::syncMenuItem(QPlatformMenuItem *menuItem)
+         // when an item's enabled state changes after menuWillOpen:
+         scheduleUpdate();
+     }
++
++    // This may be a good moment to attach this item's eventual submenu to the
++    // synced item, but only on the condition we're all currently hooked to the
++    // menunbar. A good indicator of this being the right moment is knowing that
++    // we got called from QCocoaMenuBar::updateMenuBarImmediately().
++    if (menubarUpdate)
++        if (QCocoaMenu *submenu = cocoaItem->menu())
++            submenu->setAttachedItem(syncedItem);
+ }
+ 
+ void QCocoaMenu::syncSeparatorsCollapsible(bool enable)
+diff --git a/cocoa/qcocoamenubar.h b/cocoa/qcocoamenubar.h
+index 0725e9d..a4ee531 100644
+--- a/cocoa/qcocoamenubar.h
++++ b/cocoa/qcocoamenubar.h
+@@ -72,6 +72,8 @@ public:
+     QList<QCocoaMenuItem*> merged() const;
+     NSMenuItem *itemForRole(QPlatformMenuItem::MenuRole r);
+ 
++    void syncMenu_helper(QPlatformMenu *menu, bool menubarUpdate);
++
+ private:
+     static QCocoaWindow *findWindowForMenubar();
+     static QCocoaMenuBar *findGlobalMenubar();
+diff --git a/cocoa/qcocoamenubar.mm b/cocoa/qcocoamenubar.mm
+index 3e466c9..a4cd465 100644
+--- a/cocoa/qcocoamenubar.mm
++++ b/cocoa/qcocoamenubar.mm
+@@ -155,7 +155,7 @@ void QCocoaMenuBar::insertMenu(QPlatformMenu *platformMenu, QPlatformMenu *befor
+         }
+     }
+ 
+-    syncMenu(menu);
++    syncMenu_helper(menu, false /*internaCall*/);
+ 
+     if (needsImmediateUpdate())
+         updateMenuBarImmediately();
+@@ -183,11 +183,16 @@ void QCocoaMenuBar::removeMenu(QPlatformMenu *platformMenu)
+ 
+ void QCocoaMenuBar::syncMenu(QPlatformMenu *menu)
+ {
++    syncMenu_helper(menu, false /*internaCall*/);
++}
++
++void QCocoaMenuBar::syncMenu_helper(QPlatformMenu *menu, bool menubarUpdate)
++{
+     QMacAutoReleasePool pool;
+ 
+     QCocoaMenu *cocoaMenu = static_cast<QCocoaMenu *>(menu);
+     Q_FOREACH (QCocoaMenuItem *item, cocoaMenu->items())
+-        cocoaMenu->syncMenuItem(item);
++        cocoaMenu->syncMenuItem_helper(item, menubarUpdate);
+ 
+     BOOL shouldHide = YES;
+     if (cocoaMenu->isVisible()) {
+@@ -357,7 +362,7 @@ void QCocoaMenuBar::updateMenuBarImmediately()
+         menu->setAttachedItem(item);
+         menu->setMenuParent(mb);
+         // force a sync?
+-        mb->syncMenu(menu);
++        mb->syncMenu_helper(menu, true /*menubarUpdate*/);
+         menu->propagateEnabledState(!disableForModal);
+     }
+ 
+diff --git a/cocoa/qcocoamenuitem.mm b/cocoa/qcocoamenuitem.mm
+index 137b732..440b3f0 100644
+--- a/cocoa/qcocoamenuitem.mm
++++ b/cocoa/qcocoamenuitem.mm
+@@ -150,10 +150,6 @@ void QCocoaMenuItem::setMenu(QPlatformMenu *menu)
+     QMacAutoReleasePool pool;
+     m_menu = static_cast<QCocoaMenu *>(menu);
+     if (m_menu) {
+-        if (m_native) {
+-            // Skip automatic menu item validation
+-            m_native.action = nil;
+-        }
+         m_menu->setMenuParent(this);
+         m_menu->propagateEnabledState(isEnabled());
+     } else {
+diff --git a/cocoa/qcocoawindow.mm b/cocoa/qcocoawindow.mm
+index 8864fc2..06e460b 100644
+--- a/cocoa/qcocoawindow.mm
++++ b/cocoa/qcocoawindow.mm
+@@ -1908,6 +1908,21 @@ QCocoaNSWindow *QCocoaWindow::createNSWindow(bool shouldBeChildNSWindow, bool sh
+ 
+     applyContentBorderThickness(window);
+ 
++    // Prevent CoreGraphics RGB32 -> RGB64 backing store conversions on deep color
++    // displays by forcing 8-bit components, unless a deep color format has been
++    // requested. This conversion uses significant CPU time.
++    QSurface::SurfaceType surfaceType = QPlatformWindow::window()->surfaceType();
++    bool usesCoreGraphics = surfaceType == QSurface::RasterSurface || surfaceType == QSurface::RasterGLSurface;
++    QSurfaceFormat surfaceFormat = QPlatformWindow::window()->format();
++    bool usesDeepColor = surfaceFormat.redBufferSize() > 8 ||
++                         surfaceFormat.greenBufferSize() > 8 ||
++                         surfaceFormat.blueBufferSize() > 8;
++    bool usesLayer = view().layer;
++    if (usesCoreGraphics && !usesDeepColor && !usesLayer) {
++        [window setDynamicDepthLimit:NO];
++        [window setDepthLimit:NSWindowDepthTwentyfourBitRGB];
++    }
++
+     return window;
+ }
+ 
+diff --git a/cocoa/qnsview.mm b/cocoa/qnsview.mm
+index 2b49d4d..4c53127 100644
+--- a/cocoa/qnsview.mm
++++ b/cocoa/qnsview.mm
+@@ -2090,6 +2090,7 @@ static QPoint mapWindowCoordinates(QWindow *source, QWindow *target, QPoint poin
+     }
+     else {
+         NSImage *nsimage = qt_mac_create_nsimage(pixmapCursor);
++        nsimage.size = NSSizeFromCGSize((pixmapCursor.size() / pixmapCursor.devicePixelRatioF()).toCGSize());
+         nativeCursor = [[NSCursor alloc] initWithImage:nsimage hotSpot:NSZeroPoint];
+         [nsimage release];
+     }

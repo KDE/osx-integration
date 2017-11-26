@@ -1,3 +1,23 @@
+20171126 : upstream head (5.9): 6a9d076e87f0c8aa4fb49bbcc2f56eefd85af2e3 / v5.9.3-43-g6a9d076
+ src/plugins/platforms/cocoa/qcocoamenu.h                                 |   2 +
+ src/plugins/platforms/cocoa/qcocoamenu.mm                                |  16 ++-
+ src/plugins/platforms/cocoa/qcocoamenubar.h                              |   2 +
+ src/plugins/platforms/cocoa/qcocoamenubar.mm                             |  11 +-
+ src/plugins/platforms/cocoa/qcocoamenuitem.mm                            |   4 -
+ src/plugins/platforms/cocoa/qcocoawindow.mm                              |  15 +++
+ src/plugins/platforms/cocoa/qnsview.mm                                   |   1 +
+patch: patches/25-sync-upstream-171126.diff
+Changes: git log 01c7b474f5ad2c9fcf4b90c71048624070811618..6a9d076e87f0c8aa4fb49bbcc2f56eefd85af2e3 src/plugins/platforms/cocoa
+commit d0736e9d17d0b3ec2f7aa3f323a1edf70aa83e27
+    Cocoa: Make High DPI drag cursor work
+commit 3f519ffa150ce5a2d9e3ad3f147745b312d29afb
+    QCocoaMenuItem: Don't clear NSMenuItem.action when setting submenu
+commit 5194817941985c766bbc7f80039a58e0cf504b55
+    Cocoa: optimize backingstore flush on 10-bit displays
+commit 385589ef458715fcaa533bbd01ca421dc1040eba
+    QCocoaMenu: Attach menu items when updating the menubar
+
+
 20171030 : upstream head (5.9): 01c7b474f5ad2c9fcf4b90c71048624070811618
  src/plugins/platforms/cocoa/cocoa.pro                                      |  11 +-
  src/plugins/platforms/cocoa/messages.cpp                                   |   2 +-
