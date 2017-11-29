@@ -52,7 +52,7 @@ public:
         }
     }
 
-    QPlatformTheme *create(const QString &key, const QStringList &paramList) Q_DECL_OVERRIDE
+    QPlatformTheme *create(const QString &key, const QStringList &paramList) override
     {
         Q_UNUSED(key)
         Q_UNUSED(paramList)
