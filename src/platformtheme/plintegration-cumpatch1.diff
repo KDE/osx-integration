@@ -7,6 +7,7 @@ until f33d00ef1321b96395ed4007df1d10b451d5ce5f (20170320)
 0a6be721e4e35b54c2fba6a59243eea3c5d912d4 Implement support for selected mime type filters
 7a7dfffba98d383821c39ac68de6e8aabe45b7ed Implement QPlatformTheme::fileIconPixmap() to make QFileIconProvider work.
 4aef17e64f564331c79d5307dd6aeded828bf382 Replace Q_DECL_OVERRIDE with override
+f25c5e10d0235c2d383e998bddc39fb35517ce9e Fix deprecation warnings. setSelection -> setSelectedUrl ui -> uiDelegate
 
 20170425: synced with the following plasma-integration commits (everything related to QDbusMenuBar is irrelevant on Mac):
 Fix warning when no initial directory is set. (7bca66673f9575083181ca1b0a9602ba077c9016)
