@@ -75,24 +75,19 @@ message(STATUS "KF5_VERSION=${KF5_VERSION}")
 
 if(BUILD_KDE_THEME_PLUGIN)
     # 20170119: v5.30.0 is synced with plasma-integration 5.8.95
-    set(KF5_DEP_VERSION "5.20.0") # handled by release scripts
+    set(KF5_DEP_VERSION "5.33.0") # handled by release scripts
 
     ecm_setup_version(${KF5_VERSION} VARIABLE_PREFIX OSXINTEGRATION
                       VERSION_HEADER "${CMAKE_CURRENT_BINARY_DIR}/osxintegration_version.h"
                       PACKAGE_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/KF5OSXIntegrationConfigVersion.cmake"
                       SOVERSION 5)
 
-    find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
-    find_package(KF5ConfigWidgets ${KF5_DEP_VERSION} REQUIRED)
-    find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
-    find_package(KF5Notifications ${KF5_DEP_VERSION} REQUIRED)
-    find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
+    find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS
+                Config ConfigWidgets I18n IconThemes KIO Notifications WidgetsAddons)
     if (NOT DISABLE_DBUS_SUPPORT)
         find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus)
         add_definitions(-DDBUS_SUPPORT_ENABLED)
     endif()
-    find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
-    find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
     add_definitions(-DTRANSLATION_DOMAIN=\"osxintegration5\")
     if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/po")
         ki18n_install(po)
