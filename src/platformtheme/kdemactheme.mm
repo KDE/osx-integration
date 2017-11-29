@@ -689,7 +689,7 @@ QPlatformDialogHelper *KdeMacTheme::createPlatformDialogHelper(QPlatformTheme::D
     // NOTE: somehow, the "don't use native dialog" option that Qt's example "standarddialogs"
     // provides does not modify our usePlatformNativeDialog() return value, but *does* cause
     // a Qt dialog to be created instead of the native one. Weird.
-    if (nativeTheme) {
+    if (nativeTheme && !qEnvironmentVariableIsSet("PREFER_KDE_DIALOGS")) {
         return nativeTheme->createPlatformDialogHelper(type);
     }
 #endif
@@ -697,7 +697,10 @@ QPlatformDialogHelper *KdeMacTheme::createPlatformDialogHelper(QPlatformTheme::D
     if (helper) {
         return helper;
     } else {
-        return QPlatformTheme::createPlatformDialogHelper(type);
+        if (nativeTheme) {
+            helper = nativeTheme->createPlatformDialogHelper(type);
+        }
+        return helper ? helper : QPlatformTheme::createPlatformDialogHelper(type);
     }
 }
 
