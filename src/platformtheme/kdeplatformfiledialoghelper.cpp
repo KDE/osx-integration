@@ -315,9 +315,17 @@ void KDEPlatformFileDialogHelper::initializeDialog()
             dialog->m_fileWidget->setFilter(qt2KdeFilter(nameFilters));
         }
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+        if (!options()->initiallySelectedMimeTypeFilter().isEmpty()) {
+            selectMimeTypeFilter(options()->initiallySelectedMimeTypeFilter());
+        } else if (!options()->initiallySelectedNameFilter().isEmpty()) {
+            selectNameFilter(options()->initiallySelectedNameFilter());
+        }
+#else
         if (!options()->initiallySelectedNameFilter().isEmpty()) {
             selectNameFilter(options()->initiallySelectedNameFilter());
         }
+#endif
 
         // overwrite option
         // TODO: figure out how to avoid a native "OK to overwrite" request followed by one from KDE (mod in KIO??)
