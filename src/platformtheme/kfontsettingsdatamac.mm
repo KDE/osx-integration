@@ -208,7 +208,8 @@ QFont *KFontSettingsDataMac::font(FontTypes fontType)
 
         cachedFont = new QFont(QLatin1String(fontData.FontName), fontData.Size, forceBold? QFont::Bold : fontData.Weight);
         cachedFont->setStyleHint(fontData.StyleHint);
-        cachedFont->setStyleName(QLatin1String(fontData.StyleName));
+        // ignore the default stylehint; works better converting medium -> bold
+//         cachedFont->setStyleName(QLatin1String(fontData.StyleName));
 //         if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
 //             qCWarning(PLATFORMTHEME) << "Requested font type" << fontType << "name=" << fontData.FontName << "forceBold=" << forceBold << "styleHint=" << fontData.StyleHint;
 //             qCWarning(PLATFORMTHEME) << "\t->" << *cachedFont;
