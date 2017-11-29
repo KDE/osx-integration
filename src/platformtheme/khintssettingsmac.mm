@@ -140,8 +140,7 @@ KHintsSettingsMac::KHintsSettingsMac()
         QApplication::setWheelScrollLines(cg.readEntry("WheelScrollLines", 3));
     }
 
-    bool showIcons = cg.readEntry("ShowIconsInMenuItems", !QApplication::testAttribute(Qt::AA_DontShowIconsInMenus));
-    QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus, !showIcons);
+    updateShowIconsInMenuItems(cg);
 
 #ifdef DBUS_SUPPORT_ENABLED
     QMetaObject::invokeMethod(this, "delayedDBusConnects", Qt::QueuedConnection);
@@ -227,6 +226,7 @@ void KHintsSettingsMac::slotNotifyChange(int type, int arg)
         SettingsCategory category = static_cast<SettingsCategory>(arg);
         if (category == SETTINGS_STYLE) {
             hints()[QPlatformTheme::DialogButtonBoxButtonsHaveIcons] = cg.readEntry("ShowIconsOnPushButtons", false);
+            updateShowIconsInMenuItems(cg);
         }
         break;
     }

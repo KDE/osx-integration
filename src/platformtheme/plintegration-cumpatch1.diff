@@ -13,6 +13,7 @@ f25c5e10d0235c2d383e998bddc39fb35517ce9e Fix deprecation warnings. setSelection 
 267e7c635733031d2990e78637cf6c10a56f9f05 Don't ignore initially selected mime type filter
 b0059b1c8342b5ef95b054a0a5081b5db7e1c7bb Middle-click on QSystemTrayIcon сauses context menu
 1b21b5977c2068c5bd30c9f9f641f60bdba9ea8e Also specify a default StyleName for fonts
+2434bafcb168467f6763a20226918d27afa26744 [KHintsSettings] Update AA_DontShowIconsInMenus at runtime
 
 20170425: synced with the following plasma-integration commits (everything related to QDbusMenuBar is irrelevant on Mac):
 Fix warning when no initial directory is set. (7bca66673f9575083181ca1b0a9602ba077c9016)
