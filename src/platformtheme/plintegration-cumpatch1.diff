@@ -9,6 +9,7 @@ until f33d00ef1321b96395ed4007df1d10b451d5ce5f (20170320)
 4aef17e64f564331c79d5307dd6aeded828bf382 Replace Q_DECL_OVERRIDE with override
 f25c5e10d0235c2d383e998bddc39fb35517ce9e Fix deprecation warnings. setSelection -> setSelectedUrl ui -> uiDelegate
 0dafb9403266d6064074250d44b74dc0db946cfb Make sure we always set a default mime filter in save mode
+4be9b478e5296914258b77eb02c2583ee0e84c7c Allow to disable blinking cursor completely
 
 20170425: synced with the following plasma-integration commits (everything related to QDbusMenuBar is irrelevant on Mac):
 Fix warning when no initial directory is set. (7bca66673f9575083181ca1b0a9602ba077c9016)
