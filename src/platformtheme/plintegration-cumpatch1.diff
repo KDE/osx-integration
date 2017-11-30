@@ -18,6 +18,7 @@ b0059b1c8342b5ef95b054a0a5081b5db7e1c7bb Middle-click on QSystemTrayIcon сauses
 f9e5b852faa78f6d67615ea3c435b10b393cdaa5 Add ~/.local/share/icons to icons search paths
 1781d60b230c32977c078e2943d94c506d7ee645 Set QtQuickControls theme in QPT
 059369d6b6a9a99538c175a3c53058cbb54e8abc partly merged, NOT the additional QtQuickControls2 dependency!
+59d0ad3064bb3c45d7e9ab0604e65a31e5a24155 Show shortcuts in menus
 
 20170425: synced with the following plasma-integration commits (everything related to QDbusMenuBar is irrelevant on Mac):
 Fix warning when no initial directory is set. (7bca66673f9575083181ca1b0a9602ba077c9016)
