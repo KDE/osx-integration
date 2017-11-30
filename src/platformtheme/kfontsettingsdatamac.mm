@@ -222,6 +222,12 @@ QFont *KFontSettingsDataMac::font(FontTypes fontType)
 //             if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
 //                 qCWarning(PLATFORMTHEME) << "\tfontInfo=" << fontInfo << "->" << *cachedFont;
 //             }
+        } else {
+            QString fName = cachedFont->toString();
+            cachedFont->setStyleName(QLatin1String(fontData.StyleName));
+            if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
+                qCWarning(PLATFORMTHEME) << "\t" << fName << "+ styleName" << fontData.StyleName << "->" << *cachedFont;
+            }
         }
 
         mFonts[fontType] = cachedFont;

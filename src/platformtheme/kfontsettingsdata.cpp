@@ -87,7 +87,6 @@ QFont *KFontSettingsData::font(FontTypes fontType)
         const KFontData &fontData = DefaultFontData[fontType];
         cachedFont = new QFont(QLatin1String(fontData.FontName), fontData.Size, fontData.Weight);
         cachedFont->setStyleHint(fontData.StyleHint);
-        cachedFont->setStyleName(QLatin1String(fontData.StyleName));
 
         const KConfigGroup configGroup(kdeGlobals(), fontData.ConfigGroupKey);
         QString fontInfo = configGroup.readEntry(fontData.ConfigKey, QString());
@@ -96,6 +95,8 @@ QFont *KFontSettingsData::font(FontTypes fontType)
         //NOTE: We are not using KConfig directly because we can't call QFont::QFont from here
         if (!fontInfo.isEmpty()) {
             cachedFont->fromString(fontInfo);
+        } else {
+            cachedFont->setStyleName(QLatin1String(fontData.StyleName));
         }
 
         mFonts[fontType] = cachedFont;
