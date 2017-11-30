@@ -16,6 +16,7 @@ b0059b1c8342b5ef95b054a0a5081b5db7e1c7bb Middle-click on QSystemTrayIcon сauses
 2434bafcb168467f6763a20226918d27afa26744 [KHintsSettings] Update AA_DontShowIconsInMenus at runtime
 86be8d49d8988fb6c35e847ed9e0aad3e8514208 Allow to change toolbar font separately again
 f9e5b852faa78f6d67615ea3c435b10b393cdaa5 Add ~/.local/share/icons to icons search paths
+1781d60b230c32977c078e2943d94c506d7ee645 Set QtQuickControls theme in QPT
 
 20170425: synced with the following plasma-integration commits (everything related to QDbusMenuBar is irrelevant on Mac):
 Fix warning when no initial directory is set. (7bca66673f9575083181ca1b0a9602ba077c9016)

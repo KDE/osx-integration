@@ -62,6 +62,7 @@ public:
 
 protected:
     void loadSettings();
+    void setQtQuickControlsTheme();
     KFontSettingsData::FontTypes fontType(Font type) const;
 
 private:
