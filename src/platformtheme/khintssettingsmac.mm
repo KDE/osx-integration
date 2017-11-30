@@ -157,6 +157,10 @@ KHintsSettingsMac::~KHintsSettingsMac()
 QStringList KHintsSettingsMac::xdgIconThemePaths() const
 {
     QStringList paths;
+
+    // make sure we have ~/.local/share/icons in paths if it exists
+    paths << QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, QStringLiteral("icons"), QStandardPaths::LocateDirectory);
+
     // Add home directory first in search path
     const QFileInfo homeIconDir(QDir::homePath() + QStringLiteral("/.icons"));
     if (homeIconDir.isDir()) {
