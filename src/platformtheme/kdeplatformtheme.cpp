@@ -318,14 +318,20 @@ QPlatformSystemTrayIcon *KdePlatformTheme::createPlatformSystemTrayIcon() const
 //force QtQuickControls2 to use the desktop theme as default
 void KdePlatformTheme::setQtQuickControlsTheme()
 {
+    //if the user is running only a QGuiApplication. Abort as this style is all about QWidgets and we know setting this will make it crash
+    if (!qobject_cast<QApplication*>(qApp)) {
+        if (qgetenv("QT_QUICK_CONTROLS_1_STYLE").right(7) == "Desktop") {
+            qunsetenv("QT_QUICK_CONTROLS_1_STYLE");
+        }
+        return;
+    }
     //if the user has explicitly set something else, don't meddle
+    // Do this after potentially unsetting QT_QUICK_CONTROLS_1_STYLE!
     if (qEnvironmentVariableIsSet("QT_QUICK_CONTROLS_STYLE")) {
         return;
     }
-    //if the user is running only a QGuiApplication. Abort as this style is all about QWidgets and we know setting this will make it crash
-    if (!qobject_cast<QApplication*>(qApp)) {
-        return;
-    }
+    // newer plasma-integration versions use QtQuickControls2 for this
+    // I don't want that extra dependency.
     qputenv("QT_QUICK_CONTROLS_STYLE", "org.kde.desktop");
 }
 

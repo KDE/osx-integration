@@ -59,7 +59,7 @@ public:
         return new KdeMacTheme;
     }
 protected:
-    bool eventFilter(QObject *object, QEvent *event)
+    bool eventFilter(QObject *object, QEvent *event) override
     {
         switch (event->type()) {
             case QEvent::ChildAdded: {

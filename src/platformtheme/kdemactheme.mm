@@ -280,7 +280,7 @@ public:
 #endif
 };
 
-bool KdeMacThemeEventFilter::QNativeEventFilter::nativeEventFilter(const QByteArray &eventType, void *message, long *)
+bool KdeMacThemeEventFilter::QNativeEventFilter::nativeEventFilter(const QByteArray&, void *message, long *)
 {
     NSEvent *event = static_cast<NSEvent *>(message);
     switch ([event type]) {
