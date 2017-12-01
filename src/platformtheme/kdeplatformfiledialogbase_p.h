@@ -35,9 +35,11 @@ public:
 
     explicit KDEPlatformFileDialogBase();
     virtual QUrl directory() = 0;
+    virtual void selectMimeTypeFilter(const QString &filter) = 0;
     virtual void selectNameFilter(const QString &filter) = 0;
     virtual void setDirectory(const QUrl &directory) = 0;
     virtual void selectFile(const QUrl &filename) = 0;
+    virtual QString selectedMimeTypeFilter() = 0;
     virtual QString selectedNameFilter() = 0;
     virtual QList<QUrl> selectedFiles() = 0;
 
@@ -53,7 +55,7 @@ Q_SIGNALS:
     void filterSelected(const QString &filter);
 
 protected:
-    void closeEvent(QCloseEvent *e) Q_DECL_OVERRIDE;
+    void closeEvent(QCloseEvent *e) override;
     QDialogButtonBox *m_buttons;
     QTimer m_timer;
 };

@@ -31,6 +31,7 @@
 #include <KSharedConfig>
 #include <KWindowConfig>
 #include <KProtocolInfo>
+#include <QMimeDatabase>
 #include <QVBoxLayout>
 #include <QDialogButtonBox>
 #include <QPushButton>
@@ -126,7 +127,7 @@ void KDEPlatformFileDialog::selectFile(const QUrl &filename)
 {
     QUrl dirUrl = filename.adjusted(QUrl::RemoveFilename);
     m_fileWidget->setUrl(dirUrl);
-    m_fileWidget->setSelection(filename.toString());
+    m_fileWidget->setSelectedUrl(filename);
 }
 
 void KDEPlatformFileDialog::setViewMode(QFileDialogOptions::ViewMode view)
@@ -176,9 +177,33 @@ void KDEPlatformFileDialog::setCustomLabel(QFileDialogOptions::DialogLabel label
     }
 }
 
+QString KDEPlatformFileDialog::selectedMimeTypeFilter()
+{
+    if (m_fileWidget->filterWidget()->isMimeFilter()) {
+        const auto mimeTypeFromFilter = QMimeDatabase().mimeTypeForName(m_fileWidget->filterWidget()->currentFilter());
+        // If one does not call selectMimeTypeFilter(), KFileFilterCombo::currentFilter() returns invalid mimeTypes,
+        // such as "application/json application/zip".
+        if (mimeTypeFromFilter.isValid()) {
+            return mimeTypeFromFilter.name();
+        }
+    }
+
+    if (selectedFiles().isEmpty()) {
+        return QString();
+    }
+
+    // Works for both KFile::File and KFile::Files modes.
+    return QMimeDatabase().mimeTypeForUrl(selectedFiles().at(0)).name();
+}
+
 QString KDEPlatformFileDialog::selectedNameFilter()
 {
     return m_fileWidget->filterWidget()->currentFilter();
+}
+
+void KDEPlatformFileDialog::selectMimeTypeFilter(const QString &filter)
+{
+    m_fileWidget->filterWidget()->setCurrentFilter(filter);
 }
 
 void KDEPlatformFileDialog::selectNameFilter(const QString &filter)
@@ -199,7 +224,7 @@ void KDEPlatformFileDialog::setDirectory(const QUrl &directory)
             if (!entry.isDir()) {
                 // this is probably a file remove the file part
                 m_fileWidget->setUrl(directory.adjusted(QUrl::RemoveFilename));
-                m_fileWidget->setSelection(directory.fileName());
+                m_fileWidget->setSelectedUrl(directory);
             }
             else {
                 m_fileWidget->setUrl(directory);
@@ -273,7 +298,16 @@ void KDEPlatformFileDialogHelper::initializeDialog()
         const QStringList mimeFilters = options()->mimeTypeFilters();
         const QStringList nameFilters = options()->nameFilters();
         if (!mimeFilters.isEmpty()) {
-            dialog->m_fileWidget->setMimeFilter(mimeFilters);
+            QString defaultMimeFilter;
+            if (options()->acceptMode() == QFileDialogOptions::AcceptSave) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+                defaultMimeFilter = options()->initiallySelectedMimeTypeFilter();
+#endif
+                if (defaultMimeFilter.isEmpty()) {
+                    defaultMimeFilter = mimeFilters.at(0);
+                }
+            }
+            dialog->m_fileWidget->setMimeFilter(mimeFilters, defaultMimeFilter);
 
             if ( mimeFilters.contains( QStringLiteral("inode/directory") ) )
                 dialog->m_fileWidget->setMode( dialog->m_fileWidget->mode() | KFile::Directory );
@@ -281,9 +315,17 @@ void KDEPlatformFileDialogHelper::initializeDialog()
             dialog->m_fileWidget->setFilter(qt2KdeFilter(nameFilters));
         }
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+        if (!options()->initiallySelectedMimeTypeFilter().isEmpty()) {
+            selectMimeTypeFilter(options()->initiallySelectedMimeTypeFilter());
+        } else if (!options()->initiallySelectedNameFilter().isEmpty()) {
+            selectNameFilter(options()->initiallySelectedNameFilter());
+        }
+#else
         if (!options()->initiallySelectedNameFilter().isEmpty()) {
             selectNameFilter(options()->initiallySelectedNameFilter());
         }
+#endif
 
         // overwrite option
         // TODO: figure out how to avoid a native "OK to overwrite" request followed by one from KDE (mod in KIO??)
@@ -348,6 +390,18 @@ QList<QUrl> KDEPlatformFileDialogHelper::selectedFiles() const
 {
     return m_dialog->selectedFiles();
 }
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+QString KDEPlatformFileDialogHelper::selectedMimeTypeFilter() const
+{
+    return m_dialog->selectedMimeTypeFilter();
+}
+
+void KDEPlatformFileDialogHelper::selectMimeTypeFilter(const QString &filter)
+{
+    m_dialog->selectMimeTypeFilter(filter);
+}
+#endif
 
 QString KDEPlatformFileDialogHelper::selectedNameFilter() const
 {

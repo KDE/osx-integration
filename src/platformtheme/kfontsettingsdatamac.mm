@@ -20,6 +20,7 @@
 */
 
 #include "kfontsettingsdatamac.h"
+#include "platformtheme_logging.h"
 
 #include <QDebug>
 #include <QCoreApplication>
@@ -48,17 +49,17 @@ static const char *LocalDefaultFont = NULL;
 // See README.fonts.txt for information and thoughts about native/default fonts
 
 KFontData DefaultFontData[KFontSettingsDataMac::FontTypesCount] = {
-    { GeneralId, "font",                 DefaultFont,       12, -1, QFont::SansSerif },
-    { GeneralId, "fixed",                DefaultFixedFont,  10, -1, QFont::Monospace },
-    { GeneralId, "toolBarFont",          DefaultFont,       10, -1, QFont::SansSerif },
-    { GeneralId, "menuFont",             DefaultFont,       14, -1, QFont::SansSerif },
+    { GeneralId, "font",                 DefaultFont,       12, -1, QFont::SansSerif, "Medium" },
+    { GeneralId, "fixed",                DefaultFixedFont,  10, -1, QFont::Monospace, "Regular" },
+    { GeneralId, "toolBarFont",          DefaultFont,       10, -1, QFont::SansSerif, "Medium" },
+    { GeneralId, "menuFont",             DefaultFont,       14, -1, QFont::SansSerif, "Medium" },
     // applications don't control the window titlebar fonts
-    { "WM",      "activeFont",           DefaultFont,       13, -1, QFont::SansSerif },
-    { GeneralId, "taskbarFont",          DefaultFont,        9, -1, QFont::SansSerif },
-    { GeneralId, "smallestReadableFont", DefaultFont,        9, -1, QFont::SansSerif },
+    { "WM",      "activeFont",           DefaultFont,       13, -1, QFont::SansSerif, "Medium" },
+    { GeneralId, "taskbarFont",          DefaultFont,        9, -1, QFont::SansSerif, "Medium" },
+    { GeneralId, "smallestReadableFont", DefaultFont,        9, -1, QFont::SansSerif, "Medium" },
     // this one is to accomodate for the MessageBoxFont which should be bold on OS X
     // when using the native theme fonts.
-    { GeneralId, "messageBoxFont",       DefaultFont,       13, QFont::Bold, QFont::SansSerif }
+    { GeneralId, "messageBoxFont",       DefaultFont,       13, QFont::Bold, QFont::SansSerif, "Bold" }
 };
 
 static const char *fontNameFor(QFontDatabase::SystemFont role)
@@ -74,7 +75,7 @@ static const char *fontNameFor(QFontDatabase::SystemFont role)
             fn = strdup(qf.defaultFamily().toLocal8Bit().data());
         }
         if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
-            qWarning() << "fontNameFor" << role << "font:" << qf << "name:" << fn;
+            qCWarning(PLATFORMTHEME) << "fontNameFor" << role << "font:" << qf << "name:" << fn;
         }
         return fn;
     } else {
@@ -113,7 +114,7 @@ void initDefaultFonts()
                 break;
         }
         if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
-            qWarning() << "Default font for type" << i << ":" << fn << "; currently:" << DefaultFontData[i].FontName;
+            qCWarning(PLATFORMTHEME) << "Default font for type" << i << ":" << fn << "; currently:" << DefaultFontData[i].FontName;
         }
         if (fn) {
             if (DefaultFontData[i].FontName != DefaultFont
@@ -207,9 +208,11 @@ QFont *KFontSettingsDataMac::font(FontTypes fontType)
 
         cachedFont = new QFont(QLatin1String(fontData.FontName), fontData.Size, forceBold? QFont::Bold : fontData.Weight);
         cachedFont->setStyleHint(fontData.StyleHint);
+        // ignore the default stylehint; works better converting medium -> bold
+//         cachedFont->setStyleName(QLatin1String(fontData.StyleName));
 //         if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
-//             qWarning() << "Requested font type" << fontType << "name=" << fontData.FontName << "forceBold=" << forceBold << "styleHint=" << fontData.StyleHint;
-//             qWarning() << "\t->" << *cachedFont;
+//             qCWarning(PLATFORMTHEME) << "Requested font type" << fontType << "name=" << fontData.FontName << "forceBold=" << forceBold << "styleHint=" << fontData.StyleHint;
+//             qCWarning(PLATFORMTHEME) << "\t->" << *cachedFont;
 //         }
 
         fontInfo = configGroup.readEntry(fontData.ConfigKey, QString());
@@ -217,8 +220,14 @@ QFont *KFontSettingsDataMac::font(FontTypes fontType)
         if (!fontInfo.isEmpty()) {
             cachedFont->fromString(fontInfo);
 //             if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
-//                 qWarning() << "\tfontInfo=" << fontInfo << "->" << *cachedFont;
+//                 qCWarning(PLATFORMTHEME) << "\tfontInfo=" << fontInfo << "->" << *cachedFont;
 //             }
+        } else {
+            QString fName = cachedFont->toString();
+            cachedFont->setStyleName(QLatin1String(fontData.StyleName));
+            if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
+                qCWarning(PLATFORMTHEME) << "\t" << fName << "+ styleName" << fontData.StyleName << "->" << *cachedFont;
+            }
         }
 
         mFonts[fontType] = cachedFont;
