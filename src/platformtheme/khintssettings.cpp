@@ -23,6 +23,7 @@
 #undef QT_NO_CAST_FROM_ASCII
 
 #include "khintssettings.h"
+#include "platformtheme_logging.h"
 
 #include <QDebug>
 #include <QDir>
@@ -36,6 +37,7 @@
 #include <QGuiApplication>
 #include <QDialogButtonBox>
 #include <QScreen>
+#include <QStandardPaths>
 
 #ifdef DBUS_SUPPORT_ENABLED
 #include <QDBusConnection>
@@ -83,8 +85,8 @@ KHintsSettings::KHintsSettings() : QObject(0)
         mLnfConfig = KSharedConfig::openConfig(QStandardPaths::locate(QStandardPaths::GenericDataLocation, QStringLiteral("plasma/look-and-feel/") + defaultLookAndFeelPackage + QStringLiteral("/contents/defaults")));
     }
 
-
-    m_hints[QPlatformTheme::CursorFlashTime] = qBound(200, cg.readEntry("CursorBlinkRate", 1000), 2000);
+    const auto cursorBlinkRate = cg.readEntry("CursorBlinkRate", 1000);
+    m_hints[QPlatformTheme::CursorFlashTime] = cursorBlinkRate > 0 ? qBound(200, cursorBlinkRate, 2000) : 0; // 0 => no blinking
     m_hints[QPlatformTheme::MouseDoubleClickInterval] = cg.readEntry("DoubleClickInterval", 400);
     m_hints[QPlatformTheme::StartDragDistance] = cg.readEntry("StartDragDist", 10);
     m_hints[QPlatformTheme::StartDragTime] = cg.readEntry("StartDragTime", 500);
@@ -130,10 +132,13 @@ KHintsSettings::KHintsSettings() : QObject(0)
         QApplication::setWheelScrollLines(cg.readEntry("WheelScrollLines", 3));
     }
 
-    bool showIcons = cg.readEntry("ShowIconsInMenuItems", !QApplication::testAttribute(Qt::AA_DontShowIconsInMenus));
-    QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus, !showIcons);
+    updateShowIconsInMenuItems(cg);
 
-#ifdef DBUS_SUPPORT_ENABLED
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    m_hints[QPlatformTheme::ShowShortcutsInContextMenus] = true;
+#endif
+
+    #ifdef DBUS_SUPPORT_ENABLED
     QMetaObject::invokeMethod(this, "delayedDBusConnects", Qt::QueuedConnection);
 #endif
     QMetaObject::invokeMethod(this, "setupIconLoader", Qt::QueuedConnection);
@@ -179,22 +184,12 @@ QStringList KHintsSettings::xdgIconThemePaths() const
 {
     QStringList paths;
 
+    // make sure we have ~/.local/share/icons in paths if it exists
+    paths << QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, QStringLiteral("icons"), QStandardPaths::LocateDirectory);
+
     const QFileInfo homeIconDir(QDir::homePath() + QStringLiteral("/.icons"));
     if (homeIconDir.isDir()) {
         paths << homeIconDir.absoluteFilePath();
-    }
-
-    QString xdgDirString = QFile::decodeName(qgetenv("XDG_DATA_DIRS"));
-
-    if (xdgDirString.isEmpty()) {
-        xdgDirString = QStringLiteral("/usr/local/share:/usr/share");
-    }
-
-    foreach (const QString &xdgDir, xdgDirString.split(QLatin1Char(':'))) {
-        const QFileInfo xdgIconsDir(xdgDir + QStringLiteral("/icons"));
-        if (xdgIconsDir.isDir()) {
-            paths << xdgIconsDir.absoluteFilePath();
-        }
     }
 
     return paths;
@@ -263,6 +258,8 @@ void KHintsSettings::slotNotifyChange(int type, int arg)
         } else if (category == SETTINGS_STYLE) {
             m_hints[QPlatformTheme::DialogButtonBoxButtonsHaveIcons] = cg.readEntry("ShowIconsOnPushButtons", true);
             m_hints[QPlatformTheme::UiEffects] = cg.readEntry("GraphicEffectsLevel", 0) != 0 ? QPlatformTheme::GeneralUiEffect : 0;
+
+            updateShowIconsInMenuItems(cg);
         }
         break;
     }
@@ -303,7 +300,7 @@ void KHintsSettings::slotNotifyChange(int type, int arg)
         break;
     }
     default:
-        qWarning() << "Unknown type of change in KGlobalSettings::slotNotifyChange: " << type;
+        qCWarning(PLATFORMTHEME) << "Unknown type of change in KGlobalSettings::slotNotifyChange: " << type;
     }
 }
 
@@ -353,8 +350,7 @@ void KHintsSettings::updateQtSettings(KConfigGroup &cg)
 
     m_hints[QPlatformTheme::ItemViewActivateItemOnSingleClick] = cg.readEntry("SingleClick", true);
 
-    bool showIcons = cg.readEntry("ShowIconsInMenuItems", !QApplication::testAttribute(Qt::AA_DontShowIconsInMenus));
-    QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus, !showIcons);
+    updateShowIconsInMenuItems(cg);
 
     int wheelScrollLines = cg.readEntry("WheelScrollLines", 3);
     m_hints[QPlatformTheme::WheelScrollLines] = wheelScrollLines;
@@ -362,6 +358,12 @@ void KHintsSettings::updateQtSettings(KConfigGroup &cg)
     if (app) {
         QApplication::setWheelScrollLines(cg.readEntry("WheelScrollLines", 3));
     }
+}
+
+void KHintsSettings::updateShowIconsInMenuItems(KConfigGroup &cg)
+{
+    bool showIcons = cg.readEntry("ShowIconsInMenuItems", !QApplication::testAttribute(Qt::AA_DontShowIconsInMenus));
+    QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus, !showIcons);
 }
 
 Qt::ToolButtonStyle KHintsSettings::toolButtonStyle(const KConfigGroup &cg) const

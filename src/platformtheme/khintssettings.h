@@ -78,6 +78,7 @@ protected:
     void loadPalettes();
     void iconChanged(int group);
     void updateQtSettings(KConfigGroup &cg);
+    void updateShowIconsInMenuItems(KConfigGroup &cg);
     Qt::ToolButtonStyle toolButtonStyle(const KConfigGroup &cg) const;
     void updateCursorTheme();
 

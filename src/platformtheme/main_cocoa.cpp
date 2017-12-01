@@ -52,14 +52,14 @@ public:
         }
     }
 
-    QPlatformTheme *create(const QString &key, const QStringList &paramList) Q_DECL_OVERRIDE
+    QPlatformTheme *create(const QString &key, const QStringList &paramList) override
     {
         Q_UNUSED(key)
         Q_UNUSED(paramList)
         return new KdeMacTheme;
     }
 protected:
-    bool eventFilter(QObject *object, QEvent *event)
+    bool eventFilter(QObject *object, QEvent *event) override
     {
         switch (event->type()) {
             case QEvent::ChildAdded: {

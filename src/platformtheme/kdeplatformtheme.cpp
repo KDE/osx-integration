@@ -27,6 +27,7 @@
 #include "khintssettings.h"
 #include "kdeplatformfiledialoghelper.h"
 #include "kdeplatformsystemtrayicon.h"
+#include "platformtheme_logging.h"
 
 #include <QApplication>
 #include <QFont>
@@ -41,6 +42,7 @@
 #include <kstandardshortcut.h>
 #include <KStandardGuiItem>
 #include <KLocalizedString>
+#include <KIO/Global>
 
 KdePlatformTheme::KdePlatformTheme()
 {
@@ -49,6 +51,7 @@ KdePlatformTheme::KdePlatformTheme()
     loadSettings();
 
     QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuBar, false);
+    setQtQuickControlsTheme();
 }
 
 KdePlatformTheme::~KdePlatformTheme()
@@ -66,6 +69,26 @@ QVariant KdePlatformTheme::themeHint(QPlatformTheme::ThemeHint hintType) const
         return QPlatformTheme::themeHint(hintType);
     }
 }
+
+QIcon KdePlatformTheme::fileIcon(const QFileInfo &fileInfo, QPlatformTheme::IconOptions iconOptions) const
+{
+    if (iconOptions.testFlag(DontUseCustomDirectoryIcons) && fileInfo.isDir()) {
+        qCWarning(PLATFORMTHEME) << Q_FUNC_INFO << "icon \"inode-directory\"";
+        return QIcon::fromTheme(QLatin1String("inode-directory"));
+    }
+
+    qCWarning(PLATFORMTHEME) << Q_FUNC_INFO
+        << "file:" << fileInfo.absoluteFilePath()
+        << "icon:" << KIO::iconNameForUrl(QUrl::fromLocalFile(fileInfo.absoluteFilePath()));
+    return QIcon::fromTheme(KIO::iconNameForUrl(QUrl::fromLocalFile(fileInfo.absoluteFilePath())));
+}
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 8, 0)
+QPixmap KdePlatformTheme::fileIconPixmap(const QFileInfo &fileInfo, const QSizeF &size, QPlatformTheme::IconOptions iconOptions) const
+{
+    return fileIcon(fileInfo, iconOptions).pixmap(size.toSize(), QIcon::Normal);
+}
+#endif
 
 const QPalette *KdePlatformTheme::palette(Palette type) const
 {
@@ -92,7 +115,6 @@ KFontSettingsData::FontTypes KdePlatformTheme::fontType(Font type) const
     case TipLabelFont:
     case StatusBarFont:
     case PushButtonFont:
-    case ToolButtonFont:
     case ItemViewFont:
     case ListViewFont:
     case HeaderViewFont:
@@ -109,6 +131,8 @@ KFontSettingsData::FontTypes KdePlatformTheme::fontType(Font type) const
         fdtype = KFontSettingsData::SmallestReadableFont; break;
     case FixedFont:
         fdtype = KFontSettingsData::FixedFont; break;
+    case ToolButtonFont:
+        fdtype = KFontSettingsData::ToolbarFont; break;
     default:
         fdtype = KFontSettingsData::GeneralFont; break;
     }
@@ -229,7 +253,7 @@ QString KdePlatformTheme::standardButtonText(int button) const
 {
     switch (static_cast<QPlatformDialogHelper::StandardButton>(button)) {
     case QPlatformDialogHelper::NoButton:
-        qWarning() << Q_FUNC_INFO << "Unsupported standard button:" << button;
+        qCWarning(PLATFORMTHEME) << Q_FUNC_INFO << "Unsupported standard button:" << button;
         return QString();
     case QPlatformDialogHelper::Ok:
         return KStandardGuiItem::ok().text();
@@ -290,3 +314,24 @@ QPlatformSystemTrayIcon *KdePlatformTheme::createPlatformSystemTrayIcon() const
 {
     return new KDEPlatformSystemTrayIcon;
 }
+
+//force QtQuickControls2 to use the desktop theme as default
+void KdePlatformTheme::setQtQuickControlsTheme()
+{
+    //if the user is running only a QGuiApplication. Abort as this style is all about QWidgets and we know setting this will make it crash
+    if (!qobject_cast<QApplication*>(qApp)) {
+        if (qgetenv("QT_QUICK_CONTROLS_1_STYLE").right(7) == "Desktop") {
+            qunsetenv("QT_QUICK_CONTROLS_1_STYLE");
+        }
+        return;
+    }
+    //if the user has explicitly set something else, don't meddle
+    // Do this after potentially unsetting QT_QUICK_CONTROLS_1_STYLE!
+    if (qEnvironmentVariableIsSet("QT_QUICK_CONTROLS_STYLE")) {
+        return;
+    }
+    // newer plasma-integration versions use QtQuickControls2 for this
+    // I don't want that extra dependency.
+    qputenv("QT_QUICK_CONTROLS_STYLE", "org.kde.desktop");
+}
+

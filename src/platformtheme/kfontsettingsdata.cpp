@@ -58,13 +58,13 @@ static const char GeneralId[] =      "General";
 static const char DefaultFont[] =    "Lucida Grande";
 
 static const KFontData DefaultFontData[KFontSettingsData::FontTypesCount] = {
-    { GeneralId, "font",                 DefaultFont,  10, -1, QFont::SansSerif },
-    { GeneralId, "fixed",                "Monaco",  9, -1, QFont::Monospace },
-    { GeneralId, "toolBarFont",          DefaultFont,  9, -1, QFont::SansSerif },
-    { GeneralId, "menuFont",             DefaultFont,  10, -1, QFont::SansSerif },
-    { "WM",      "activeFont",           DefaultFont,  10, -1, QFont::SansSerif },
-    { GeneralId, "taskbarFont",          DefaultFont,  10, -1, QFont::SansSerif },
-    { GeneralId, "smallestReadableFont", DefaultFont,  8, -1, QFont::SansSerif }
+    { GeneralId, "font",                 DefaultFont,  10, -1, QFont::SansSerif, "Regular" },
+    { GeneralId, "fixed",                "Monaco",  9, -1, QFont::Monospace, "Regular" },
+    { GeneralId, "toolBarFont",          DefaultFont,  9, -1, QFont::SansSerif, "Regular" },
+    { GeneralId, "menuFont",             DefaultFont,  10, -1, QFont::SansSerif, "Regular" },
+    { "WM",      "activeFont",           DefaultFont,  10, -1, QFont::SansSerif, "Regular" },
+    { GeneralId, "taskbarFont",          DefaultFont,  10, -1, QFont::SansSerif, "Regular" },
+    { GeneralId, "smallestReadableFont", DefaultFont,  8, -1, QFont::SansSerif, "Regular" }
 };
 
 KSharedConfigPtr &KFontSettingsData::kdeGlobals()
@@ -95,6 +95,8 @@ QFont *KFontSettingsData::font(FontTypes fontType)
         //NOTE: We are not using KConfig directly because we can't call QFont::QFont from here
         if (!fontInfo.isEmpty()) {
             cachedFont->fromString(fontInfo);
+        } else {
+            cachedFont->setStyleName(QLatin1String(fontData.StyleName));
         }
 
         mFonts[fontType] = cachedFont;
