@@ -79,6 +79,7 @@ void KFileTreeView::Private::_k_expanded(const QModelIndex &baseIndex)
 {
     QModelIndex index = mProxyModel->mapFromSource(baseIndex);
 
+    q->setExpanded(index, true);
     q->selectionModel()->clearSelection();
     q->selectionModel()->setCurrentIndex(index, QItemSelectionModel::SelectCurrent);
     q->scrollTo(index);
@@ -108,6 +109,8 @@ KFileTreeView::KFileTreeView(QWidget *parent)
 
 KFileTreeView::~KFileTreeView()
 {
+    delete d->mSourceModel;
+    delete d->mProxyModel;
     delete d;
 }
 

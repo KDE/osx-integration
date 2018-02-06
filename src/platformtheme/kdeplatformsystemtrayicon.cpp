@@ -1,5 +1,5 @@
 /*  This file is part of the KDE libraries
- *  Copyright 2014 Martin Gr√§√ülin <mgraesslin@kde.org>
+ *  Copyright 2014 Martin Gr‰ﬂlin <mgraesslin@kde.org>
  *
  *  This library is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -27,6 +27,7 @@
 #ifdef DBUS_SUPPORT_ENABLED
 #include <QDBusInterface>
 #endif
+#include <QSystemTrayIcon>
 
 SystemTrayMenu::SystemTrayMenu()
     : QPlatformMenu()
@@ -47,6 +48,11 @@ SystemTrayMenu::~SystemTrayMenu()
 QPlatformMenuItem *SystemTrayMenu::createMenuItem() const
 {
     return new SystemTrayMenuItem();
+}
+
+QPlatformMenu *SystemTrayMenu::createSubMenu() const
+{
+    return new SystemTrayMenu();
 }
 
 void SystemTrayMenu::insertMenuItem(QPlatformMenuItem *menuItem, QPlatformMenuItem *before)
@@ -244,6 +250,21 @@ void SystemTrayMenuItem::setIconSize(int size)
     Q_UNUSED(size);
 }
 
+void SystemTrayMenuItem::setHasExclusiveGroup(bool hasExclusiveGroup)
+{
+    if (hasExclusiveGroup) {
+        if (!m_action->actionGroup()) {
+            m_action->setActionGroup(new QActionGroup(m_action));
+        }
+    } else {
+        QActionGroup *actionGroup = m_action->actionGroup();
+        if (actionGroup) {
+            m_action->setActionGroup(nullptr);
+            delete actionGroup;
+        }
+    }
+}
+
 quintptr SystemTrayMenuItem::tag() const
 {
     return m_tag;
@@ -344,13 +365,15 @@ void KDEPlatformSystemTrayIcon::showMessage(const QString &title, const QString 
 bool KDEPlatformSystemTrayIcon::isSystemTrayAvailable() const
 {
 #ifdef DBUS_SUPPORT_ENABLED
-    QDBusInterface systrayHost(QStringLiteral("org.kde.StatusNotifierWatcher"), QStringLiteral("/StatusNotifierWatcher"), QStringLiteral("org.kde.StatusNotifierWatcher"));
-    if (systrayHost.isValid()) {
-        return systrayHost.property("IsStatusNotifierHostRegistered").toBool();
+    if (QGuiApplication::platformName().compare(QStringLiteral("cocoa"), Qt::CaseInsensitive)) {
+        QDBusInterface systrayHost(QStringLiteral("org.kde.StatusNotifierWatcher"), QStringLiteral("/StatusNotifierWatcher"), QStringLiteral("org.kde.StatusNotifierWatcher"));
+        if (systrayHost.isValid()) {
+            return systrayHost.property("IsStatusNotifierHostRegistered").toBool();
+        }
     }
 #endif
 
-    return false;
+    return QSystemTrayIcon::isSystemTrayAvailable();
 }
 
 bool KDEPlatformSystemTrayIcon::supportsMessages() const

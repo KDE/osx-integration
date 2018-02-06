@@ -59,18 +59,35 @@
 #include <X11/Xcursor/Xcursor.h>
 #endif
 
-static const QString defaultLookAndFeelPackage = QStringLiteral("org.kde.breeze.desktop");
+static const QString defaultLookAndFeelPackage = QStringLiteral("com.apple.macintosh.desktop");
 
 KSharedConfigPtr &KHintsSettings::kdeGlobals()
 {
     if (!mKdeGlobals) {
+        verbose = qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE");
         if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_CONFIG_FILE")) {
-            mKdeGlobals = KSharedConfig::openConfig(qgetenv("QT_QPA_PLATFORMTHEME_CONFIG_FILE"), KConfig::NoGlobals);
+            const auto fname(qgetenv("QT_QPA_PLATFORMTHEME_CONFIG_FILE"));
+            mKdeGlobals = KSharedConfig::openConfig(fname, KConfig::NoGlobals);
+            const auto foundFile = QStandardPaths::locate(mKdeGlobals->locationType(), mKdeGlobals->name());
+            if (foundFile.isEmpty()) {
+                qCWarning(PLATFORMTHEME) << "WARNING: could not open config file" << fname
+                    << "in" << QStandardPaths::standardLocations(mKdeGlobals->locationType());
+            }
         } else {
             mKdeGlobals = KSharedConfig::openConfig(QStringLiteral("kdeglobals"), KConfig::NoGlobals);
         }
     }
     return mKdeGlobals;
+}
+
+KSharedConfigPtr &KHintsSettings::LnfConfig()
+{
+    return mLnfConfig;
+}
+
+KSharedConfigPtr &KHintsSettings::DefaultLnfConfig()
+{
+    return mDefaultLnfConfig;
 }
 
 KHintsSettings::KHintsSettings() : QObject(0)
@@ -83,6 +100,10 @@ KHintsSettings::KHintsSettings() : QObject(0)
     mDefaultLnfConfig = KSharedConfig::openConfig(QStandardPaths::locate(QStandardPaths::GenericDataLocation, QStringLiteral("plasma/look-and-feel/") + looknfeel + QStringLiteral("/contents/defaults")));
     if (looknfeel != defaultLookAndFeelPackage) {
         mLnfConfig = KSharedConfig::openConfig(QStandardPaths::locate(QStandardPaths::GenericDataLocation, QStringLiteral("plasma/look-and-feel/") + defaultLookAndFeelPackage + QStringLiteral("/contents/defaults")));
+        if (verbose) {
+            qCWarning(PLATFORMTHEME) << "User-selected look-and-feel:" << looknfeel << mDefaultLnfConfig->name();
+            qCWarning(PLATFORMTHEME) << "Default look-and-feel:" << defaultLookAndFeelPackage << mLnfConfig->name();
+        }
     }
 
     const auto cursorBlinkRate = cg.readEntry("CursorBlinkRate", 1000);
@@ -172,10 +193,12 @@ QVariant KHintsSettings::readConfigValue(const QString &group, const QString &ke
         }
     }
 
+#ifndef Q_OS_MACOS
     KConfigGroup lnfCg(mDefaultLnfConfig, group);
     if (lnfCg.isValid()) {
         return lnfCg.readEntry(key, defaultValue);
     }
+#endif
 
     return defaultValue;
 }

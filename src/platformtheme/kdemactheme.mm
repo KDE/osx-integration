@@ -31,6 +31,7 @@
 #include "kdeplatformsystemtrayicon.h"
 #include "platformtheme_logging.h"
 
+#include <qglobal.h>
 #include <QObject>
 #include <QCoreApplication>
 #include <QGuiApplication>
@@ -64,6 +65,7 @@
 // instantiating the native platform theme requires the use of private APIs
 #include <QtGui/private/qguiapplication_p.h>
 #include <QtGui/qpa/qplatformintegration.h>
+#include <QtGui/qpa/qplatformnativeinterface.h>
 
 
 #include <kiconengine.h>
@@ -409,6 +411,8 @@ How we get here:
 ============ */
 
 KdeMacTheme::KdeMacTheme()
+    : m_nativeInterface(nullptr)
+    , verbose(qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE"))
 {
     if (strcasecmp(QT_VERSION_STR, qVersion())) {
         NSLog(@"Warning: the %s platform theme plugin for Mac was built against Qt %s but is running with Qt %s!",
@@ -417,19 +421,27 @@ KdeMacTheme::KdeMacTheme()
     // first things first: instruct Qt not to use the Mac-style toplevel menubar
     // if we are not using the Cocoa QPA plugin (but the XCB QPA instead).
     platformName = QGuiApplication::platformName();
+    QString platformThemeName;
     if (!platformName.contains(QLatin1String("cocoa"))) {
         QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuBar, true);
         QCoreApplication::setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
+        m_isCocoa = false;
+        // we will almost certainly be using the xcb QPA ("X11"). We'll proxy
+        // the generic Unix theme, *not* the KDE theme. That'd be redundant.
+        platformThemeName = QStringLiteral("generic");
+    } else {
+        m_isCocoa = true;
+        platformThemeName = platformName;
     }
     QPlatformIntegration *pi = QGuiApplicationPrivate::platformIntegration();
     if (pi) {
-        nativeTheme = pi->createPlatformTheme(platformName);
+        nativeTheme = pi->createPlatformTheme(platformThemeName);
     } else {
         nativeTheme = Q_NULLPTR;
     }
     if (!nativeTheme) {
         warnNoNativeTheme();
-    } else if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
+    } else if (verbose) {
         qCWarning(PLATFORMTHEME) << Q_FUNC_INFO
             << "loading platform theme plugin" << QLatin1String(PLATFORM_PLUGIN_THEME_NAME) << "for platform" << platformName;
     }
@@ -539,9 +551,15 @@ QVariant KdeMacTheme::themeHint(QPlatformTheme::ThemeHint hintType) const
 {
     QVariant hint = m_hints->hint(hintType);
     if (hint.isValid()) {
+        if (verbose) {
+            qCWarning(PLATFORMTHEME) << "themeHint" << hintType << ":" << hint;
+        }
         return hint;
     } else {
         if (nativeTheme) {
+            if (verbose) {
+                qCWarning(PLATFORMTHEME) << "Using native theme for themeHint" << hintType << ":" << nativeTheme->themeHint(hintType);
+            }
             return nativeTheme->themeHint(hintType);
         }
         return QPlatformTheme::themeHint(hintType);
@@ -594,10 +612,10 @@ const QFont *KdeMacTheme::font(Font type) const
 void KdeMacTheme::loadSettings()
 {
     if (!m_fontsData) {
-        m_fontsData = new KFontSettingsDataMac;
+        m_fontsData = new KFontSettingsDataMac(this);
     }
     if (!m_hints) {
-        m_hints = new KHintsSettingsMac;
+        m_hints = new KHintsSettingsMac(this);
     }
 }
 
@@ -685,11 +703,12 @@ QString KdeMacTheme::standardButtonText(int button) const
 QPlatformDialogHelper *KdeMacTheme::createPlatformDialogHelper(QPlatformTheme::DialogType type) const
 {
 #ifdef KDEMACTHEME_PREFER_NATIVE_DIALOGS
-    // always prefer native dialogs
+    // always prefer native dialogs - when using the Cocoa QPA.
     // NOTE: somehow, the "don't use native dialog" option that Qt's example "standarddialogs"
     // provides does not modify our usePlatformNativeDialog() return value, but *does* cause
     // a Qt dialog to be created instead of the native one. Weird.
-    if (nativeTheme && !qEnvironmentVariableIsSet("PREFER_KDE_DIALOGS")) {
+    if (nativeTheme && m_isCocoa
+            && (!qEnvironmentVariableIsSet("PREFER_KDE_DIALOGS") || qEnvironmentVariableIsEmpty("PREFER_KDE_DIALOGS"))) {
         return nativeTheme->createPlatformDialogHelper(type);
     }
 #endif
@@ -707,11 +726,31 @@ QPlatformDialogHelper *KdeMacTheme::createPlatformDialogHelper(QPlatformTheme::D
 QPlatformSystemTrayIcon *KdeMacTheme::createPlatformSystemTrayIcon() const
 {
     if (nativeTheme) {
-        return nativeTheme->createPlatformSystemTrayIcon();
+        const auto systray = nativeTheme->createPlatformSystemTrayIcon();
+        if (!m_isCocoa && verbose) {
+            qCWarning(PLATFORMTHEME) << "Created native systray icon" << systray << "for platform" << platformName;
+        }
+        return systray;
     }
     // TODO: figure out if it makes sense to return something other than 
     // nativeTheme->createPlatformSystemTrayIcon() or even NULL
     return KdePlatformTheme::createPlatformSystemTrayIcon();
+}
+
+QPlatformNativeInterface *KdeMacTheme::nativeInterface()
+{
+    if (!m_nativeInterface) {
+        m_nativeInterface = QGuiApplication::platformNativeInterface();
+    }
+    return m_nativeInterface;
+}
+
+KdeMacTheme::PlatformFunctionPtr KdeMacTheme::platformFunction(const QByteArray &functionName)
+{
+    if (nativeInterface()) {
+        return m_nativeInterface->nativeResourceFunctionForIntegration(functionName);
+    }
+    return nullptr;
 }
 
 #include "kdemactheme.moc"

@@ -1,5 +1,5 @@
 /*  This file is part of the KDE libraries
- *  Copyright 2014 Martin Gr√§√ülin <mgraesslin@kde.org>
+ *  Copyright 2014 Martin Gr‰ﬂlin <mgraesslin@kde.org>
  *
  *  This library is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -47,6 +47,7 @@ public:
     void syncSeparatorsCollapsible(bool enable) override;
     quintptr tag() const override;
     QPlatformMenuItem *createMenuItem() const override;
+    QPlatformMenu *createSubMenu() const override;
 
     QMenu *menu() const;
 
@@ -76,6 +77,7 @@ public:
     void setVisible(bool isVisible) override;
     quintptr tag() const override;
     void setIconSize(int size) override;
+    void setHasExclusiveGroup(bool hasExclusiveGroup) override;
 
     QAction *action() const;
 

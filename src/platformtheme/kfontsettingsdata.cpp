@@ -21,6 +21,8 @@
 #undef QT_NO_CAST_FROM_ASCII
 
 #include "kfontsettingsdata.h"
+#include "platformtheme_logging.h"
+
 #include <QCoreApplication>
 #include <QString>
 #include <QVariant>
@@ -35,7 +37,7 @@
 #include <kconfiggroup.h>
 
 KFontSettingsData::KFontSettingsData()
-    : QObject(0)
+    : QObject(nullptr)
 {
 #ifdef DBUS_SUPPORT_ENABLED
     QMetaObject::invokeMethod(this, "delayedDBusConnects", Qt::QueuedConnection);
@@ -71,7 +73,13 @@ KSharedConfigPtr &KFontSettingsData::kdeGlobals()
 {
     if (!mKdeGlobals) {
         if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_CONFIG_FILE")) {
-            mKdeGlobals = KSharedConfig::openConfig(qgetenv("QT_QPA_PLATFORMTHEME_CONFIG_FILE"), KConfig::NoGlobals);
+            const auto fname(qgetenv("QT_QPA_PLATFORMTHEME_CONFIG_FILE"));
+            mKdeGlobals = KSharedConfig::openConfig(fname, KConfig::NoGlobals);
+            const auto foundFile = QStandardPaths::locate(mKdeGlobals->locationType(), mKdeGlobals->name());
+            if (foundFile.isEmpty()) {
+                qCWarning(PLATFORMTHEME) << "WARNING: could not open config file" << fname
+                    << "in" << QStandardPaths::standardLocations(mKdeGlobals->locationType());
+            }
         } else {
             mKdeGlobals = KSharedConfig::openConfig(QStringLiteral("kdeglobals"), KConfig::NoGlobals);
         }

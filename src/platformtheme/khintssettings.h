@@ -74,6 +74,9 @@ protected Q_SLOTS:
 
 protected:
     KSharedConfigPtr &kdeGlobals();
+    KSharedConfigPtr &LnfConfig();
+    KSharedConfigPtr &DefaultLnfConfig();
+
     QVariant readConfigValue(const QString &group, const QString &key, const QVariant &defaultValue);
     void loadPalettes();
     void iconChanged(int group);
@@ -97,6 +100,7 @@ private:
     KSharedConfigPtr mKdeGlobals;
     KSharedConfigPtr mDefaultLnfConfig;
     KSharedConfigPtr mLnfConfig;
+    bool verbose;
 };
 
 #endif //KHINTS_SETTINGS_H

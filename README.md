@@ -23,6 +23,15 @@ and the plugin can now also be built to override the native Cocoa QPA plugin
 (OVERRIDE_NATIVE_THEME CMake option). The Menu key emulation still requires
 a Qt patch (or a dedicated event handler) to do anything useful though.
 
+* Other useful env. variables:
+- QT_QPA_PLATFORMTHEME_VERBOSE : activate verbose mode (logging category
+  CocoaPlatformTheme or KDEPlatformTheme).
+- QT_QPA_PLATFORMTHEME_CONFIG_FILE : load a different file instead of "kdeglobals"
+  from ~/.config or ~/Library/Preferences
+- QT_QPA_PLATFORMTHEME_DISABLED : disable the plugin completely.
+- PREFER_KDE_DIALOGS : force KDE dialogs even when configured to prefer native
+  file dialogs.
+
 This component should still build against Qt 5.5.x; the other components need at
 least Qt 5.8 .
 
@@ -41,7 +50,13 @@ and also reintroduces a basic fullscreen mode that works consistently across
 Mission Control settings and platforms - i.e. it never blackens out other
 attached monitors but keeps their content visible and accessible. It's also a
 lot faster and supports opening new windows without side-effects when in
-fullscreen mode.
+fullscreen mode. Selecting the FreeType engine has been made easier via an env.
+variable (QT_MAC_USE_FREETYPE) as well as an integration function that can be
+called from application code (see kfontsettingsdatamac.mm). There's also support
+for activating the FontConfig fontengine/database (QT_MAC_USE_FONTCONFIG) but
+this requires a patched QtBase configured to use FontConfig. Both use a font
+gamma setting that determines font darkness and can be set via the env. var
+QT_MAC_FREETYPE_FONT_GAMMA .
 This plugin installs next to and will be loaded instead of the stock plugin; it
 will then give priority to the modified QMacStyle if that is installed. If the
 KDE platform theme plugin is built in override mode (see above) this plugin is
@@ -70,3 +85,8 @@ this is also the only way to build the KDE platform theme plugin component.
 - DISABLE_DBUS_SUPPORT : Don't build the D-Bus functionality. Experimental!
 - EMULATE_MENU_KEY : emulate a Menu key (right Command+Option key-combo); requires
   BUILD_QT_PLUGINS to be set in order for that keypress to open the context menu.
+
+* CMake options for QCocoaQPA :
+- HAVE_INFINALITY : should be enabled when you have the Infinality+Ultimate patch-set
+  applied to FreeType *and* FontConfig. Without this option fonts will probably look
+  washed out.

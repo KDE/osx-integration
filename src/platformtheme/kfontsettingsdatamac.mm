@@ -20,6 +20,7 @@
 */
 
 #include "kfontsettingsdatamac.h"
+#include "kdemactheme.h"
 #include "platformtheme_logging.h"
 
 #include <QDebug>
@@ -62,7 +63,7 @@ KFontData DefaultFontData[KFontSettingsDataMac::FontTypesCount] = {
     { GeneralId, "messageBoxFont",       DefaultFont,       13, QFont::Bold, QFont::SansSerif, "Bold" }
 };
 
-static const char *fontNameFor(QFontDatabase::SystemFont role)
+const char *KFontSettingsDataMac::fontNameFor(QFontDatabase::SystemFont role) const
 {
     QFont qf = QFontDatabase::systemFont(role);
     if (!qf.defaultFamily().isEmpty()) {
@@ -74,7 +75,7 @@ static const char *fontNameFor(QFontDatabase::SystemFont role)
         } else {
             fn = strdup(qf.defaultFamily().toLocal8Bit().data());
         }
-        if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
+        if (mTheme->verbose) {
             qCWarning(PLATFORMTHEME) << "fontNameFor" << role << "font:" << qf << "name:" << fn;
         }
         return fn;
@@ -83,7 +84,7 @@ static const char *fontNameFor(QFontDatabase::SystemFont role)
     }
 }
 
-void initDefaultFonts()
+void initDefaultFonts(KFontSettingsDataMac *instance)
 {
     const char *fn;
     static bool active = false;
@@ -95,19 +96,19 @@ void initDefaultFonts()
     active = true;
 
     if (!LocalDefaultFont) {
-        fn = fontNameFor(QFontDatabase::GeneralFont);
+        fn = instance->fontNameFor(QFontDatabase::GeneralFont);
         LocalDefaultFont = fn;
     }
     for (int i = 0 ; i < KFontSettingsDataMac::FontTypesCount ; ++i) {
         switch(i) {
             case KFontSettingsDataMac::FixedFont:
-                fn = fontNameFor(QFontDatabase::FixedFont);
+                fn = instance->fontNameFor(QFontDatabase::FixedFont);
                 break;
             case KFontSettingsDataMac::WindowTitleFont:
-                fn = fontNameFor(QFontDatabase::TitleFont);
+                fn = instance->fontNameFor(QFontDatabase::TitleFont);
                 break;
             case KFontSettingsDataMac::SmallestReadableFont:
-                fn = fontNameFor(QFontDatabase::SmallestReadableFont);
+                fn = instance->fontNameFor(QFontDatabase::SmallestReadableFont);
                 break;
             default:
                 fn = LocalDefaultFont;
@@ -129,7 +130,8 @@ void initDefaultFonts()
     active = false;
 }
 
-KFontSettingsDataMac::KFontSettingsDataMac()
+KFontSettingsDataMac::KFontSettingsDataMac(KdeMacTheme *theme)
+    : mTheme(theme)
 {
 #ifdef DBUS_SUPPORT_ENABLED
     QMetaObject::invokeMethod(this, "delayedDBusConnects", Qt::QueuedConnection);
@@ -140,6 +142,72 @@ KFontSettingsDataMac::KFontSettingsDataMac()
         // delete mFonts[i];
         mFonts[i] = 0;
     }
+
+    if (QGuiApplication::platformName().contains(QLatin1String("cocoa"))) {
+        KConfigGroup general(kdeGlobals(), "General");
+        const QString fontEngine = general.readEntry("fontEngine", QString());
+        // don't do anything if no instructions are given in kdeglobals or the environment
+        bool useFreeType = false, useFontConfig = false;
+        mUseCoreText = false;
+        if (!fontEngine.isEmpty()) {
+            useFreeType = fontEngine.compare(QLatin1String("FreeType"), Qt::CaseInsensitive) == 0;
+            useFontConfig = fontEngine.compare(QLatin1String("FontConfig"), Qt::CaseInsensitive) == 0;
+            // fontEngine=CoreText is the default and only handled so we can warn appropriately
+            // when the user tries to activate another, unknown font engine.
+            mUseCoreText = fontEngine.compare(QLatin1String("CoreText"), Qt::CaseInsensitive) == 0;
+        }
+        if (qgetenv("QT_MAC_FONTENGINE").toLower() == "freetype") {
+            useFontConfig = false;
+            useFreeType = true;
+        }
+        if (qgetenv("QT_MAC_FONTENGINE").toLower() == "fontconfig") {
+            useFreeType = false;
+            useFontConfig = true;
+        }
+        if (qgetenv("QT_MAC_FONTENGINE").toLower() == "coretext") {
+            // CoreText overrides all
+            mUseCoreText = true;
+        }
+        QString desired;
+        bool result = false;
+        const auto ftptr = mTheme->platformFunction("qt_mac_use_freetype");
+        const auto fcptr = mTheme->platformFunction("qt_mac_use_fontconfig");
+        typedef bool (*fontengineEnabler)(bool enabled);
+        if (mUseCoreText) {
+            desired = QStringLiteral("CoreText");
+            if (fcptr) {
+                reinterpret_cast<fontengineEnabler>(fcptr)(false);
+            }
+            if (ftptr) {
+                result = reinterpret_cast<fontengineEnabler>(ftptr)(false);
+                if (!result) {
+                    // at this point failure *probably* means that:
+                    qCWarning(PLATFORMTHEME) << "The" << desired << "fontengine was probably still enabled";
+                }
+            }
+        } else if (useFontConfig) {
+            desired = QStringLiteral("FontConfig");
+            if (fcptr) {
+                result = reinterpret_cast<fontengineEnabler>(fcptr)(useFontConfig);
+            } else {
+                qCWarning(PLATFORMTHEME) << "Cannot use the FontConfig fontengine/fontdatabase:\n"
+                    "\tthis probably means Qt was built without FontConfig support or\n"
+                    "\tthat you're not using the QAltCocoa QPA plugin.";
+            }
+        } else if (useFreeType) {
+            desired = QStringLiteral("FreeType");
+            if (ftptr) {
+                result = reinterpret_cast<fontengineEnabler>(ftptr)(useFreeType);
+            } else {
+                qCWarning(PLATFORMTHEME) << "Cannot use the FreeType fontdatabase:\n"
+                    "\tthis probably means Qt was built without FreeType support or\n"
+                    "\tthat you're not using the QAltCocoa QPA plugin.";
+            }
+        }
+    } else {
+        mUseCoreText = false;
+    }
+
 }
 
 KFontSettingsDataMac::~KFontSettingsDataMac()
@@ -178,7 +246,7 @@ QFont *KFontSettingsDataMac::font(FontTypes fontType)
             // we prefer to return NULL if called through recursively.
             if (!active) {
                 active = true;
-                initDefaultFonts();
+                initDefaultFonts(this);
                 active = false;
             } else {
                 // our caller must handle NULL, preferably by relaying the font request
@@ -207,7 +275,6 @@ QFont *KFontSettingsDataMac::font(FontTypes fontType)
         const KFontData &fontData = DefaultFontData[fontType];
 
         cachedFont = new QFont(QLatin1String(fontData.FontName), fontData.Size, forceBold? QFont::Bold : fontData.Weight);
-        cachedFont->setStyleHint(fontData.StyleHint);
         // ignore the default stylehint; works better converting medium -> bold
 //         cachedFont->setStyleName(QLatin1String(fontData.StyleName));
 //         if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
@@ -230,6 +297,13 @@ QFont *KFontSettingsDataMac::font(FontTypes fontType)
             }
         }
 
+        // experimental: force outline mode when not using CoreText. This should prevent the FreeType
+        // font engine from picking up and using X11 bitmap fonts, should those be installed.
+        if (mUseCoreText) {
+            cachedFont->setStyleHint(fontData.StyleHint);
+        } else {
+            cachedFont->setStyleHint(fontData.StyleHint, QFont::ForceOutline);
+        }
         mFonts[fontType] = cachedFont;
     }
     return cachedFont;

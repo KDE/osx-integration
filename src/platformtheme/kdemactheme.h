@@ -32,6 +32,7 @@
 class KHintsSettingsMac;
 class QIconEngine;
 class KdeMacThemeEventFilter;
+class QPlatformNativeInterface;
 
 class KdeMacTheme : public KdePlatformTheme
 {
@@ -56,6 +57,12 @@ public:
 
     QPlatformSystemTrayIcon *createPlatformSystemTrayIcon() const override;
 
+    QPlatformNativeInterface *nativeInterface();
+    typedef void * (*PlatformFunctionPtr)();
+    PlatformFunctionPtr platformFunction(const QByteArray &functionName);
+
+    bool verbose;
+
 protected:
     void loadSettings();
     KFontSettingsDataMac::FontTypes fontType(Font type) const;
@@ -68,6 +75,9 @@ private:
 
     // this will hold an instance of a class with Qt and/or native event filters:
     KdeMacThemeEventFilter *m_eventFilter;
+    QPlatformNativeInterface *m_nativeInterface;
+
+    bool m_isCocoa;
 };
 
 #endif // KDEMACTHEME_H

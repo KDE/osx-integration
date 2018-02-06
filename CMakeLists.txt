@@ -6,7 +6,7 @@ option(BUILD_KDE_THEME_PLUGIN
         "Should the KDE theme plugin be built?"
         ON)
 option(BUILD_QT_PLUGINS
-        "Should the Qt QPA and style plugins be built (they don't depend on KDE but become optional when the KDE theme plugin is built)"
+        "Should the Qt Cocoa QPA and Aqua style plugins be built (they don't depend on KDE but become optional when the KDE theme plugin is built)"
         ON)
 
 option(DEFINE_ICONTHEME_SETTINGS
@@ -19,7 +19,7 @@ option(NEVER_NATIVE_DIALOGS
         "Should native dialogs never be used (when not already preferred)?"
         OFF)
 option(OVERRIDE_NATIVE_THEME
-        "Should the platform theme plugin replace the native theme? If OFF it installs as the \"kde\" theme."
+        "Should the platform theme plugin override the native theme? If ON it installs as the \"Cocoa\" instead of as the \"kde\" theme."
         OFF)
 option(DISABLE_DBUS_SUPPORT
         "Don't build the D-Bus functionality. Experimental!"
@@ -28,12 +28,31 @@ option(EMULATE_MENU_KEY
         "Emulate the presence of a Menu key as on PC keyboards when the right Command+Option keys are pressed.
         BUILD_QT_PLUGINS must be set for this to have any effect."
         OFF)
+option(HAVE_INFINALITY
+        "The Infinality+Ultimate patch set has been applied to FreeType and FontConfig.
+        (the FontConfig patches are determining). See https://github.com/archfan/infinality_bundle"
+        OFF)
 
 option(USE_PLCRASHREPORTER
         "Use the Plausible CrashReporter (https://www.plcrashreporter.org)"
         OFF)
 
 include(FeatureSummary)
+add_feature_info("KDE platform theme plugin" BUILD_KDE_THEME_PLUGIN "")
+add_feature_info("Build the Qt plugins" BUILD_QT_PLUGINS
+        "Should the Qt Cocoa QPA and Aqua style plugins be built")
+add_feature_info("Override the Cocoa platform" OVERRIDE_NATIVE_THEME
+        "Install the platform theme plugin so it overrides the native \"Cocoa\" platform")
+add_feature_info("Icon theme settings" DEFINE_ICONTHEME_SETTINGS
+        "Should the theme plugin define a standard theme and add the standard locations for icon themes to the search path?")
+add_feature_info("Prefer native dialogs" PREFER_NATIVE_DIALOGS "")
+add_feature_info("Never use native dialogs" NEVER_NATIVE_DIALOGS "")
+add_feature_info("No DBus" DISABLE_DBUS_SUPPORT
+        "Don't build the D-Bus functionality. Experimental!")
+add_feature_info("Emulate a Menu key" EMULATE_MENU_KEY
+        "Emulate the presence of a Menu key as on PC keyboards when the right Command+Option keys are pressed.")
+add_feature_info("Build for use with the Infinality+Ultimate patch-set" HAVE_INFINALITY "")
+
 find_package(ECM 5.20.0  NO_MODULE)
 set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://projects.kde.org/projects/kdesupport/extra-cmake-modules")
 # feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKAGES)
@@ -119,3 +138,9 @@ if(BUILD_KDE_THEME_PLUGIN)
 endif()
 
 feature_summary(WHAT ALL   FATAL_ON_MISSING_REQUIRED_PACKAGES)
+if(CMAKE_OSX_DEPLOYMENT_TARGET)
+    message(STATUS "OS X Deployment target: ${CMAKE_OSX_DEPLOYMENT_TARGET}")
+endif()
+if(CMAKE_OSX_SYSROOT)
+    message(STATUS "OS X SDK sysroot: ${CMAKE_OSX_SYSROOT}")
+endif()

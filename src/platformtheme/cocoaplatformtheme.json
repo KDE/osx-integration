@@ -1,3 +1,11 @@
 {
-    "Keys": [ "cocoa" ]
+    "Keys": [ "cocoa" ],
+    "Name": "Kokoa",
+    "Copyright": "(C) 2015-17 René J.V. Bertin",
+    "Description": [
+        "KDE platform integration plugin for Mac OS X/macOS",
+        "Based on the Plasma Integration plugin.",
+        "This version replaces and proxies the original Qt Cocoa and/or RJVB's QAltCocoa QPA plugins"
+    ],
+    "Url": [ "https://github.com/RJVB/osx-integration" ]
 }

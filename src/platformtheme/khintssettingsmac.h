@@ -28,12 +28,13 @@ class KConfigGroup;
 
 class QPalette;
 class KdeProxyStyle;
+class KdeMacTheme;
 
 class KHintsSettingsMac : public KHintsSettings
 {
     Q_OBJECT
 public:
-    explicit KHintsSettingsMac();
+    explicit KHintsSettingsMac(KdeMacTheme *theme);
     virtual ~KHintsSettingsMac();
 
     QStringList xdgIconThemePaths() const;
@@ -49,6 +50,9 @@ protected:
     void updateCursorTheme();
     void checkNativeTheme(const QString &theme);
 private:
+    KHintsSettingsMac();
+
+    KdeMacTheme *mTheme;
     KdeProxyStyle *styleProxy;
 };
 

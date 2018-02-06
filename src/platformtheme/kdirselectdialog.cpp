@@ -411,6 +411,9 @@ KDirSelectDialog::KDirSelectDialog(const QUrl &startDir, bool localOnly, QWidget
 
 KDirSelectDialog::~KDirSelectDialog()
 {
+    delete d->m_placesView;
+    delete d->m_treeView;
+    delete d->m_urlCombo;
     delete d;
 }
 

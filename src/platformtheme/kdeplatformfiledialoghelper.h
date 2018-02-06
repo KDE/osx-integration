@@ -33,6 +33,7 @@ public:
     friend class KDEPlatformFileDialogHelper;
 
     explicit KDEPlatformFileDialog();
+    virtual ~KDEPlatformFileDialog();
     QUrl directory() override;
     void selectMimeTypeFilter(const QString &filter) override;
     void selectNameFilter(const QString &filter) override;

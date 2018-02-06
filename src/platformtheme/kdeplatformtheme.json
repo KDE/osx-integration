@@ -1,3 +1,12 @@
 {
-    "Keys": [ "kde" ]
+    "Keys": [ "kde" ],
+    "Name": "KDEPlatformTheme",
+    "Copyright": "(C) 2015-17 René J.V. Bertin",
+    "Description": [
+        "KDE platform integration plugin for Mac OS X/macOS",
+        "Based on the Plasma Integration plugin.",
+        "This version only proxies the original Qt Cocoa and/or RJVB's QAltCocoa QPA plugins;",
+        "Set QT_QPA_PLATFORMTHEME=kde to use it instead of the Cocoa plugin."
+    ],
+    "Url": [ "https://github.com/RJVB/osx-integration" ]
 }

@@ -24,8 +24,10 @@
 #include <QWidget>
 #include <QApplication>
 #include <QDebug>
+#include <QPluginLoader>
 
 #include "kdemactheme.h"
+#include "platformtheme_logging.h"
 
 #include <config-platformtheme.h>
 
@@ -37,6 +39,8 @@
 // This file should be kept in sync with main_kde.cpp !!
 // NB NB
 
+static QPluginLoader unloadProtection;
+
 class KdePlatformThemePlugin : public QPlatformThemePlugin
 {
     Q_OBJECT
@@ -45,6 +49,10 @@ public:
     KdePlatformThemePlugin(QObject *parent = Q_NULLPTR)
         : QPlatformThemePlugin(parent)
     {
+        if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_DISABLED")) {
+            qCWarning(PLATFORMTHEME) << "The KDE platform theme plugin has been disabled because of QT_QPA_PLATFORMTHEME_DISABLED";
+            return;
+        }
         if (qEnvironmentVariableIsSet("KDE_LAYOUT_USES_WIDGET_RECT")) {
             qApp->installEventFilter(this);
         }
@@ -54,7 +62,26 @@ public:
     {
         Q_UNUSED(key)
         Q_UNUSED(paramList)
-        return new KdeMacTheme;
+        if (!qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_DISABLED")) {
+            if (unloadProtection.fileName().isEmpty()) {
+                unloadProtection.setFileName(QStringLiteral("platformthemes/" PLATFORM_PLUGIN_FILE_NAME));
+                if (unloadProtection.fileName().isEmpty()) {
+                    // try with the non-standard extension
+                    unloadProtection.setFileName(QStringLiteral("platformthemes/" PLATFORM_PLUGIN_FILE_NAME ".so"));
+                }
+                // using a global static loader instance should already prevent us from being unloaded
+                // too early; add an additional layer of protection:
+                unloadProtection.setLoadHints(QLibrary::PreventUnloadHint);
+                bool success = unloadProtection.load();
+                if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
+                    qCWarning(PLATFORMTHEME) << "loaded from:"
+                        << unloadProtection.fileName() << "unload protection:" << success;
+                }
+            }
+            return new KdeMacTheme;
+        } else {
+            return nullptr;
+        }
     }
 protected:
     bool eventFilter(QObject *object, QEvent *event)

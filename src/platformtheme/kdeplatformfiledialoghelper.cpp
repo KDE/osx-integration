@@ -22,6 +22,7 @@
 #include "kdeplatformfiledialoghelper.h"
 #include "kdeplatformfiledialogbase_p.h"
 #include "kdirselectdialog_p.h"
+#include "platformtheme_logging.h"
 
 #include <kfilefiltercombo.h>
 #include <kfilewidget.h>
@@ -111,6 +112,12 @@ KDEPlatformFileDialog::KDEPlatformFileDialog()
     connect(m_fileWidget, SIGNAL(accepted()), SLOT(accept()));
     connect(m_fileWidget->cancelButton(), SIGNAL(clicked(bool)), SLOT(reject()));
     layout()->addWidget(m_buttons);
+}
+
+KDEPlatformFileDialog::~KDEPlatformFileDialog()
+{
+    delete m_fileWidget;
+    delete m_buttons;
 }
 
 QUrl KDEPlatformFileDialog::directory()
@@ -416,6 +423,11 @@ QUrl KDEPlatformFileDialogHelper::directory() const
 void KDEPlatformFileDialogHelper::selectFile(const QUrl &filename)
 {
     m_dialog->selectFile(filename);
+
+    // Qt 5 at least <= 5.8.0 does not derive the directory from the passed url
+    // and set the initialDirectory option accordingly, also not for known schemes
+    // like file://, so we have to do it ourselves
+    options()->setInitialDirectory(m_dialog->directory());
 }
 
 void KDEPlatformFileDialogHelper::setDirectory(const QUrl &directory)

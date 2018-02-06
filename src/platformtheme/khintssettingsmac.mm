@@ -22,6 +22,7 @@
  */
 
 #include "khintssettingsmac.h"
+#include "kdemactheme.h"
 #include "platformtheme_logging.h"
 
 #include <QDebug>
@@ -72,26 +73,50 @@ public:
     }
 };
 
-KHintsSettingsMac::KHintsSettingsMac()
-    : styleProxy(0)
+KHintsSettingsMac::KHintsSettingsMac(KdeMacTheme *theme)
+    : mTheme(theme)
+    , styleProxy(0)
 {
     KSharedConfigPtr mKdeGlobals = kdeGlobals();
-    if (qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME_VERBOSE")) {
+    if (mTheme->verbose) {
         if (!mKdeGlobals->name().isEmpty()) {
             qCWarning(PLATFORMTHEME) << Q_FUNC_INFO << "config file:" << mKdeGlobals->name()
                 << "(" << QStandardPaths::locate(mKdeGlobals->locationType(), mKdeGlobals->name()) << ")";
+        } else {
+            qCWarning(PLATFORMTHEME) << Q_FUNC_INFO << "config file:" << mKdeGlobals << "has no known name";
         }
     }
 
     KConfigGroup cg(mKdeGlobals, "KDE");
+    if (mTheme->verbose) {
+        qCWarning(PLATFORMTHEME) << "config group" << mKdeGlobals->name() << "." << cg.name()
+            << "exists=" << cg.exists()
+            << "valid=" << cg.isValid()
+            << "groups=" << cg.groupList()
+            << "keys=" << cg.keyList();
+    }
 
     // we're overriding whatever the parent class configured
     hints().clear();
 
     KConfigGroup cgToolbar(mKdeGlobals, "Toolbar style");
+    if (mTheme->verbose) {
+        qCWarning(PLATFORMTHEME) << "config group" << mKdeGlobals->name() << "." << cgToolbar.name()
+            << "exists=" << cgToolbar.exists()
+            << "valid=" << cgToolbar.isValid()
+            << "groups=" << cgToolbar.groupList()
+            << "keys=" << cgToolbar.keyList();
+    }
     hints()[QPlatformTheme::ToolButtonStyle] = toolButtonStyle(cgToolbar);
 
     KConfigGroup cgToolbarIcon(mKdeGlobals, "MainToolbarIcons");
+    if (mTheme->verbose) {
+        qCWarning(PLATFORMTHEME) << "config group" << mKdeGlobals->name() << "." << cgToolbarIcon.name()
+            << "exists=" << cgToolbarIcon.exists()
+            << "valid=" << cgToolbarIcon.isValid()
+            << "groups=" << cgToolbarIcon.groupList()
+            << "keys=" << cgToolbarIcon.keyList();
+    }
     hints()[QPlatformTheme::ToolBarIconSize] = cgToolbarIcon.readEntry("Size", 22);
 
     hints()[QPlatformTheme::ItemViewActivateItemOnSingleClick] = cg.readEntry("SingleClick", true);
@@ -108,15 +133,28 @@ KHintsSettingsMac::KHintsSettingsMac()
                << QStringLiteral("macintosh")
                << QStringLiteral("fusion")
                << QStringLiteral("windows");
+    if (mTheme->verbose) {
+        qCWarning(PLATFORMTHEME) << "initial widget style list:" << styleNames;
+    }
     const QString configuredStyle = cg.readEntry("widgetStyle", QString());
     if (!configuredStyle.isEmpty()) {
         styleNames.removeOne(configuredStyle);
         styleNames.prepend(configuredStyle);
+        if (mTheme->verbose) {
+            qCWarning(PLATFORMTHEME) << "Found widgetStyle" << configuredStyle << "in config file";
+        }
     }
     const QString lnfStyle = readConfigValue(QStringLiteral("KDE"), QStringLiteral("widgetStyle"), QString()).toString();
-    if (!lnfStyle.isEmpty()) {
+    if (!lnfStyle.isEmpty() && lnfStyle != configuredStyle) {
         styleNames.removeOne(lnfStyle);
         styleNames.prepend(lnfStyle);
+        if (mTheme->verbose) {
+            qCWarning(PLATFORMTHEME) << "Found widgetStyle" << lnfStyle << "look-and-feel definition"
+                << (LnfConfig() ? LnfConfig()->name() : QStringLiteral("???"));
+        }
+    }
+    if (mTheme->verbose) {
+        qCWarning(PLATFORMTHEME) << "final widget style list:" << styleNames;
     }
     hints()[QPlatformTheme::StyleNames] = styleNames;
     checkNativeTheme(configuredStyle);
@@ -257,9 +295,19 @@ void KHintsSettingsMac::slotNotifyChange(int type, int arg)
                 << QStringLiteral("macintosh")
                 << QStringLiteral("fusion")
                 << QStringLiteral("windows");
+        if (mTheme->verbose) {
+            qCWarning(PLATFORMTHEME) << "initial widget style list:" << styleNames;
+        }
         const QString lnfStyle = readConfigValue(QStringLiteral("KDE"), QStringLiteral("widgetStyle"), QString()).toString();
         if (!lnfStyle.isEmpty() && !styleNames.contains(lnfStyle)) {
             styleNames.prepend(lnfStyle);
+            if (mTheme->verbose) {
+                qCWarning(PLATFORMTHEME) << "Found widgetStyle" << lnfStyle << "look-and-feel definition"
+                    << (LnfConfig() ? LnfConfig()->name() : QStringLiteral("???"));
+            }
+        }
+        if (mTheme->verbose) {
+            qCWarning(PLATFORMTHEME) << "final widget style list:" << styleNames;
         }
         hints()[QPlatformTheme::StyleNames] = styleNames;
 
