@@ -1,9 +1,0 @@
-maintainer: rjvbb
-description: Theme, style and platform plugins aiming to improve the "KDE experience" on Mac.
-tier: 4
-type: integration
-platforms:
-    - name: Mac OS X
-portingAid: false
-deprecated: false
-release: true

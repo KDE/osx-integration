@@ -2,6 +2,15 @@
 
 Improved integration of Qt and KDE applications with the Mac OS X desktop
 
+The sources are organised in Qt version-specific branches; please checkout
+- any branch when interested only in the platform theme
+- qt580 when using Qt 5.8.0
+- qt590 when using Qt 5.9.x (or Qt 5.8.0 and benefit from new features in the
+  Qt 5.9x Cocoa plugin and Macintosh style.
+
+I expect to add new branches when stable versions are released and intend
+to maintain a minimum dependency on Qt 5.9x LTS.
+
 ### KDEPlatformTheme
 
 The plugin Mac KDE platform theme plugin makes it possible to use KDE font

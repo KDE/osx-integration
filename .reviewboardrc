@@ -1,4 +1,0 @@
-REVIEWBOARD_URL = "https://git.reviewboard.kde.org"
-REPOSITORY = 'git://anongit.kde.org/scratch/rjvbb/osx-integration'
-BRANCH = 'master'
-TARGET_GROUPS = 'kde-mac'
